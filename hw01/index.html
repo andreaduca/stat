@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>HW01 · Private key to public key</title>
 <link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="css/hw01.css">
 </head>
 <body>
 <main class="wrap">
@@ -95,8 +96,9 @@
   <p class="small muted">Statistics · MSc Cybersecurity, Sapienza · homework 1</p>
 </main>
 <script type="module">
-  import { shell } from './js/pages/shell.js';
-  shell('index.html');
+  import { mountShell } from '../assets/js/ui/dom.js';
+  import { hw01Shell } from './js/pages/shell.js';
+  mountShell(hw01Shell('index.html'));
 </script>
 </body>
 </html>

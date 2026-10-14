@@ -2,6 +2,8 @@
    element building, the page shell (header + nav + footer), and the
    collapsible "What am I looking at?" box. No maths lives here. */
 
+import { SITE } from './site.js';
+
 /** Build an element. `props` sets attributes, except `class`/`text`/`html`
  *  and `on*` handlers. `kids` may be nodes or strings. */
 export function el(tag, props = {}, kids = []) {
@@ -27,13 +29,11 @@ export function fill(node, kids) {
   return node;
 }
 
-/** Header with title + tab nav, and the footer disclaimer. Called once per
- *  page; `links` is [{href, label}] and `current` marks the active tab. */
-/** Public repository, shown in the footer for transparency. Set it once the
- *  repo exists; while empty the link is simply omitted. */
-const SOURCE_URL = '';
-
-export function mountShell({ title, subtitle, links = [], current = '', home = '../index.html' }) {
+/** Header with title and tab nav, plus the footer carrying the homework's
+ *  honesty notice and the credits. Called once per page: `links` is
+ *  [{href, label}], `current` marks the active tab, and `notice` is the
+ *  warning that belongs on every page of that homework. */
+export function mountShell({ title, subtitle, links = [], current = '', home = '../index.html', notice = '' }) {
   const header = el('header', { class: 'site-header' }, [
     el('div', { class: 'inner' }, [
       el('div', { class: 'site-brand' }, [
@@ -44,7 +44,16 @@ export function mountShell({ title, subtitle, links = [], current = '', home = '
         el('a', { href: l.href, text: l.label, 'aria-current': l.href === current ? 'page' : null }))),
     ]),
   ]);
+  const credits = `${SITE.author} · ${SITE.course}`;
+  const footer = el('footer', { class: 'site-footer' }, [
+    el('div', { class: 'inner' }, [
+      notice ? el('p', { class: 'notice', text: notice }) : null,
+      el('p', { html: SITE.sourceUrl ? `${credits} · <a href="${SITE.sourceUrl}">source</a>` : credits }),
+    ]),
+  ]);
+
   document.body.prepend(header);
+  document.body.append(footer);
 }
 
 /** The "What am I looking at?" box: the maths of a panel, and why it matters.

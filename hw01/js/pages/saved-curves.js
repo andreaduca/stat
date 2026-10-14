@@ -7,8 +7,10 @@ import { load, save } from '../../../assets/js/ui/store.js';
 import { PRESETS } from '../core/curves.js';
 
 const KEY = 'hw01.saved-curves';
-const CURRENT = 'hw01.current-curve';
-const CURVE_KEYS = ['curve', 'p', 'a', 'b', 'gx', 'gy'];
+/** Where the curve in view is remembered, and which parameters describe it.
+ *  Passed to startPage by every page of this homework. */
+export const CURVE_MEMORY = 'hw01.current-curve';
+export const CURVE_KEYS = ['curve', 'p', 'a', 'b', 'gx', 'gy'];
 
 /** Same parameters, same id — saving a curve twice updates it instead of cloning. */
 const idFor = ({ p, a, b }) => `s${p}-${a}-${b}`;
@@ -57,21 +59,4 @@ export function selectionParams(id) {
     gx: chosen.base ? String(chosen.base.x) : null,
     gy: chosen.base ? String(chosen.base.y) : null,
   };
-}
-
-/* ---- the curve in view, shared across the pages ------------------------- */
-
-/** Remember which curve is being looked at. */
-export function rememberCurve(state) {
-  const keep = {};
-  for (const key of CURVE_KEYS) if (state[key] !== undefined) keep[key] = state[key];
-  save(CURRENT, keep);
-}
-
-/** Starting parameters for a page: what its URL says, or — when the URL names
- *  no curve at all — the one the reader was last looking at. This is what makes
- *  the curve and base point follow you from page to page. */
-export function withRemembered(params) {
-  const named = CURVE_KEYS.some((key) => params[key] !== undefined);
-  return named ? params : { ...load(CURRENT, {}), ...params };
 }

@@ -1,0 +1,17 @@
+/* hw01.css — styles used only by this homework. Anything that belongs to a
+   shared component (the lattice plot, the line chart) lives in base.css. */
+
+/* the binary digits of k, in the visualiser's key panel */
+.bits { display: flex; flex-wrap: wrap; gap: 3px; font-family: var(--mono); }
+.bits b {
+  display: grid;
+  place-items: center;
+  width: 24px; height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  font-weight: 500;
+  background: var(--panel-alt);
+}
+.bits b.on   { border-color: var(--accent); color: var(--accent); }
+.bits b.here { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+

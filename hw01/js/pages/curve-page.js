@@ -3,20 +3,15 @@
    point orders. The inputs themselves live in curve-input.js, shared with the
    other pages. */
 
-import { el, fill, explain, fmt } from '../../../assets/js/ui/dom.js';
+import { el, explain, fmt } from '../../../assets/js/ui/dom.js';
 import { LatticeGrid, legend } from '../../../assets/js/ui/grid.js';
-import { readParams, writeParams } from '../../../assets/js/ui/params.js';
+import { startPage } from '../../../assets/js/ui/page.js';
 import { curveFromParams } from '../core/curves.js';
-import { curveOptions, rememberCurve, withRemembered } from './saved-curves.js';
+import { curveOptions, CURVE_KEYS, CURVE_MEMORY } from './saved-curves.js';
 import { curveInput } from './curve-input.js';
 import { Point } from '../core/curve.js';
 import { divisors } from '../core/field.js';
-import { shell } from './shell.js';
-
-shell('curve.html');
-
-const app = document.getElementById('app');
-let state = withRemembered(readParams());
+import { hw01Shell } from './shell.js';
 
 /* The curve object memoises points, #E and orders, so keep the same instance
    while the parameters do not change — re-picking a base point stays instant. */
@@ -25,7 +20,7 @@ const savedExtra = () => curveOptions().filter((o) => o.saved);
 const histCache = new Map();
 const orderCache = new Map();
 
-function load() {
+function load(state) {
   const result = curveFromParams(state, savedExtra());
   if (result.error) return result;
   const key = `${result.curve.p}:${result.curve.a}:${result.curve.b}`;
@@ -44,14 +39,6 @@ const histOf = (c) => {
   if (!histCache.has(curveKey)) histCache.set(curveKey, c.orderHistogram());
   return histCache.get(curveKey);
 };
-
-function update(changes) {
-  state = { ...state, ...changes };
-  for (const [k, v] of Object.entries(changes)) if (v === null) delete state[k];
-  writeParams(changes);
-  rememberCurve(state);
-  render();
-}
 
 /* ---------- panels ---------- */
 
@@ -99,7 +86,7 @@ function factsPanel(c, base) {
   ]);
 }
 
-function plotPanel(c, base) {
+function plotPanel(c, base, update) {
   const points = c.points();
   const grid = new LatticeGrid({
     modulus: c.p,
@@ -159,17 +146,20 @@ function ordersPanel(c) {
   ]);
 }
 
-/* ---------- render ---------- */
+/* ---------- the page ---------- */
 
-function render() {
-  const { curve: c, base, presetId, error } = load();
-  const input = curveInput({ curve: c ?? null, base: base ?? null, presetId, error: error ?? null, state, update });
-  if (error) { fill(app, [input]); return; }
-  fill(app, [
-    input,
-    el('div', { class: 'cols wide-first' }, [plotPanel(c, base), factsPanel(c, base)]),
-    ordersPanel(c),
-  ]);
-}
-
-render();
+startPage({
+  shell: hw01Shell('curve.html'),
+  sticky: CURVE_KEYS,
+  memory: CURVE_MEMORY,
+  render: ({ state, update }) => {
+    const { curve: c, base, presetId, error } = load(state);
+    const input = curveInput({ curve: c ?? null, base: base ?? null, presetId, error: error ?? null, state, update });
+    if (error) return [input];
+    return [
+      input,
+      el('div', { class: 'cols wide-first' }, [plotPanel(c, base, update), factsPanel(c, base)]),
+      ordersPanel(c),
+    ];
+  },
+});

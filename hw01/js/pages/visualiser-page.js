@@ -3,21 +3,21 @@
    third intersection, the reflection, the result) and shown on three linked
    panels: the F_p grid, the bits of k, and the arithmetic. */
 
-import { el, fill, field, explain } from '../../../assets/js/ui/dom.js';
+import { el, field, explain } from '../../../assets/js/ui/dom.js';
 import { LatticeGrid, legend } from '../../../assets/js/ui/grid.js';
-import { readParams, writeParams } from '../../../assets/js/ui/params.js';
+import { startPage } from '../../../assets/js/ui/page.js';
 import { curveFromParams } from '../core/curves.js';
-import { curveOptions, rememberCurve, withRemembered } from './saved-curves.js';
+import { curveOptions, CURVE_KEYS, CURVE_MEMORY } from './saved-curves.js';
 import { curveInput } from './curve-input.js';
 import { measure } from '../core/curve.js';
-import { shell } from './shell.js';
+import { hw01Shell } from './shell.js';
 
-shell('visualiser.html');
-
-const app = document.getElementById('app');
-const MAX_LOG = 200;
-let state = withRemembered(readParams());
 const savedExtra = () => curveOptions().filter((o) => o.saved);
+const MAX_LOG = 200;
+
+const asBig = (value, fallback = 6n) => {
+  try { const n = BigInt(String(value).trim()); return n < 0n ? -n : n; } catch { return fallback; }
+};
 
 /* micro-steps, by the kind of group operation being shown */
 const PHASES = {
@@ -43,21 +43,9 @@ const CAPTION = {
 };
 
 let grid = null, frames = [], index = 0, timer = null, parts = {};
+let secondsPerStep = 1;
 
-function update(changes) {
-  state = { ...state, ...changes };
-  for (const [k, v] of Object.entries(changes)) if (v === null) delete state[k];
-  writeParams(changes);
-  rememberCurve(state);
-  stop();
-  render();
-}
-
-const asBig = (value, fallback = 6n) => {
-  try { const n = BigInt(String(value).trim()); return n < 0n ? -n : n; } catch { return fallback; }
-};
-
-const speed = () => Number(state.speed ?? 1) * 1000;
+const speed = () => secondsPerStep * 1000;
 
 function stop() {
   if (timer) clearInterval(timer);
@@ -150,7 +138,7 @@ function show(next) {
 
 /** The controls this page adds under the shared curve card: which key to walk
  *  through, by which method, and the transport for stepping through it. */
-function extraControls(c, base, k, method) {
+function extraControls(k, method, update, patch) {
   const kInput = el('input', { type: 'number', class: 'num', value: String(k), min: 1, onchange: (e) => update({ k: e.target.value }) });
 
   const methods = el('div', { class: 'radio-row' }, ['double-and-add', 'naive'].map((m) =>
@@ -159,9 +147,10 @@ function extraControls(c, base, k, method) {
       m,
     ])));
 
+  /* the speed must not redraw the page: that would restart the animation */
   const slider = el('input', {
-    type: 'range', min: 0.25, max: 4, step: 0.25, value: String(state.speed ?? 1),
-    onchange: (e) => { state.speed = e.target.value; writeParams({ speed: e.target.value }); if (timer) { stop(); play(); } },
+    type: 'range', min: 0.25, max: 4, step: 0.25, value: String(secondsPerStep),
+    onchange: (e) => { secondsPerStep = Number(e.target.value); patch({ speed: e.target.value }); if (timer) { stop(); play(); } },
   });
 
   parts.play = el('button', { class: 'primary', text: '▶ play', onclick: play });
@@ -247,47 +236,49 @@ function arithPanel() {
   ]);
 }
 
-/* ---------- render ---------- */
+/* ---------- the page ---------- */
 
-function render() {
-  const { curve: c, base, presetId, error } = curveFromParams(state, savedExtra());
-  if (error) {
-    fill(app, [curveInput({ curve: null, base: null, presetId, error, state, update })]);
-    return;
-  }
+startPage({
+  shell: hw01Shell('visualiser.html'),
+  sticky: CURVE_KEYS,
+  memory: CURVE_MEMORY,
+  render: ({ state, update, patch }) => {
+    stop();
+    const { curve: c, base, presetId, error } = curveFromParams(state, savedExtra());
+    if (error) return [curveInput({ curve: null, base: null, presetId, error, state, update })];
 
-  const k = asBig(state.k ?? 6) || 6n;
-  const method = state.method === 'naive' ? 'naive' : 'double-and-add';
-  const { trace } = measure(c, k, base, method);
+    const k = asBig(state.k ?? 6) || 6n;
+    const method = state.method === 'naive' ? 'naive' : 'double-and-add';
+    secondsPerStep = Number(state.speed ?? 1);
+    const { trace } = measure(c, k, base, method);
 
-  parts = { curve: c, trace };
-  if (trace.length === 0) {
-    fill(app, [el('div', { class: 'card' }, [
-      el('p', { class: 'small', text: `k = ${k} needs no group operation at all: 1G is G itself. Try k = 6.` }),
-      el('p', {}, [el('a', { href: 'visualiser.html?curve=' + (state.curve ?? 'C1') + '&k=6', text: 'Show k = 6 →' })]),
-    ])]);
-    return;
-  }
+    parts = { curve: c, trace };
+    if (trace.length === 0) {
+      return [
+        curveInput({ curve: c, base, presetId, error: null, state, update, extras: extraControls(k, method, update, patch) }),
+        el('div', { class: 'card' }, [
+          el('p', { class: 'small', text: `k = ${k} needs no group operation at all: 1G is G itself. Try k = 6.` }),
+        ]),
+      ];
+    }
 
-  /* flatten the trace into micro-steps, remembering which bit of k drives each */
-  frames = [];
-  let bitIndex = 0, seen = '';
-  trace.forEach((t, opIndex) => {
-    if (method !== 'naive') {
-      if (t.op === 'D') { seen += '0'; bitIndex = seen.length - 1; }
-      else if (t.op === 'A') { seen = seen.slice(0, -1) + '1'; bitIndex = seen.length - 1; }
-    } else bitIndex = -1;
-    for (const phase of PHASES[t.special ?? 'normal']) frames.push({ t, phase, opIndex, bitIndex: bitIndex + 1 });
-  });
+    /* flatten the trace into micro-steps, remembering which bit of k drives each */
+    frames = [];
+    let bitIndex = 0, seen = '';
+    trace.forEach((t, opIndex) => {
+      if (method !== 'naive') {
+        if (t.op === 'D') { seen += '0'; bitIndex = seen.length - 1; }
+        else if (t.op === 'A') { seen = seen.slice(0, -1) + '1'; bitIndex = seen.length - 1; }
+      } else bitIndex = -1;
+      for (const phase of PHASES[t.special ?? 'normal']) frames.push({ t, phase, opIndex, bitIndex: bitIndex + 1 });
+    });
 
-  const gridCard = gridPanel(c, base);
-  const keyCard = keyPanel(k, method, trace);
-  const arithCard = arithPanel();
-  fill(app, [
-    curveInput({ curve: c, base, presetId, error: null, state, update, extras: extraControls(c, base, k, method) }),
-    el('div', { class: 'cols wide-first' }, [gridCard, el('div', { class: 'stack' }, [keyCard, arithCard])]),
-  ]);
-  show(0);
-}
+    const gridCard = gridPanel(c, base);
+    const keyCard = keyPanel(k, method, trace);
+    const arithCard = arithPanel();
+    const card = curveInput({ curve: c, base, presetId, error: null, state, update, extras: extraControls(k, method, update, patch) });
 
-render();
+    queueMicrotask(() => show(0));   // the panels must be in the DOM first
+    return [card, el('div', { class: 'cols wide-first' }, [gridCard, el('div', { class: 'stack' }, [keyCard, arithCard])])];
+  },
+});

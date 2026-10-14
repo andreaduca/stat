@@ -2,40 +2,25 @@
    key, the operation counters for the two methods, the step-by-step trace,
    and the cost curve that shows why double-and-add is the one in real use. */
 
-import { el, fill, field, explain, fmt } from '../../../assets/js/ui/dom.js';
+import { el, field, explain, fmt } from '../../../assets/js/ui/dom.js';
 import { lineChart, chartLegend } from '../../../assets/js/ui/linechart.js';
-import { readParams, writeParams } from '../../../assets/js/ui/params.js';
+import { startPage } from '../../../assets/js/ui/page.js';
 import { curveFromParams } from '../core/curves.js';
-import { curveOptions } from './saved-curves.js';
-import { rememberCurve, withRemembered } from './saved-curves.js';
+import { curveOptions, CURVE_KEYS, CURVE_MEMORY } from './saved-curves.js';
 import { curveInput } from './curve-input.js';
 import { measure } from '../core/curve.js';
-import { shell } from './shell.js';
+import { hw01Shell } from './shell.js';
 
-shell('keygen.html');
-
-const app = document.getElementById('app');
 const savedExtra = () => curveOptions().filter((o) => o.saved);
 const MAX_ROWS = 1200;        // keep the DOM sane on the larger curves
 const NAIVE_LIMIT = 20000n;   // beyond this, repeated addition is not worth running
-let state = withRemembered(readParams());
-
-function update(changes) {
-  state = { ...state, ...changes };
-  for (const [k, v] of Object.entries(changes)) if (v === null) delete state[k];
-  writeParams(changes);
-  rememberCurve(state);
-  render();
-}
 
 const asBig = (value, fallback = 6n) => {
   try { const n = BigInt(String(value).trim()); return n < 0n ? -n : n; } catch { return fallback; }
 };
 
-/* ---------- panels ---------- */
-
 /** The controls this page adds under the shared curve card. */
-function extraControls(k, method) {
+function extraControls(k, method, update) {
   const kInput = el('input', {
     type: 'number', class: 'num', value: String(k), min: 0, style: 'width:12ch',
     onchange: (e) => update({ k: e.target.value }),
@@ -212,29 +197,34 @@ function tracePanel(c, k, method, trace) {
   ]);
 }
 
-/* ---------- render ---------- */
+/* ---------- the page ---------- */
 
-function render() {
-  const { curve: c, base, presetId, error } = curveFromParams(state, savedExtra());
-  const k = asBig(state.k ?? 6);
-  const method = state.method === 'naive' ? 'naive' : 'double-and-add';
-  const input = (extras) => curveInput({ curve: c ?? null, base: base ?? null, presetId, error: error ?? null, state, update, extras });
+startPage({
+  shell: hw01Shell('keygen.html'),
+  sticky: CURVE_KEYS,
+  memory: CURVE_MEMORY,
+  render: ({ state, update }) => {
+    const { curve: c, base, presetId, error } = load(state);
+    const k = asBig(state.k ?? 6);
+    const method = state.method === 'naive' ? 'naive' : 'double-and-add';
+    const input = (extras) => curveInput({ curve: c ?? null, base: base ?? null, presetId, error: error ?? null, state, update, extras });
 
-  if (error) { fill(app, [input([extraControls(k, method)])]); return; }
+    if (error) return [input([extraControls(k, method, update)])];
 
-  const fast = measure(c, k, base, 'double-and-add');
-  const naive = k <= NAIVE_LIMIT ? measure(c, k, base, 'naive') : null;
-  const chosen = method === 'naive' && naive ? naive : fast;
+    const fast = measure(c, k, base, 'double-and-add');
+    const naive = k <= NAIVE_LIMIT ? measure(c, k, base, 'naive') : null;
+    const chosen = method === 'naive' && naive ? naive : fast;
 
-  fill(app, [
-    input([extraControls(k, method)]),
-    el('div', { class: 'cols' }, [
-      resultPanel(c, base, k, chosen.Q),
-      countersPanel(c, base, k, naive ? naive.ops : null, fast.ops),
-    ]),
-    costChart(c, base),
-    el('div', { class: 'cols' }, [multiplesPanel(c, base, k), tracePanel(c, k, method, chosen.trace)]),
-  ]);
-}
+    return [
+      input([extraControls(k, method, update)]),
+      el('div', { class: 'cols' }, [
+        resultPanel(c, base, k, chosen.Q),
+        countersPanel(c, base, k, naive ? naive.ops : null, fast.ops),
+      ]),
+      costChart(c, base),
+      el('div', { class: 'cols' }, [multiplesPanel(c, base, k), tracePanel(c, k, method, chosen.trace)]),
+    ];
+  },
+});
 
-render();
+function load(state) { return curveFromParams(state, savedExtra()); }

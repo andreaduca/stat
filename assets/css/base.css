@@ -284,21 +284,6 @@ details.explain p.practice {
 .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: .8rem; color: var(--muted); margin-top: 10px; }
 .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
 
-/* ---------- bit strip (visualiser key panel) ---------- */
-
-.bits { display: flex; flex-wrap: wrap; gap: 3px; font-family: var(--mono); }
-.bits b {
-  display: grid;
-  place-items: center;
-  width: 24px; height: 28px;
-  border: 1px solid var(--line);
-  border-radius: 5px;
-  font-weight: 500;
-  background: var(--panel-alt);
-}
-.bits b.on   { border-color: var(--accent); color: var(--accent); }
-.bits b.here { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-
 /* ---------- line chart (see assets/js/ui/linechart.js) ---------- */
 
 .chart { position: relative; }
