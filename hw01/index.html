@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HW01 · Private key to public key</title>
+<link rel="stylesheet" href="../assets/css/base.css">
+</head>
+<body>
+<main class="wrap">
+  <h1>From a private key to a public key</h1>
+  <p class="lead">A private key is a number <span class="eq">k</span>. The matching public key is the
+    point <span class="eq">Q = kG</span>, reached by adding a fixed point <span class="eq">G</span> to
+    itself <span class="eq">k</span> times on an elliptic curve. Going forward is cheap; going backward
+    — recovering <span class="eq">k</span> from <span class="eq">Q</span> — is the hard problem the whole
+    construction rests on. These pages do it on a curve small enough to see every point at once.</p>
+
+  <div class="cols">
+    <div class="card">
+      <h2>The exercise</h2>
+      <p>Take the curve <span class="eq">y² = x³ + 7 mod 17</span> and the base point
+        <span class="eq">G = (1,5)</span>. Choose a private key, say <span class="eq">k = 6</span>.
+        Implement point addition, compute <span class="eq">G, 2G, 3G, …, kG</span>, and print the last
+        one as the toy public key. Then do the same with the faster double-and-add method, and watch
+        what changes when <span class="eq">k</span>, <span class="eq">G</span> or the curve changes.</p>
+      <p>The curve used here is <span class="eq">y² = x³ + 7</span> — the same equation as
+        <strong>secp256k1</strong>, the curve Bitcoin and Ethereum both sign with. What differs is the
+        size. secp256k1 is taken modulo the 78-digit prime <span class="eq">2²⁵⁶ − 2³² − 977</span> and
+        has roughly <span class="eq">10⁷⁷</span> points; here the modulus is 17 and the curve has 18
+        points, so a laptop can find the private key by simply trying all of them. The mathematics is
+        the same in both cases — only the size separates a teaching aid from a system holding real
+        money.</p>
+    </div>
+
+    <div class="card">
+      <h2>How to use these pages</h2>
+      <ul>
+        <li><a href="curve.html"><strong>The curve</strong></a> — see all the points at once, the
+          symmetry that pairs <span class="eq">P</span> with <span class="eq">−P</span>, how many points
+          there are, and the order of each one.</li>
+        <li><a href="keygen.html"><strong>Key generation</strong></a> — the table of multiples
+          <span class="eq">G, 2G, 3G, …</span>, the toy public key, the double-and-add trace, and the
+          cost of each method side by side.</li>
+        <li><a href="visualiser.html"><strong>Visualiser</strong></a> — one group operation at a time,
+          slowed down: the line through the two points, the third intersection, the reflection, and the
+          arithmetic mod <span class="eq">p</span> that produced it.</li>
+      </ul>
+      <p class="small muted">Every panel has a “What am I looking at?” box, and the URL keeps your
+        settings — <span class="eq">keygen.html?curve=C1&amp;k=6</span> — so a configuration can be
+        bookmarked or linked.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Where this sits in a crypto wallet</h2>
+    <p>Everything on these pages is step 2 of four. It is worth knowing which four.</p>
+    <ol>
+      <li><strong>A private key is chosen</strong> — a random 256-bit number <span class="eq">k</span>.
+        The 12 or 24 English words a wallet asks you to write down (a BIP-39 seed phrase) are a
+        human-readable encoding of the seed that <span class="eq">k</span> is derived from. Those words
+        <em>are</em> the key; nothing else is kept.</li>
+      <li><strong>The public key is computed</strong> as <span class="eq">Q = kG</span> on secp256k1.
+        This is the operation these pages take apart, and the only step that is irreversible.</li>
+      <li><strong>An address is derived</strong> by hashing <span class="eq">Q</span>. Ethereum takes
+        Keccak-256 of the 64-byte public key and keeps the last 20 bytes — that is the
+        <span class="eq">0x…</span> you paste. Bitcoin applies SHA-256 then RIPEMD-160 and encodes the
+        result. Hashing here is about length and format, not secrecy: <span class="eq">Q</span> is
+        public anyway.</li>
+      <li><strong>Spending requires a signature</strong> made with <span class="eq">k</span> (ECDSA),
+        which proves the signer knows <span class="eq">k</span> without ever transmitting it.</li>
+    </ol>
+    <p class="small muted">A <strong>hardware wallet</strong> — a Ledger or a Trezor — exists to keep
+      <span class="eq">k</span> inside a chip: it performs step 4 internally and emits only signatures,
+      so the key never touches the computer. A <strong>software wallet</strong> holds
+      <span class="eq">k</span> in the memory of a general-purpose machine, which is why a compromised
+      laptop means compromised funds. Neither design would be worth building if step 2 could be run
+      backwards.</p>
+  </div>
+
+  <div class="card">
+    <h2>What to try first</h2>
+    <ol class="small">
+      <li>On <a href="keygen.html?curve=C1&amp;k=6">key generation</a>, run <span class="eq">k = 6</span>
+        and check the table against your own hand computation.</li>
+      <li>Push <span class="eq">k</span> past the order of <span class="eq">G</span>. The multiples start
+        over: only <span class="eq">k mod ord(G)</span> ever mattered.</li>
+      <li>Switch to curve C2 (modulus 1051) and compare the operation counters of the two methods as
+        <span class="eq">k</span> grows. One grows like <span class="eq">k</span>, the other like
+        <span class="eq">log k</span>.</li>
+      <li>On <a href="visualiser.html">the visualiser</a>, step through a doubling and reproduce
+        <span class="eq">λ</span> with pen and paper.</li>
+    </ol>
+  </div>
+
+  <p class="small muted">Statistics · MSc Cybersecurity, Sapienza · homework 1</p>
+</main>
+<script type="module">
+  import { shell } from './js/pages/shell.js';
+  shell('index.html');
+</script>
+</body>
+</html>

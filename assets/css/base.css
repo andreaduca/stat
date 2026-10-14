@@ -1,0 +1,329 @@
+/* base.css — the shared look of every homework page in this repo.
+   Design tokens, page shell, nav, cards, tables, forms, and the colours
+   used by the SVG lattice plots. System fonts only; no imports, no CDN.
+   Page-specific rules do NOT belong here: keep them in hw<NN>/. */
+
+:root {
+  --bg:        #faf9f6;
+  --panel:     #ffffff;
+  --panel-alt: #f3f1ec;
+  --ink:       #1a1c20;
+  --muted:     #5f6470;
+  --line:      #e2dfd8;
+  --accent:    #0f6b63;
+  --accent-ink:#ffffff;
+  --warn-bg:   #fdf4e3;
+  --warn-line: #e4c37a;
+  --warn-ink:  #6b4a05;
+
+  /* lattice-plot palette: one role per colour, same roles in both themes */
+  --c-point:    #9aa2b1;
+  --c-operand:  #c2681a;
+  --c-line:     #2f6fd0;
+  --c-third:    #a62f9e;
+  --c-result:   #0f8a4d;
+  --c-axis:     #cfcbc2;
+
+  /* chart series, validated for CVD separation against the panel surface */
+  --s1: #00897a;
+  --s2: #c2681a;
+
+  --radius: 10px;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:        #14161a;
+    --panel:     #1c1f24;
+    --panel-alt: #23272e;
+    --ink:       #e9e7e2;
+    --muted:     #a0a6b2;
+    --line:      #2f343c;
+    --accent:    #3fb8a8;
+    --accent-ink:#0a1312;
+    --warn-bg:   #2b2415;
+    --warn-line: #6b5520;
+    --warn-ink:  #e8cf92;
+
+    --c-point:   #6e7788;
+    --c-operand: #e89a4c;
+    --c-line:    #6fa8f5;
+    --c-third:   #d97fd0;
+    --c-result:  #4ecb84;
+    --c-axis:    #363b44;
+
+    --s1: #1f9e8d;
+    --s2: #c47a28;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.6 var(--sans);
+  -webkit-text-size-adjust: 100%;
+}
+
+/* ---------- shell ---------- */
+
+.site-header {
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+.site-header .inner,
+main.wrap,
+.site-footer .inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+.site-header .inner {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 28px;
+}
+.site-brand { min-width: 0; }
+.site-title { font-size: 1rem; font-weight: 650; margin: 0 0 2px; }
+.site-title a { color: inherit; text-decoration: none; }
+.site-sub { color: var(--muted); font-size: .85rem; margin: 0; }
+
+nav.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+nav.tabs a {
+  padding: 5px 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: .875rem;
+}
+nav.tabs a:hover { color: var(--ink); border-color: var(--muted); }
+nav.tabs a[aria-current="page"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+main.wrap { padding-top: 28px; padding-bottom: 56px; }
+
+h1 { font-size: 1.6rem; line-height: 1.25; margin: 0 0 .4em; }
+h2 { font-size: 1.15rem; margin: 0 0 .6em; }
+h3 { font-size: .95rem; margin: 1.4em 0 .4em; color: var(--muted); font-weight: 600; }
+p  { margin: 0 0 1em; }
+a  { color: var(--accent); }
+.lead { font-size: 1.05rem; color: var(--muted); }
+
+/* ---------- cards & layout ---------- */
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin: 0 0 20px;
+}
+.cols { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); align-items: start; }
+.cols.wide-first { grid-template-columns: minmax(0, 1.4fr) minmax(260px, 1fr); align-items: start; }
+@media (max-width: 760px) { .cols.wide-first { grid-template-columns: 1fr; } }
+
+/* grid/flex children default to min-width:auto, which lets a wide table push
+   the whole page sideways; 0 lets .scroll-x do its job instead */
+.cols > *, .stack > * { min-width: 0; }
+.scroll-x { min-width: 0; }
+
+.stack > * + * { margin-top: 14px; }
+.row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.row .vrule { align-self: stretch; width: 1px; min-height: 34px; background: var(--line); margin: 0 4px; }
+
+/* ---------- maths & numbers ---------- */
+
+.eq, code, kbd, .num, table.data td, table.data th {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+.eq { font-size: 1.05rem; }
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--panel-alt);
+  border: 1px solid var(--line);
+  font-size: .8rem;
+  font-family: var(--mono);
+}
+.facts { list-style: none; margin: 0; padding: 0; }
+.facts li { display: flex; justify-content: space-between; gap: 16px; padding: 5px 0; border-bottom: 1px solid var(--line); }
+.facts li:last-child { border-bottom: 0; }
+.facts .k { color: var(--muted); }
+.facts .v { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+
+.result {
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  background: var(--panel-alt);
+}
+.result .label { font-size: .72rem; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+.result .value { font-family: var(--mono); font-size: 1.3rem; word-break: break-all; }
+
+/* ---------- tables ---------- */
+
+.scroll-x { overflow-x: auto; }
+table.data { border-collapse: collapse; width: 100%; font-size: .9rem; }
+table.data th, table.data td { padding: 5px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+table.data th { color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--panel); }
+table.data td.left, table.data th.left { text-align: left; white-space: normal; }
+table.data tr.is-current td { background: var(--panel-alt); font-weight: 650; }
+table.data tr.is-identity td { color: var(--c-third); }
+table.data tr.cycle-restart td { border-top: 2px solid var(--c-result); }
+.tall { max-height: 420px; overflow: auto; }
+
+/* a short comparison table must never need a scrollbar: let every cell wrap,
+   headers included, so it survives down to a phone */
+table.data.compare th, table.data.compare td { white-space: normal; padding: 5px 6px; }
+table.data.compare td:first-child, table.data.compare th:first-child { padding-left: 0; }
+
+/* ---------- forms ---------- */
+
+label.field { display: block; font-size: .8rem; color: var(--muted); }
+label.field > span { display: block; margin-bottom: 4px; }
+input, select, button {
+  font: inherit;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 6px 9px;
+  min-height: 34px;        /* one control height, so a row of mixed controls lines up */
+}
+input[type="number"], input.num { font-family: var(--mono); width: 9ch; }
+input[type="range"] { padding: 0; width: 150px; display: block; }  /* block: an inline range adds a descender gap */
+button { cursor: pointer; }
+button:hover { border-color: var(--muted); }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.radio-row { display: flex; gap: 14px; font-size: .9rem; min-height: 34px; align-items: center; }
+.radio-row label { display: flex; gap: 5px; align-items: center; }
+
+/* ---------- notes, warnings, explainers ---------- */
+
+details.explain {
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  margin: 0 0 16px;
+  background: var(--panel-alt);
+}
+details.explain > summary { cursor: pointer; font-size: .85rem; color: var(--muted); }
+details.explain > div { padding-top: 8px; font-size: .9rem; }
+/* inline formulas inside prose match the prose, instead of standing a size above it */
+details.explain .eq, .small .eq, li .eq { font-size: inherit; }
+details.explain p:last-child { margin-bottom: 0; }
+details.explain p.practice {
+  border-left: 2px solid var(--accent);
+  padding-left: 10px;
+  margin-left: 1px;
+}
+
+.notice {
+  border: 1px solid var(--warn-line);
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: .88rem;
+}
+.err { color: var(--c-third); font-size: .88rem; }
+.ok  { color: var(--c-result); font-size: .88rem; }
+.muted { color: var(--muted); }
+.small { font-size: .85rem; }
+
+.site-footer {
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: .85rem;
+  padding: 18px 0 40px;
+}
+
+/* ---------- lattice plot (see assets/js/ui/grid.js) ---------- */
+
+.plot { position: relative; }
+.plot svg { display: block; width: 100%; height: auto; touch-action: none; }
+.plot .axis      { stroke: var(--c-axis); stroke-width: 1; }
+.plot .mirror    { stroke: var(--c-axis); stroke-dasharray: 4 4; }
+.plot .pt        { fill: var(--c-point); }
+.plot .pt.hit    { fill: transparent; }
+.plot .m-operand { fill: var(--c-operand); }
+.plot .m-line    { fill: var(--c-line); opacity: .75; }
+.plot .m-third   { fill: var(--c-third); }
+.plot .m-result  { fill: var(--c-result); }
+.plot .m-base    { fill: none; stroke: var(--c-operand); stroke-width: 2; }
+.plot .moving    { transition: transform var(--flip, .6s) ease-in-out; }
+.plot text.lbl   { font: 11px var(--mono); fill: var(--muted); }
+.plot .tip {
+  position: absolute;
+  pointer-events: none;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font: 12px var(--mono);
+  white-space: pre;
+  box-shadow: 0 2px 8px rgb(0 0 0 / .14);
+  opacity: 0;
+  transform: translate(-50%, -130%);
+}
+.plot .tip.on { opacity: 1; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: .8rem; color: var(--muted); margin-top: 10px; }
+.legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+
+/* ---------- bit strip (visualiser key panel) ---------- */
+
+.bits { display: flex; flex-wrap: wrap; gap: 3px; font-family: var(--mono); }
+.bits b {
+  display: grid;
+  place-items: center;
+  width: 24px; height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  font-weight: 500;
+  background: var(--panel-alt);
+}
+.bits b.on   { border-color: var(--accent); color: var(--accent); }
+.bits b.here { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+/* ---------- line chart (see assets/js/ui/linechart.js) ---------- */
+
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; max-width: 680px; height: auto; margin: 0 auto; }
+.chart .grid    { stroke: var(--line); stroke-width: 1; }
+.chart .frame   { stroke: var(--c-axis); stroke-width: 1; }
+.chart .tick    { font: 11px var(--mono); fill: var(--muted); }
+.chart .axis-ttl{ font: 11px var(--sans); fill: var(--muted); }
+.chart path.line{ fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart .guide   { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0; }
+.chart .guide.on{ opacity: .7; }
+.chart circle.dot { stroke: var(--panel); stroke-width: 2; opacity: 0; }
+.chart circle.dot.on { opacity: 1; }
+.chart text.endlbl { font: 11px var(--sans); font-weight: 600; }
+.chart .tip {
+  position: absolute;
+  pointer-events: none;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 5px 9px;
+  font: 12px var(--mono);
+  white-space: pre;
+  box-shadow: 0 2px 8px rgb(0 0 0 / .14);
+  opacity: 0;
+  transform: translate(-50%, -115%);
+}
+.chart .tip.on { opacity: 1; }
