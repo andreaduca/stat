@@ -28,14 +28,3 @@ python3 -m http.server
 
 then open <http://localhost:8000>. Opening the files directly with `file://` does not
 work: browsers refuse to load ES modules from the filesystem.
-
-## Publishing
-
-GitHub Pages: repository → Settings → Pages → deploy from `main`, root folder. Every
-link is relative, so the site works from any subdirectory. Check the public URL in a
-private window before sending it on.
-
-## Credits
-
-Written by Andrea. The curves, the reference values and the didactic goals follow the
-homework specification in `docs/plans/hw01.md` (not committed: `docs/` is gitignored).
