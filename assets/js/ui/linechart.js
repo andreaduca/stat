@@ -32,7 +32,7 @@ export function lineChart({ series, xTitle = '', yTitle = '', width = 560, heigh
   const X = (x) => pad.l + (x / xMax) * plotW;
   const Y = (y) => pad.t + plotH - (y / yMax) * plotH;
 
-  const svg = node('svg', { viewBox: `0 0 ${width} ${height}` });
+  const svg = node('svg', { viewBox: `0 0 ${width} ${height}`, role: 'img', 'aria-label': `line chart of ${yTitle || 'values'} by ${xTitle || 'x'}: ${series.map((s) => s.label).join(', ')}` });
 
   // recessive grid and axis labels
   const yStep = niceStep(yMax, 4), xStep = niceStep(xMax, 5);

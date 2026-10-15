@@ -209,6 +209,8 @@ input[type="range"] { padding: 0; width: 150px; display: block; }  /* block: an 
 button { cursor: pointer; }
 button:hover { border-color: var(--muted); }
 button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+/* keyboard users must always see where they are */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .radio-row { display: flex; gap: 14px; font-size: .9rem; min-height: 34px; align-items: center; }
 .radio-row label { display: flex; gap: 5px; align-items: center; }
 
@@ -317,3 +319,14 @@ details.explain p.practice {
 
 .chart rect.bar { opacity: .85; }
 .chart .ref { stroke: var(--c-third); stroke-width: 1; stroke-dasharray: 5 4; }
+
+/* ---------- heatmap (see assets/js/ui/heatmap.js) ---------- */
+
+.heatmap { position: relative; }
+.heatmap canvas { display: block; width: 100%; max-width: 420px; height: auto; aspect-ratio: 1; image-rendering: pixelated; cursor: crosshair; border: 1px solid var(--line); }
+.heatmap .tip {
+  position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--line);
+  border-radius: 6px; padding: 4px 8px; font: 12px var(--mono); white-space: pre;
+  box-shadow: 0 2px 8px rgb(0 0 0 / .14); opacity: 0; transform: translate(-50%, -130%);
+}
+.heatmap .tip.on { opacity: 1; }

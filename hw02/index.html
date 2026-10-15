@@ -51,9 +51,18 @@
       <li><a href="stats.html"><strong>Statistics lab</strong></a> Eight seeded experiments: the entropy
         pipe, avalanche, address uniformity, checksum miss rates, weak entropy (including the Coldcard
         model) and vanity waiting times — each against its theory.</li>
+      <li><a href="incidents.html"><strong>Incidents</strong></a> Real losses placed on six layers around
+        the mathematics, the Coldcard bug in its own code, and the DApp front-end attacks — none broke a
+        primitive.</li>
+      <li><a href="structure.html"><strong>Structure &amp; AI</strong></a> The evidence-labelled argument on
+        ECDSA versus hash-based signatures, with Shor in miniature, nonce reuse, Lamport reuse and smooth
+        numbers.</li>
+      <li><a href="wallet-lab.html"><strong>Safe wallet lab</strong></a> How to check these pages against
+        MetaMask, Rabby and others with the public test mnemonic on a testnet, with a checklist to fill in.</li>
+      <li><a href="essay.html"><strong>Essay</strong></a> The written answer to the homework, every claim
+        labelled with its evidence and linked to the experiment behind it.</li>
     </ul>
-    <p class="small muted" style="margin-top:14px">Coming in the next phases: incidents; structure and AI;
-      a safe wallet lab; and the essay.</p>
+
     <p class="small muted">Every panel has a “What am I looking at?” box, and the URL keeps the settings —
       <span class="eq">pipeline.html?words=24&amp;index=1</span> — so a configuration can be linked. Secrets
       never go in the URL: only the public test vector is selected by name.</p>
@@ -118,12 +127,17 @@
     </ol>
   </div>
 
-  <p class="small muted">Statistics · MSc Cybersecurity, Sapienza · homework 2 · October 2026</p>
+  <p class="small muted" id="credits">Statistics · MSc Cybersecurity, Sapienza · homework 2 · October 2026</p>
 </main>
 <script type="module">
   import { mountShell } from '../assets/js/ui/dom.js';
+  import { SITE } from '../assets/js/ui/site.js';
   import { hw02Shell } from './js/pages/shell.js';
   mountShell(hw02Shell('index.html'));
+  // author, and the source repository once its address is set in assets/js/ui/site.js
+  const credits = document.getElementById('credits');
+  credits.prepend(`${SITE.author} · `);
+  if (SITE.sourceUrl) credits.insertAdjacentHTML('beforeend', ` · <a href="${SITE.sourceUrl}">source code</a>`);
 </script>
 </body>
 </html>

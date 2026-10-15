@@ -18,6 +18,16 @@ export const CATEGORIES = {
   failure:     { icon: '!', label: 'failure' },
 };
 
+/** How strong a claim is (spec §0.7): proved, measured in this app, on the
+ *  historical record (with a source), or an opinion. */
+export const EVIDENCE = {
+  theorem: 'theorem',
+  measurement: 'measurement',
+  record: 'historical record',
+  opinion: 'opinion',
+};
+export const evidence = (kind) => el('span', { class: `evidence ${kind}`, text: EVIDENCE[kind] });
+
 export function badge(cat) {
   const c = CATEGORIES[cat];
   return el('span', { class: `cat ${cat}`, title: `category: ${c.label}` }, [el('i', { 'aria-hidden': 'true', text: c.icon }), c.label]);
@@ -119,14 +129,16 @@ export function stepCard({ no = null, id = null, title, cats = [], formula, body
 export const facts = (rows) => el('ul', { class: 'facts' }, rows.filter(Boolean).map(([k, v]) =>
   el('li', {}, [el('span', { class: 'k', html: k }), el('span', { class: 'v', text: v })])));
 
-/** "3.2 ms", "4 min", "1.1·10²⁵ years": a duration a person can read. */
+/** "3.2 ms", "41 s", "70 days", "1.1·10²⁵ years": a duration a person can read. */
 export function humanTime(seconds) {
-  if (seconds < 1) return `${(seconds * 1000).toPrecision(2)} ms`;
-  if (seconds < 120) return `${seconds.toPrecision(2)} s`;
-  if (seconds < 7200) return `${(seconds / 60).toPrecision(2)} min`;
-  if (seconds < 172800) return `${(seconds / 3600).toPrecision(2)} h`;
+  const num = (x) => (x < 10 ? x.toPrecision(2) : String(Math.round(x)));
+  if (seconds < 1) return `${num(seconds * 1000)} ms`;
+  if (seconds < 120) return `${num(seconds)} s`;
+  if (seconds < 7200) return `${num(seconds / 60)} min`;
+  if (seconds < 172800) return `${num(seconds / 3600)} h`;
+  if (seconds < 6.3e7) return `${num(seconds / 86400)} days`;
   const years = seconds / 3.156e7;
-  if (years < 1e4) return `${years.toPrecision(2)} years`;
+  if (years < 1e4) return `${num(years)} years`;
   const exp = Math.floor(Math.log10(years));
   return `${(years / 10 ** exp).toFixed(1)}·10${String(exp).replace(/\d/g, (d) => '⁰¹²³⁴⁵⁶⁷⁸⁹'[d])} years`;
 }

@@ -27,7 +27,7 @@ const STEPS = [
   ['k → Q = kG', 'pipeline.html#step-5', 'scalar multiplication on secp256k1', 'publickey', 'How can others verify without being able to act?', 'private in, public out', 'no (one-way)', 'no'],
   ['Q → address', 'pipeline.html#step-6', 'Keccak-256, last 20 bytes', 'hashing', 'How do I get a short identifier with no structure?', 'none', 'no', 'no'],
   ['address → EIP-55', 'pipeline.html#step-7', 'Keccak-256 of the hex text sets the case', 'checksum', 'How do I catch a typo without changing the format?', 'none', 'yes (it is still the address)', 'no'],
-  ['signing a transaction', null, 'ECDSA with k and a nonce', 'publickey', 'How do I prove I hold k without revealing it?', 'private key', 'no', 'private key'],
+  ['signing a transaction', 'structure.html?exp=S9', 'ECDSA with k and a nonce', 'publickey', 'How do I prove I hold k without revealing it?', 'private key', 'no', 'private key'],
 ];
 
 function matrixPanel() {

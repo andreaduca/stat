@@ -39,7 +39,8 @@ export function barChart({ categories, series, overlay = null, refLines = [], xT
   const band = plotW / categories.length;
   const Xc = (i) => pad.l + band * (i + 0.5);
 
-  const svg = node('svg', { viewBox: `0 0 ${width} ${height}` });
+  // an accessible name, so a screen reader announces what the chart is
+  const svg = node('svg', { viewBox: `0 0 ${width} ${height}`, role: 'img', 'aria-label': `bar chart of ${yTitle || 'values'} by ${xTitle || 'category'}: ${series.map((s) => s.label).join(', ')}${overlay ? `, with ${overlay.label}` : ''}` });
   for (let v = yMin; v <= yMax + step / 2; v += step) {
     svg.append(node('line', { class: 'grid', x1: pad.l, y1: Y(v), x2: pad.l + plotW, y2: Y(v) }));
     svg.append(node('text', { class: 'tick', x: pad.l - 8, y: Y(v) + 4, 'text-anchor': 'end' }, short(v)));

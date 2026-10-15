@@ -11,6 +11,10 @@ const LINKS = [
   { href: 'history.html', label: 'History & hashes' },
   { href: 'primitives.html', label: 'Why many primitives' },
   { href: 'stats.html', label: 'Statistics lab' },
+  { href: 'incidents.html', label: 'Incidents' },
+  { href: 'structure.html', label: 'Structure & AI' },
+  { href: 'wallet-lab.html', label: 'Wallet lab' },
+  { href: 'essay.html', label: 'Essay' },
 ];
 
 /** Shell arguments for one page of hw02. @param {string} current its filename */

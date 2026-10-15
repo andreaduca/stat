@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Essay · From wallet seed to Ethereum address · HW02</title>
+<link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="css/hw02.css">
+</head>
+<body>
+<!-- Written from the author's notes (Obsidian vault, Foundations/Statistics HMWK2 00–09) and from the
+     measured results of these pages, at the author's request. Numbers are the default runs (seed 1). -->
+<main class="wrap">
+<article class="essay">
+
+  <h1>From wallet seed to Ethereum address</h1>
+  <p class="byline">Statistics · MSc Cybersecurity, Sapienza · Homework 2 · October 2026</p>
+
+  <p class="lead">An Ethereum wallet keeps one secret, written down as twelve or twenty-four words, and
+    turns it into as many accounts as its owner wants. Between those words and the <span class="eq">0x…</span>
+    address pasted into a payment sit six standards and four different kinds of cryptography. This essay
+    follows the pipeline step by step, measures the statistical properties of each step, looks at how
+    wallets have actually been broken, and asks whether the algebra at its heart is the part a much
+    stronger mathematician would break first.</p>
+
+  <p class="evidence-key small">Each claim is labelled with its evidence:
+    <span class="evidence theorem">theorem</span> a proved result ·
+    <span class="evidence measurement">measurement</span> computed on these pages, with a link to the
+    configuration ·
+    <span class="evidence record">historical record</span> with a source ·
+    <span class="evidence opinion">opinion</span> the author’s judgement.</p>
+
+  <nav class="toc" aria-label="Contents">
+    <ol>
+      <li><a href="#intro">Introduction: the wallet pipeline</a></li>
+      <li><a href="#kinds">The six kinds of operation</a></li>
+      <li><a href="#standards">The standards, one by one</a></li>
+      <li><a href="#history">Historical context, and SHA-2 versus Keccak/SHA-3</a></li>
+      <li><a href="#why">Why several primitives</a></li>
+      <li><a href="#stats">Statistical properties along the pipeline</a></li>
+      <li><a href="#incidents">When it went wrong</a></li>
+      <li><a href="#structure">Structure, assumptions and a mathematician AI</a></li>
+      <li><a href="#final">Final considerations</a></li>
+      <li><a href="#refs">References</a></li>
+    </ol>
+  </nav>
+
+  <!-- 1 -->
+  <h2 id="intro">1 · Introduction: the wallet pipeline</h2>
+  <p>The pipeline has seven steps, and every one of them can be reproduced in a browser
+    (<a href="pipeline.html">pipeline explorer</a>):</p>
+  <ol class="pipeline-list">
+    <li><strong>Entropy</strong> — 128 or 256 random bits;</li>
+    <li>→ <strong>mnemonic</strong>: the bits plus a short SHA-256 checksum, cut into 11-bit groups, each a word of a 2048-word list (BIP-39);</li>
+    <li>→ <strong>seed</strong>: PBKDF2-HMAC-SHA512 of the words, 2048 iterations, 512 bits (BIP-39);</li>
+    <li>→ <strong>master key and chain code</strong>: HMAC-SHA512 keyed with the string “Bitcoin seed” (BIP-32);</li>
+    <li>→ <strong>private key</strong> <span class="eq">k</span>: child derivations along the path <span class="eq">m/44’/60’/0’/0/i</span> (BIP-32, BIP-44);</li>
+    <li>→ <strong>public key</strong> <span class="eq">Q = kG</span> on secp256k1;</li>
+    <li>→ <strong>address</strong>: the last 20 bytes of Keccak-256 of <span class="eq">Q</span>, and finally the
+      <strong>checksummed address</strong>, whose letter case is set by another Keccak-256 (EIP-55).</li>
+  </ol>
+  <p>For the public test mnemonic <span class="eq">abandon × 11 about</span> the chain ends at
+    <span class="eq">0x9858EfFD232B4033E47d90003D41EC34EcaEda94</span>, the first account every standard
+    wallet shows for it. Every intermediate value on these pages — seed
+    <span class="eq">5eb00bbd…</span>, master key <span class="eq">1837c1be…</span>, private key
+    <span class="eq">1ab42cc4…</span> — matches the official test vectors
+    <span class="evidence measurement">measurement</span>. The cryptography is not new: the newest
+    primitive in the chain is from 2012. What the wallet standards of 2012–2016 add is engineering — a way
+    for people to back up, derive and type keys without losing money. As section 7 shows, that engineering
+    layer and the layers above it are where the money has been lost.</p>
+
+  <!-- 2 -->
+  <h2 id="kinds">2 · The six kinds of operation</h2>
+  <p>Each step takes bits and returns bits, which makes them look alike. They answer different questions,
+    and the homework rightly insists on keeping them apart.</p>
+  <div class="scroll-x"><table class="data compare prose">
+    <thead><tr><th class="left">kind</th><th class="left">question it answers</th><th class="left">in the pipeline</th><th class="left">reversible?</th></tr></thead>
+    <tbody>
+      <tr><td class="left">generation</td><td class="left">where does the unpredictability come from?</td><td class="left">the 128–256 bits of entropy</td><td class="left">—</td></tr>
+      <tr><td class="left">encoding (+ checksum)</td><td class="left">how do people copy bits and catch slips?</td><td class="left">entropy → words; bytes → hex</td><td class="left">yes, by anyone</td></tr>
+      <tr><td class="left">derivation</td><td class="left">how does one secret become many, deterministically?</td><td class="left">PBKDF2 seed; BIP-32 keys; the BIP-44 path</td><td class="left">no</td></tr>
+      <tr><td class="left">public-key cryptography</td><td class="left">how do others verify without being able to act?</td><td class="left"><span class="eq">Q = kG</span>; ECDSA signatures</td><td class="left">no (one-way)</td></tr>
+      <tr><td class="left">hashing</td><td class="left">how do I get a short fingerprint with no structure?</td><td class="left">Keccak-256 → address</td><td class="left">no</td></tr>
+      <tr><td class="left">checksum in an encoding</td><td class="left">how do I catch a typo without changing the format?</td><td class="left">EIP-55 letter case</td><td class="left">— (adds redundancy)</td></tr>
+    </tbody>
+  </table></div>
+  <p>The distinction that matters most is between <strong>generation</strong> and
+    <strong>derivation</strong>. Generation is the only step that creates unpredictability; every later step
+    is a deterministic function, and a deterministic function cannot add entropy:
+    <span class="eq">H(f(X)) ≤ H(X)</span> <span class="evidence theorem">theorem</span>. A wallet built on
+    128 random bits has at most 128 bits of security, however many 256- and 512-bit values follow
+    (<a href="stats.html?exp=S1">S1, the entropy pipe</a>). Determinism is the point of derivation: the
+    words are written down once, and every key can be recomputed from them forever. It is also why a bad
+    generator cannot be repaired by anything downstream — the lesson of sections 6 and 7.</p>
+  <p>Three confusions follow from blurring the categories, and appear in published writing about wallets:
+    the address is <em>not</em> the public key but a hash of it; the mnemonic is <em>not</em> encrypted but
+    encoded, so whoever holds the words holds the funds; EIP-55 does <em>not</em> make addresses secure —
+    it detects typos and has no secret, so an attacker can produce a valid casing for any look-alike.</p>
+
+  <!-- 3 -->
+  <h2 id="standards">3 · The standards, one by one</h2>
+
+  <h3>BIP-39 (2013): words and seed</h3>
+  <p>BIP-39 contains two separate ideas. The first is an <strong>encoding</strong>: ENT bits of entropy
+    (128 to 256) get ENT/32 checksum bits from SHA-256(entropy), and the result is read as numbers in base
+    2048, one word per 11 bits. For 128 zero bits, SHA-256 starts with <span class="eq">0x37</span>, the
+    checksum is <span class="eq">0011</span>, and the words are eleven times “abandon” (index 0) and
+    “about” (index 3). The last word therefore carries 7 entropy bits and 4 checksum bits, so for eleven
+    fixed words exactly <span class="eq">2⁷ = 128</span> of the 2048 last words are valid
+    (<a href="bip39.html">BIP-39 lab</a>) <span class="evidence measurement">measurement</span>.</p>
+  <p>The second idea is a <strong>derivation</strong>: seed = PBKDF2-HMAC-SHA512(password = the words,
+    salt = “mnemonic” + passphrase, 2048 iterations, 64 bytes). PBKDF2 accepts any string — a phrase whose
+    checksum fails, or “correct horse battery staple”, still produces a seed. That decoupling is deliberate,
+    because it lets the optional passphrase be anything, and it means the checksum is enforced by wallet
+    software, not by the mathematics. Each passphrase opens a different wallet; none is “wrong”. The 2048
+    iterations multiply the cost of every guess by 2048, about 11 bits of work: irrelevant against 128
+    random bits, decisive for a forgotten word. On these pages a whole missing word is recovered in a few
+    seconds — the checksum discards 15 of every 16 candidates before any expensive work, and every survivor
+    costs one PBKDF2 plus a derivation <span class="evidence measurement">measurement</span>.</p>
+
+  <h3>BIP-32 (2012): one seed, a tree of keys</h3>
+  <p>The master key and chain code are the two halves of HMAC-SHA512(“Bitcoin seed”, seed). A child is
+    computed from its parent with <span class="eq">I = HMAC-SHA512(c<sub>par</sub>, data)</span>,
+    <span class="eq">k<sub>i</sub> = I<sub>L</sub> + k<sub>par</sub> mod n</span>,
+    <span class="eq">c<sub>i</sub> = I<sub>R</sub></span>. The data is
+    <span class="eq">0x00 ‖ k<sub>par</sub> ‖ i</span> for a <em>hardened</em> index
+    (<span class="eq">i ≥ 2³¹</span>) and the compressed public key ‖ i for a <em>normal</em> one. That one
+    line decides everything that follows. For a normal child, multiplying by <span class="eq">G</span>
+    gives <span class="eq">K<sub>i</sub> = I<sub>L</sub>·G + K<sub>par</sub></span>: public children from a
+    public parent, which is what lets a shop hand out fresh addresses from an <em>xpub</em> without holding
+    any key that can spend. The same linearity is a weakness: the xpub plus one leaked child key gives
+    <span class="eq">k<sub>par</sub> = k<sub>i</sub> − I<sub>L</sub> mod n</span>, and from there every
+    sibling. On the <a href="bip32.html">BIP-32 lab</a> both happen: five addresses derived from the xpub
+    alone match the private derivation, and the parent key of <span class="eq">m/44’/60’/0’/0</span> is
+    recovered from child 5 <span class="evidence measurement">measurement</span>. For a hardened child the
+    attack cannot even be written down, because the HMAC input contains the parent private key. An invalid
+    child (<span class="eq">I<sub>L</sub> ≥ n</span>) has probability about
+    <span class="eq">3.7·10⁻³⁹</span> and has never been observed <span class="evidence theorem">theorem</span>.</p>
+
+  <h3>BIP-44 (2014): a map of the tree</h3>
+  <p>BIP-44 gives the levels a meaning — <span class="eq">m / 44’ / 60’ / account’ / change / index</span>,
+    with 60 the coin type of Ether — and hardens the top three, so that a leaked account xpub cannot climb
+    to other accounts, other coins or the master key. It does not settle which level counts “accounts”:
+    MetaMask increments the last index, Ledger Live the account level, and older tools a third variant. The
+    same words therefore agree on the first address and disagree from the second on
+    (<a href="bip32.html">three wallets side by side</a>) <span class="evidence measurement">measurement</span>.
+    An “empty” wallet after a migration is usually a path mismatch, not lost funds.</p>
+
+  <h3>secp256k1: the only step with a public/private relationship</h3>
+  <p>The curve <span class="eq">y² = x³ + 7</span> over the prime field of
+    <span class="eq">p = 2²⁵⁶ − 2³² − 977</span> has a prime number <span class="eq">n ≈ 2²⁵⁶</span> of
+    points, so every point except the identity generates the whole group. The public key is
+    <span class="eq">Q = kG</span>: about 256 doublings and 128 additions forward, while the best known way
+    back — the elliptic-curve discrete logarithm — costs about <span class="eq">√n ≈ 2¹²⁸</span>
+    operations. It is the same group law as on the toy curves of Homework 1, only larger. Its 64 bytes carry
+    about 257 bits of information, because <span class="eq">y</span> is fixed by <span class="eq">x</span>
+    up to its sign; that is why a compressed key needs only <span class="eq">x</span> and one parity bit.</p>
+
+  <h3>Keccak-256: the address</h3>
+  <p>The address is the last 20 bytes of Keccak-256 of the 64-byte public key. The hash compresses, and it
+    removes the algebra: nothing about <span class="eq">Q</span> can be computed from the address. An
+    account that has only received funds exposes nothing but a hash; its first outgoing transaction
+    publishes <span class="eq">Q</span> for good, because nodes recover it from the signature. Ethereum’s
+    Keccak-256 is <em>not</em> SHA3-256 (section 4).</p>
+
+  <h3>EIP-55 (2016): a checksum in the letter case</h3>
+  <p>An address was 40 hexadecimal characters with no checksum, so a typo sent funds to a key nobody
+    holds. EIP-55 hides one check bit in the case of each letter a–f: a letter is uppercase when the
+    corresponding hex digit of Keccak-256(lowercase address text) is at least 8. Digits carry nothing, so
+    the number of check bits <span class="eq">L</span> follows <span class="eq">Binomial(40, 6/16)</span>,
+    mean 15. A random typo passes with probability <span class="eq">2^−L</span>, and on average
+    <span class="eq">E[2^−L] = (13/16)⁴⁰ ≈ 0.0247 %</span> <span class="evidence theorem">theorem</span> —
+    eight times <span class="eq">2^−15</span>, because by Jensen’s inequality the letter-poor addresses
+    dominate the average. An all-lowercase address is accepted as “no checksum”, so the check is optional;
+    and it guards against accidents only (<a href="address.html">address lab</a>).</p>
+
+  <!-- 4 -->
+  <h2 id="history">4 · Historical context, and SHA-2 versus Keccak/SHA-3</h2>
+  <p>The dates tell the story <span class="evidence record">historical record</span>
+    (<a href="history.html">timeline</a>). Diffie–Hellman (1976) and RSA (1977) founded public-key
+    cryptography; elliptic curves followed in 1985. SHA-2 was published in 2001. Bitcoin (2008) put
+    secp256k1, ECDSA and SHA-256 in a public ledger. The wallet standards arrived within four years — BIP-32
+    in 2012, BIP-39 in 2013, BIP-44 in 2014, EIP-55 in January 2016 — built entirely from those existing
+    pieces. Keccak won the SHA-3 competition in October 2012; Ethereum launched in July 2015 with Keccak
+    fixed in its protocol; FIPS 202 standardised SHA-3 one month later, in August 2015, with a different
+    padding byte.</p>
+  <p>That byte is the whole difference between Keccak-256 and SHA3-256: the same permutation, the same
+    rate and capacity, a domain byte of <span class="eq">0x01</span> for Keccak and
+    <span class="eq">0x06</span> for SHA-3. One different input bit to the permutation gives unrelated
+    outputs — <span class="eq">c5d24601…</span> against <span class="eq">a7ffc6f8…</span> for the empty
+    string — and on these pages both come from one function with the padding byte as a parameter
+    <span class="evidence measurement">measurement</span>.</p>
+  <p>The two families differ in construction. SHA-2 is a Merkle–Damgård chain: blocks are folded one by
+    one into a chaining value, and the final chaining value <em>is</em> the digest. Keccak is a sponge: a
+    1600-bit state of which only the 1088-bit rate ever touches input or output, while the 512-bit capacity
+    stays hidden. Their security targets are the same; the practical difference is length extension.
+    Knowing SHA-256(secret ‖ m) and the length is enough to compute SHA-256(secret ‖ m ‖ padding ‖ suffix)
+    without the secret — demonstrated live on the <a href="history.html">history page</a>, where the forged
+    tag is accepted <span class="evidence measurement">measurement</span>. A sponge cannot be resumed,
+    because its output is not its state. This is why BIP-32 and PBKDF2 use HMAC rather than a bare hash.
+    NIST wanted SHA-3 after the 2004–2005 attacks on MD5 and SHA-1, as a structurally different reserve in
+    case SHA-2 followed them; it has not. The wallet uses both families, so one cryptanalytic breakthrough
+    would not take down every step.</p>
+
+  <!-- 5 -->
+  <h2 id="why">5 · Why several primitives instead of one</h2>
+  <p>Because each step needs a property the others cannot — or must not — provide
+    (<a href="primitives.html">why many primitives</a>). People need words with a checksum, not 256-bit
+    hex: BIP-39. One backup must cover every key, and a server must derive public keys without private
+    ones: BIP-32, which needs the curve’s homomorphism, not a hash. Anyone must be able to verify while only
+    the owner signs, among millions of anonymous verifiers: a public-key scheme, because a hash has no key
+    pair and a MAC needs a shared secret. The identifier should be short and should hide the key’s
+    algebra: a hash. Typos should be caught without changing the format: a checksum squeezed into letter
+    case. Guessing a weak secret should be expensive: key stretching.</p>
+  <p>This is separation of concerns, and its benefit is that failures stay local: a bug in EIP-55 casing
+    never leaks a key, a weak passphrase does not break secp256k1, a hash collision does not allow signing.
+    It also places algebraic structure exactly where it is needed — signatures and normal derivation — and
+    removes it everywhere else: hardened derivation hides the linear relation, the address hides
+    <span class="eq">Q</span> <span class="evidence opinion">opinion</span>. Taking any piece away shows
+    what it was for: without BIP-32, one backup per key; without hardening, one leak reaches everything;
+    without the hash, every unused address exposes its public key; without EIP-55, every typo goes through.</p>
+
+  <!-- 6 -->
+  <h2 id="stats">6 · Statistical properties along the pipeline</h2>
+  <p>Each step has its own statistical signature, and the <a href="stats.html">statistics lab</a> measures
+    them with a fixed seed so that every number below can be reproduced from its link. All of them are
+    <span class="evidence measurement">measurement</span>s, compared with the theoretical value.</p>
+  <div class="scroll-x"><table class="data compare">
+    <thead><tr><th class="left">experiment</th><th class="left">measured</th><th class="left">theory</th></tr></thead>
+    <tbody>
+      <tr><td class="left"><a href="stats.html?exp=S2">S2</a> words changed by one entropy bit (N = 300)</td><td class="left">1.890, 95 % CI [1.85, 1.93]</td><td class="left">1.886</td></tr>
+      <tr><td class="left">S2 seed / key / address bits changed</td><td class="left">256.2 / 128.0 / 80.7</td><td class="left">256 / 128 / 80</td></tr>
+      <tr><td class="left"><a href="stats.html?exp=S3">S3</a> 6 000 addresses: hex χ², byte χ²</td><td class="left">p = 0.070, p = 0.218</td><td class="left">uniform</td></tr>
+      <tr><td class="left">S3 monobit; largest of 160 position tests</td><td class="left">z = −2.09 (raw p = 0.037); |z| = 3.33, corrected p = 0.139</td><td class="left">uniform</td></tr>
+      <tr><td class="left"><a href="stats.html?exp=S4">S4</a> random 12 / 24 words pass the checksum</td><td class="left">6.30 % [6.15, 6.45] / 0.373 % [0.337, 0.413]</td><td class="left">6.25 % / 0.391 %</td></tr>
+      <tr><td class="left">S4 one word replaced; two words swapped</td><td class="left">6.26 %; 6.26 %</td><td class="left">6.25 %</td></tr>
+      <tr><td class="left">S4 EIP-55: one character mistyped, undetected</td><td class="left">24 / 100 000 = 0.024 % [0.016, 0.036]</td><td class="left">0.0247 %</td></tr>
+      <tr><td class="left"><a href="stats.html?exp=S6">S6</a> tries to match 3 hex characters (300 searches)</td><td class="left">mean 3 929 [3 464, 4 393]; median 2 663</td><td class="left">4 096; 2 839</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>Avalanche.</strong> After the first derivation, a one-bit change of the entropy is
+    indistinguishable from starting over: about half the bits of the seed, the key and the address change,
+    with the spread of a Binomial law. The words behave differently — a flipped bit changes its own word and,
+    15 times in 16, the checksum in the last word — and the exact law gives 1.886, which the measurement
+    reproduces. The contrast is <span class="eq">k ↦ kG</span> alone: <span class="eq">k + 1</span> changes
+    <span class="eq">Q</span> a lot but predictably, to <span class="eq">Q + G</span>.</p>
+  <p><strong>Uniformity, and multiple testing.</strong> The addresses pass every test once the number of
+    tests is accounted for. But one raw p-value is below 0.05 (the monobit test, p = 0.037), and with 164
+    tests per sample that is exactly what chance produces. In the author’s own notes the same thing happened
+    with Python: a monobit deviation of <span class="eq">z ≈ −2</span> replicated once on a fresh sample
+    before vanishing in larger ones, and a direct test of Keccak showed no bias. Even a replication can be a
+    fluke; the defences are a correction for multiple tests, sample sizes fixed in advance, more data, and an
+    independent check of the mechanism. For rare events, the analytic formula beats simulation: 100 000
+    mistyped addresses give only 24 misses, a relative error near 20 %, while
+    <span class="eq">(13/16)⁴⁰</span> is exact.</p>
+  <p><strong>Search costs are geometric waiting times.</strong> Matching <span class="eq">k</span> hex
+    characters of an address takes a geometric number of tries, mean <span class="eq">16<sup>k</sup></span>,
+    median about 30 % lower; the simulation agrees. Every character multiplies the cost by 16, which is the
+    economics of address poisoning in section 7: eight matching characters cost about two seconds at
+    <span class="eq">2·10⁹</span> tries per second, all forty cost <span class="eq">2¹⁶⁰</span>.</p>
+  <p><strong>What the tests cannot see.</strong> This is the most important result of the lab. Keys made
+    from a 16-bit seed — a scaled-down copy of the Profanity, Milk Sad and Trust Wallet bugs — produce
+    addresses that pass the same tests (<a href="stats.html?exp=S5a">S5a</a>: smallest corrected
+    p = 0.129), although only 65 536 keys are possible. The same generator then falls to enumeration
+    (<a href="stats.html?exp=S5b">S5b</a>): the victim’s key is found after 10 655 guesses, in seconds.
+    And a model of the generator that produced Coldcard seeds from 2021 to 2026
+    (<a href="stats.html?exp=S5c">S5c</a>) passes the byte and bit tests even <em>before</em> its final
+    hash (p = 0.687 raw, 0.808 hashed), while the victim’s 24 words are recovered after 2 794 guesses over
+    the unknown timer value. Statistical tests describe the distribution of outputs; the attacker exploits
+    the size of the input space. Only knowledge of the generation process can certify entropy — which is
+    why randomness standards such as NIST SP 800-90B assess the noise source, not the output.</p>
+
+  <!-- 7 -->
+  <h2 id="incidents">7 · When it went wrong</h2>
+  <p>In the major incidents of the last fifteen years, no wallet primitive was broken
+    <span class="evidence record">historical record</span> (<a href="incidents.html">incidents</a>). The
+    losses sit on six layers around the mathematics.</p>
+  <ul>
+    <li><strong>Entropy.</strong> Brainwallets hashed human phrases into keys and were swept by bots.
+      Profanity expanded keys from a 32-bit seed (Wintermute lost about $160 M in September 2022); Trust
+      Wallet’s extension and Libbitcoin Explorer (“Milk Sad”) seeded a Mersenne Twister with 32 bits. Each
+      time, every downstream value looked random while the key space was <span class="eq">2³²</span>.</li>
+    <li><strong>Signing.</strong> ECDSA with a reused nonce gives away the key — Sony’s PlayStation 3 used
+      a constant one in 2010; an Android random-number bug made Bitcoin wallets repeat nonces in 2013; and
+      a few biased nonce bits over many signatures let Breitner and Heninger recover hundreds of real keys
+      with lattices (2019).</li>
+    <li><strong>Key handling.</strong> The Slope wallet sent seed phrases to a logging server (2022);
+      the Ronin bridge lost about $600 M when enough validator keys were compromised.</li>
+    <li><strong>Contract logic.</strong> The DAO’s reentrancy bug (2016) and the Parity multisig failures
+      (2017): cryptography guarantees who signed, not what the program does.</li>
+    <li><strong>Front-end and supply chain.</strong> BadgerDAO (2021) served a script asking for unlimited
+      token approvals; a phished account published a wallet drainer in Ledger’s Connect Kit (2023); in
+      February 2025 malicious JavaScript in Safe{Wallet}’s infrastructure altered Bybit’s cold-wallet
+      transaction during signing — about $1.5 B, the largest theft to date. For a DApp user the screen is
+      the trust anchor, hardware wallets often sign blind, and an approval is delegated authority.</li>
+    <li><strong>The human interface.</strong> Address poisoning plants a look-alike that matches the first
+      and last characters of a familiar address; in May 2024 one victim lost about $68 M. EIP-55 does not
+      help: the fake has a perfectly valid checksum.</li>
+  </ul>
+  <p><strong>Coldcard, 2026.</strong> The clearest recent case is the subject of the author’s note 09. A
+    library guarded its hardware random-number generator with <span class="eq">#ifndef
+    MICROPY_HW_ENABLE_RNG</span> — “is the macro undefined?” — where it meant <span class="eq">#if
+    !MICROPY_HW_ENABLE_RNG</span>, “is it zero?”. MicroPython always defines the macro, as 0; the board set
+    it to 0 for its own reasons; the guard never fired, and the linker silently chose MicroPython’s fallback
+    generator, Yasmarang, seeded with a chip-ID word XORed with a timer. A second Yasmarang copy, starting
+    from constants printed in the source, was XORed on top, and the result was hashed with SHA-256d. Five
+    years of seeds were valid, uniform-looking and guessable: with the chip-ID word known, only about
+    80 000 timer values remained. Sweeps began on 30–31 July 2026; reported totals are around
+    1 400–2 000 BTC <span class="evidence record">historical record</span>. Users who had mixed in at
+    least 50 dice rolls were safe, because an independent source of entropy composes safely. The fix
+    checked the property that mattered — which function ends up in the binary — rather than a flag that
+    stood in for it. Every component was sound; the failure lived in the wiring between three
+    repositories, one macro and the linker. Test the path, not the component.</p>
+  <p>The list is a biased sample: undetected thefts, keys compromised but not yet used, and losses never
+    reported are missing, and weak-entropy bugs can stay invisible for years — Randstorm affected wallets
+    from 2011–2015 and was disclosed in 2023.</p>
+
+  <!-- 8 -->
+  <h2 id="structure">8 · Structure, assumptions and a mathematician AI</h2>
+  <p>The homework’s last question is whether ECDSA, being built on mathematical structure, is more at risk
+    from a much stronger mathematician — an AI, say — than a hash-based construction. “Structure” needs a
+    precise meaning: relations an attacker can compute with. For <span class="eq">k ↦ kG</span> they are
+    global and exposed by the interface — <span class="eq">(a + b)G = aG + bG</span>, the period
+    <span class="eq">n</span>, a group law. A hash has local structure hidden behind many rounds, and no
+    usable global relation by design. On these pages the difference is literal: the equation
+    <span class="eq">f(a + b) = f(a) + f(b)</span> held 1 000 times out of 1 000 for the curve, and never for
+    Keccak on secp256k1 (on the toy curve C5, 3 times in 1 000 — chance, about 1 in 139)
+    (<a href="structure.html?exp=S8">S8</a>) <span class="evidence measurement">measurement</span>.</p>
+  <p><strong>What theory says.</strong> In the generic group model an algorithm that only uses group
+    operations needs about <span class="eq">√n</span> steps (Shoup, 1997): anything faster must exploit how
+    elements are represented, and for secp256k1 nothing is known <span class="evidence theorem">theorem</span>.
+    Signatures exist as soon as one-way functions do (Rompel, 1990), so for signing — Ethereum’s only use of
+    public-key cryptography — structure is not necessary in principle; key agreement, however, cannot be
+    built from a black-box one-way permutation (Impagliazzo and Rudich, 1989), and with only a random oracle
+    Merkle’s puzzles and their quadratic gap are optimal (Barak and Mahmoody, 2009). Some structure is the
+    price of public-key functionality <span class="evidence theorem">theorem</span>. Finally, a quantum
+    computer finds the hidden period of a group homomorphism in polynomial time (Shor), so RSA,
+    Diffie–Hellman and elliptic curves fall; against unstructured search it gains only a square root
+    (Grover), so hashes survive with doubled sizes <span class="evidence theorem">theorem</span>.</p>
+  <p><strong>What a period looks like.</strong> On a toy curve with 19 points and
+    <span class="eq">Q = 13P</span>, the pairs <span class="eq">(a, b)</span> where
+    <span class="eq">aP + bQ</span> hits a fixed point form a line, <span class="eq">a + 13b ≡ 1</span>. Its
+    two-dimensional Fourier transform is zero except on the line of frequencies
+    <span class="eq">v ≡ 13u</span>: all 18 peaks give <span class="eq">k = v·u⁻¹ = 13</span>, and on a curve
+    of 139 points all 138 peaks give the chosen <span class="eq">k = 100</span>
+    (<a href="structure.html?exp=S7">S7</a>) <span class="evidence measurement">measurement</span>. With a hash
+    in place of the group law the spectrum is noise. Classically this costs more than trying every key; it
+    shows the principle Shor’s algorithm exploits, not a speed-up.</p>
+  <p><strong>What history says.</strong> Structured schemes have tended to fail suddenly when one idea
+    arrived — the Merkle–Hellman knapsack (1982), discrete logarithms in small-characteristic fields
+    (2013–14), the multivariate Rainbow (2022, “a weekend on a laptop”), the isogeny-based SIKE (2022, about
+    an hour on one core). Hashes degraded gradually: MD5 and SHA-1 lost collision resistance after years of
+    warnings, while their preimage resistance — the property hash-based signatures need — has held. The
+    outstanding exception is the elliptic-curve discrete logarithm on well-chosen prime-field curves:
+    40 years without an attack better than generic, apart from special weak classes such as anomalous curves
+    <span class="evidence record">historical record</span>. Integers, by contrast, have a statistical
+    regularity curves lack: a random integer is smooth over small primes with probability about Dickman’s
+    <span class="eq">ρ(u)</span>, which the lab reproduces (29.6 % of 20-bit integers are 1000-smooth against
+    ρ = 30.3 %, 0.45 % of 40-bit ones against 0.47 %; <a href="structure.html?exp=S11">S11</a>) — the reason
+    RSA needs 3072-bit numbers where a curve needs 256.</p>
+  <p><strong>Structure in this very wallet.</strong> Two attacks of this homework exist only because of
+    linearity: the xpub leak of section 3, and ECDSA nonce reuse. Each signature is the linear equation
+    <span class="eq">s·k = z + r·d</span>; two signatures with the same nonce give
+    <span class="eq">k = (z₁ − z₂)/(s₁ − s₂)</span> and <span class="eq">d = (s₁k − z₁)/r</span>, and on
+    these pages that recovers the public test key exactly — as do the related nonces
+    <span class="eq">k</span> and <span class="eq">k + 1</span> (<a href="structure.html?exp=S9">S9</a>)
+    <span class="evidence measurement">measurement</span>. But hash-based signatures have their own
+    fragility, which is state rather than algebra: a Lamport key used <span class="eq">t</span> times lets a
+    forger sign a random message with probability <span class="eq">(1 − 2^−t)<sup>m</sup></span>. With a
+    32-bit toy hash the forgery rate measured 14.4 % after four signatures (theory 12.7 %) and 87.5 % after
+    eight (88.2 %), every forgery accepted by the public key (<a href="structure.html?exp=S10">S10</a>); for a
+    real 256-bit key it is <span class="eq">2^−106</span> after two signatures and 37 % after eight. Stateless
+    SLH-DSA avoids the problem with signatures of 8 to 50 KB, against 64 bytes for ECDSA, on a chain where
+    every byte costs fees. Minimal assumptions are not the same as misuse resistance.</p>
+  <p><strong>So, the mathematician AI.</strong> Where could new mathematics bite? First, and by a wide
+    margin, in implementations and systems — entropy, nonces, front-ends, contract logic — where money is
+    lost today and where a model that reads code at scale would find bugs long before it proved a theorem.
+    The Coldcard bug fits the pattern: five years old, no mathematics involved; Coinkite speculated that
+    AI-assisted review sped up its discovery and Galaxy Research reported attackers using AI models, but
+    neither is forensic proof <span class="evidence record">historical record</span>. Second, in structured
+    assumptions, where history shows that breaks happen and where a sufficiently strong mathematician would
+    look for an elliptic-curve analogue of smoothness — Semaev’s summation polynomials are the research
+    attempt, so far without a practical attack. Third, and least plausibly, in hash functions, whose
+    preimage-type properties have been the most robust, and which can be swapped without redesigning the
+    scheme <span class="evidence opinion">opinion</span>.</p>
+  <p>My answer, with its evidence levels: for signatures, hash-based schemes rest on fewer and weaker
+    assumptions <span class="evidence theorem">theorem</span>; ECDSA’s structure is a larger mathematical
+    attack surface — proven fatal against a quantum computer, historically plausible against a new
+    classical idea, and yet unexploited classically for forty years
+    <span class="evidence record">historical record</span>. The price of hashes is size and, for stateful
+    schemes, fragile key management; the price of structure is concentrated mathematical risk. A robust
+    system therefore exposes as little structure as possible — hash-hidden public keys, hardened
+    derivation, deterministic nonces — and keeps a path open to conservative primitives; Ethereum
+    researchers are working on hash-based signatures for the consensus layer for exactly this reason
+    <span class="evidence opinion">opinion</span>.</p>
+
+  <!-- 9 -->
+  <h2 id="final">9 · Final considerations</h2>
+  <p>Three conclusions run through the whole pipeline.</p>
+  <p>First, <strong>the secret is made once</strong>. Generation is the only source of unpredictability;
+    every later step — however many bits it outputs, however random they look — is a function of it. The
+    pipeline’s strength is fixed at the first step and can only be lost afterwards, never added. The
+    Coldcard seeds, the Milk Sad keys and the 16-bit keys of the lab all looked perfect.</p>
+  <p>Second, <strong>statistics describe outputs, not origins</strong>. Every test on these pages has the
+    same honest limit: it can confirm that a step behaves like a random function, measure a checksum’s miss
+    rate exactly, or show a period where there should be none; it cannot certify entropy. Good practice is
+    to decide the tests in advance, correct for how many were run, replicate, prefer the formula for rare
+    events, and say which claims are measurements and which are opinions.</p>
+  <p>Third, <strong>the mathematics is the strongest part</strong> — and the most concentrated risk. No
+    incident here broke secp256k1, Keccak, SHA-2 or PBKDF2; money was lost in the layers around them. Yet the
+    one place where a much stronger mathematician could cause a sudden, total failure is the algebraic
+    structure that makes signatures and watch-only wallets possible. The wallet pipeline already answers
+    with its design: use structure only where it is needed, hide it everywhere else, and keep the layers
+    separate so that a failure stays local <span class="evidence opinion">opinion</span>.</p>
+
+  <!-- 10 -->
+  <h2 id="refs">10 · References</h2>
+  <p class="small muted">Primary sources first; incident figures as reported. URLs are given where the
+    author’s notes give them; the remaining sources should be consulted directly.</p>
+  <ol class="refs small">
+    <li>BIP-32, BIP-39, BIP-44 — Bitcoin Improvement Proposals, <a href="https://github.com/bitcoin/bips">github.com/bitcoin/bips</a>; SLIP-44 coin types.</li>
+    <li>V. Buterin, A. Van de Sande, EIP-55: Mixed-case checksum address encoding, 2016, <a href="https://eips.ethereum.org/EIPS/eip-55">eips.ethereum.org/EIPS/eip-55</a>.</li>
+    <li>G. Wood, Ethereum Yellow Paper, Appendix F (signing transactions).</li>
+    <li>NIST FIPS 180-4, Secure Hash Standard (SHA-2); NIST FIPS 202, SHA-3 Standard (2015); NIST FIPS 205, SLH-DSA (2024).</li>
+    <li>Certicom Research, SEC 2: Recommended Elliptic Curve Domain Parameters (secp256k1).</li>
+    <li>A. M. Antonopoulos, G. Wood, <em>Mastering Ethereum</em>, chapters 4–5.</li>
+    <li>V. Shoup, Lower bounds for discrete logarithms and related problems, EUROCRYPT 1997.</li>
+    <li>J. Rompel, One-way functions are necessary and sufficient for secure signatures, STOC 1990.</li>
+    <li>R. Impagliazzo, S. Rudich, Limits on the provable consequences of one-way permutations, STOC 1989; B. Barak, M. Mahmoody, Merkle puzzles are optimal, CRYPTO 2009.</li>
+    <li>P. Shor, Polynomial-time algorithms for prime factorization and discrete logarithms on a quantum computer, 1994/1997; L. Grover, A fast quantum mechanical algorithm for database search, 1996.</li>
+    <li>N. Smart, The discrete logarithm problem on elliptic curves of trace one, J. Cryptology 1999.</li>
+    <li>W. Beullens, Breaking Rainbow takes a weekend on a laptop, 2022; W. Castryck, T. Decru, An efficient key recovery attack on SIDH, 2022.</li>
+    <li>J. Breitner, N. Heninger, Biased Nonce Sense, FC 2019, <a href="https://eprint.iacr.org/2019/023">eprint.iacr.org/2019/023</a>.</li>
+    <li>NIST SP 800-90B, Recommendation for the entropy sources used for random bit generation.</li>
+    <li>Incidents: 1inch on Profanity (Sep 2022); NVD CVE-2023-31290 (Trust Wallet) and CVE-2023-39910 (Milk Sad, milksad.info); Halborn on BadgerDAO (2021) and on address poisoning (2024); The Hacker News on Randstorm and on Ledger Connect Kit (2023); The Block on Slope (2022) and Bybit (2025, citing Sygnia); R. Castellucci, Cracking cryptocurrency brainwallets, DEF CON 23 (2015).</li>
+    <li>Coldcard: Coinkite security advisory (July–August 2026), <a href="https://blog.coinkite.com/coldcard-mk3-seed-generation-warning">blog.coinkite.com</a>; Wizardsardine, Coldcard: the technical autopsy of an entropy failure, <a href="https://wizardsardine.com/blog/coldcard-vuln-deep-dive">wizardsardine.com</a>; BlockSec; Casa; AnChain.AI; source code in github.com/Coldcard/firmware, github.com/Coldcard/micropython, github.com/switck/libngu.</li>
+  </ol>
+
+</article>
+</main>
+<script type="module">
+  import { mountShell } from '../assets/js/ui/dom.js';
+  import { hw02Shell } from './js/pages/shell.js';
+  mountShell(hw02Shell('essay.html'));
+</script>
+</body>
+</html>
