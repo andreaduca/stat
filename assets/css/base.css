@@ -312,3 +312,8 @@ details.explain p.practice {
   transform: translate(-50%, -115%);
 }
 .chart .tip.on { opacity: 1; }
+
+/* ---------- bar chart (see assets/js/ui/barchart.js; shares .chart above) ---------- */
+
+.chart rect.bar { opacity: .85; }
+.chart .ref { stroke: var(--c-third); stroke-width: 1; stroke-dasharray: 5 4; }

@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BIP-32/44 lab · HW02</title>
+<link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="css/hw02.css">
+</head>
+<body>
+<main class="wrap">
+  <h1>BIP-32 and BIP-44: a tree of keys</h1>
+  <p class="lead">One seed, an unlimited tree of key pairs. Click through the first levels, derive
+    addresses from an xpub without any private key, then watch that same linearity hand over the parent
+    key when one child key leaks — and see why hardened levels stop it.</p>
+  <div id="app"></div>
+</main>
+<script type="module" src="js/pages/bip32-page.js"></script>
+</body>
+</html>

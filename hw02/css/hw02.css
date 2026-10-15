@@ -1,0 +1,256 @@
+/* hw02.css — styles used only by this homework: the six category badges,
+   hex values with their copy button, the 11-bit groups of a mnemonic, the
+   reveal-mode diff marks and the home-page pipeline. Shared components live
+   in assets/css/base.css. */
+
+:root {
+  /* one colour per kind of operation (note 01); always paired with a text label and an icon */
+  --cat-gen:  #b3261e;   /* generation */
+  --cat-enc:  #a15c00;   /* encoding + checksum */
+  --cat-der:  #2f6fd0;   /* derivation */
+  --cat-pub:  #7b3fb0;   /* public-key cryptography */
+  --cat-hash: #0f8a4d;   /* hashing */
+  --cat-sum:  #6b7280;   /* checksum in encoding */
+  --diff:     #c62828;   /* reveal mode: what changed */
+  --dg-rate:  #cfe8da;   /* sponge diagram: rate */
+  --dg-cap:   #e3d5f0;   /* sponge diagram: capacity */
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --cat-gen:  #ef6b5f;
+    --cat-enc:  #e3a33b;
+    --cat-der:  #6fa8f5;
+    --cat-pub:  #c08ae8;
+    --cat-hash: #4ecb84;
+    --cat-sum:  #a0a6b2;
+    --diff:     #ff6b6b;
+    --dg-rate:  #1f4a36;
+    --dg-cap:   #3d2c52;
+  }
+}
+
+/* a long unbreakable token (a path, an address) breaks rather than widening a card */
+.card { overflow-wrap: break-word; }
+/* 40-character addresses and hex values inside prose must wrap on a phone */
+.eq, .card p, .facts .v { overflow-wrap: anywhere; }
+.facts .k { flex: 0 1 auto; }
+
+/* a table of words rather than numbers */
+table.data.prose td, table.data.prose th { font-family: var(--sans); }
+
+/* ---------- category badges ---------- */
+
+.cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 9px 1px 7px;
+  border: 1px solid var(--c);
+  border-radius: 999px;
+  font-size: .78rem;
+  white-space: nowrap;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--c) 9%, var(--panel));
+}
+.cat i { font-style: normal; color: var(--c); font-weight: 700; }
+.cat.generation { --c: var(--cat-gen); }
+.cat.encoding   { --c: var(--cat-enc); }
+.cat.derivation { --c: var(--cat-der); }
+.cat.publickey  { --c: var(--cat-pub); }
+.cat.hashing    { --c: var(--cat-hash); }
+.cat.checksum   { --c: var(--cat-sum); }
+.cat.system     { --c: var(--muted); }
+.cat.postquantum{ --c: var(--cat-pub); }
+.cat.failure    { --c: var(--diff); }
+
+/* ---------- a pipeline step ---------- */
+
+.step-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-bottom: 10px; }
+.step-head h2 { margin: 0; }
+.step-no {
+  display: inline-grid; place-items: center;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--accent); color: var(--accent-ink);
+  font: 600 .85rem var(--sans);
+}
+.formula {
+  font-family: var(--mono);
+  background: var(--panel-alt);
+  border-radius: 7px;
+  padding: 7px 10px;
+  margin: 0 0 12px;
+  overflow-wrap: anywhere;
+  font-size: .92rem;
+}
+.why { font-size: .9rem; color: var(--muted); margin: 10px 0 12px; }
+.why::before { content: "Why this step exists: "; font-weight: 600; color: var(--ink); }
+.why.matters::before { content: "Why it matters: "; }
+.tagline { font-size: .8rem; color: var(--muted); margin: 0 0 4px; }
+
+/* one level of the path walk */
+.level { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-alt); padding: 12px 14px; margin: 0 0 12px; }
+.level .hex { background: var(--panel); }
+
+/* ---------- hex values ---------- */
+
+.val { margin: 0 0 10px; }
+.val-head { display: flex; align-items: baseline; gap: 8px; font-size: .8rem; color: var(--muted); margin-bottom: 2px; }
+.val-head .count { margin-left: auto; color: var(--diff); font-weight: 600; }
+.val-head button { min-height: 0; padding: 1px 7px; font-size: .72rem; border-radius: 5px; }
+.hex {
+  font-family: var(--mono);
+  font-size: .88rem;
+  word-break: break-all;
+  line-height: 1.5;
+  padding: 6px 9px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel);
+}
+.hex .dim  { color: var(--muted); }
+.hex .keep { color: var(--cat-hash); font-weight: 650; }
+.hex .chg, .words .chg, td.chg {
+  color: var(--diff);
+  background: color-mix(in srgb, var(--diff) 15%, transparent);
+  border-radius: 2px;
+}
+
+/* ---------- mnemonic: 11-bit groups ---------- */
+
+.groups { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.grp { border: 1px solid var(--line); border-radius: 7px; padding: 6px 8px; background: var(--panel); }
+.grp .bits { font-family: var(--mono); font-size: .8rem; letter-spacing: .02em; word-break: break-all; }
+.grp .bits .cs { color: var(--cat-enc); font-weight: 700; text-decoration: underline; }
+.grp .meta { display: flex; justify-content: space-between; gap: 6px; font-size: .85rem; margin-top: 2px; }
+.grp .meta .n { font-family: var(--mono); color: var(--muted); }
+.grp.chg { border-color: var(--diff); }
+.grp.chg .word { color: var(--diff); font-weight: 650; }
+.key-cs { color: var(--cat-enc); font-weight: 700; text-decoration: underline; }
+
+/* ---------- EIP-55 character table ---------- */
+
+.eip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(34px, 1fr)); gap: 3px; }
+.eip-grid div {
+  border: 1px solid var(--line); border-radius: 5px; text-align: center;
+  font-family: var(--mono); font-size: .8rem; line-height: 1.3; padding: 2px 0;
+}
+.eip-grid .c { font-size: 1rem; font-weight: 650; }
+.eip-grid .up { border-color: var(--cat-sum); background: var(--panel-alt); }
+.eip-grid .digit .c { color: var(--muted); font-weight: 400; }
+.eip-grid .chg { border-color: var(--diff); color: var(--diff); }
+.eip-grid .typo .c { text-decoration: underline; text-decoration-thickness: 2px; }
+
+/* ---------- safety labels ---------- */
+
+.safety { font-size: .78rem; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; color: var(--warn-ink); background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 999px; padding: 1px 9px; }
+
+textarea { font: inherit; font-family: var(--mono); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 7px; padding: 6px 9px; width: 100%; }
+/* a wide text field in a .row: its label grows, the input fills it */
+input.wide { width: 100%; font-family: var(--mono); }
+.row > label.field:has(> input.wide) { flex: 1 1 30ch; min-width: 0; max-width: 52ch; }
+
+/* ---------- home: the list of pages, as tiles ---------- */
+
+ul.pagelist { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+ul.pagelist li { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-alt); padding: 10px 14px; font-size: .9rem; }
+ul.pagelist li a { display: block; margin-bottom: 2px; font-size: 1rem; }
+
+/* ---------- home: the pipeline as a list of linked boxes ---------- */
+
+ol.pipe { list-style: none; padding: 0; margin: 0; display: grid; gap: 0; }
+ol.pipe li { display: grid; grid-template-columns: minmax(0, 1fr); }
+ol.pipe a.box {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 10px 14px; background: var(--panel); color: var(--ink); text-decoration: none;
+}
+ol.pipe a.box:hover { border-color: var(--accent); }
+ol.pipe a.box strong { font-size: 1rem; }
+ol.pipe a.box .size { color: var(--muted); font-size: .85rem; font-family: var(--mono); }
+ol.pipe a.box .cat { margin-left: auto; }
+ol.pipe .arrow { padding: 4px 0 4px 26px; font-size: .82rem; color: var(--muted); font-family: var(--mono); }
+ol.pipe .arrow::before { content: "↓ "; color: var(--accent); font-family: var(--sans); }
+
+/* ---------- BIP-39 lab: word inputs and chips ---------- */
+
+.wordgrid { display: grid; gap: 6px 8px; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); }
+.wordgrid input { width: 100%; font-family: var(--mono); }
+.word-in.good { border-color: color-mix(in srgb, var(--cat-hash) 55%, var(--line)); }
+.word-in.bad  { border-color: var(--diff); }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chips button { min-height: 0; padding: 2px 8px; font: .8rem var(--mono); border-radius: 999px; }
+.chips button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+/* ---------- BIP-32 lab: the key tree ---------- */
+
+.tree svg { display: block; width: 100%; min-width: 560px; height: auto; }
+.tree .edge   { stroke: var(--cat-der); stroke-width: 1.6; }
+.tree .edge.h { stroke-width: 3; }
+.tree .edge.n { stroke-dasharray: 5 4; }
+.tree .node { cursor: pointer; }
+.tree .node circle { fill: var(--panel); stroke: var(--muted); stroke-width: 1.4; }
+.tree .node:hover circle, .tree .node:focus circle { stroke: var(--accent); stroke-width: 2.2; outline: none; }
+.tree .node.sel circle { fill: var(--accent); stroke: var(--accent); }
+.tree .lbl  { font: 12px var(--mono); fill: var(--ink); pointer-events: none; }
+.tree .sel .lbl { fill: var(--accent-ink); font-weight: 650; }
+.tree .addr { font: 10px var(--mono); fill: var(--muted); }
+.legend i.ln { display: inline-block; width: 26px; height: 0; border-radius: 0; margin-right: 6px; vertical-align: middle; border-top: 3px solid var(--cat-der); }
+.legend i.ln.n { border-top: 2px dashed var(--cat-der); }
+
+/* ---------- history: timeline ---------- */
+
+.timeline svg { display: block; width: 100%; min-width: 760px; height: auto; }
+.timeline .axis { stroke: var(--muted); stroke-width: 1.5; }
+.timeline .tick { stroke: var(--muted); }
+.timeline .year { font: 12px var(--mono); fill: var(--muted); }
+.timeline .lead { stroke: var(--line); stroke-width: 1; }
+.timeline .lbl  { font: 12px var(--sans); fill: var(--muted); paint-order: stroke; stroke: var(--panel); stroke-width: 5px; stroke-linejoin: round; }
+.timeline .lbl.hw { fill: var(--ink); font-weight: 650; }
+.timeline .dot { stroke: var(--panel); stroke-width: 2; cursor: help; }
+.timeline .dot.hw { stroke: var(--ink); stroke-width: 1.5; }
+.timeline .dot.generation { fill: var(--cat-gen); }
+.timeline .dot.encoding   { fill: var(--cat-enc); }
+.timeline .dot.derivation { fill: var(--cat-der); }
+.timeline .dot.publickey  { fill: var(--cat-pub); }
+.timeline .dot.hashing    { fill: var(--cat-hash); }
+.timeline .dot.checksum   { fill: var(--cat-sum); }
+.timeline .dot.system     { fill: var(--muted); }
+.timeline .dot.postquantum{ fill: var(--cat-pub); }
+.timeline .dot.failure    { fill: var(--diff); }
+
+ol.tl-list { list-style: none; padding: 0; margin: 0; }
+ol.tl-list li { display: grid; grid-template-columns: 3.4em minmax(0, 1fr); gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); }
+ol.tl-list .when { font-family: var(--mono); color: var(--muted); }
+ol.tl-list li.hw .when { color: var(--ink); font-weight: 650; }
+ol.tl-list .what { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.hwtag { font-size: .72rem; border: 1px solid var(--accent); color: var(--accent); border-radius: 999px; padding: 0 7px; }
+
+/* ---------- history: construction diagrams ---------- */
+
+.diagram svg { display: block; width: 100%; max-width: 760px; min-width: 560px; height: auto; margin: 0 auto 6px; }
+.diagram .box  { fill: var(--panel-alt); stroke: var(--muted); }
+.diagram .msg  { fill: var(--panel); stroke: var(--line); stroke-dasharray: 4 3; }
+.diagram .out  { fill: var(--panel); stroke: var(--accent); stroke-width: 1.6; }
+.diagram .rate { fill: var(--dg-rate); stroke: var(--cat-hash); }
+.diagram .cap  { fill: var(--dg-cap); stroke: var(--cat-pub); }
+.diagram .flow { stroke: var(--muted); stroke-width: 1.4; }
+.diagram .tip  { fill: var(--muted); }
+.diagram .dg-t { font: 600 14px var(--sans); fill: var(--ink); }
+.diagram .dg-s { font: 11px var(--sans); fill: var(--muted); }
+.diagram .xor  { font: 600 16px var(--sans); fill: var(--ink); }
+
+/* ---------- primitives: "what would break" cards ---------- */
+
+.breaks { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.break { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-alt); padding: 12px 14px; }
+ul.confusions { padding-left: 1.2em; }
+ul.confusions li { margin-bottom: 8px; }
+
+/* ---------- statistics lab ---------- */
+
+.lab-tabs a { cursor: pointer; }
+.running { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 6px 0 12px; }
+.running progress { flex: 1 1 200px; height: 10px; accent-color: var(--accent); }
+.card textarea { min-height: 4.5em; }
+.charts { display: grid; gap: 8px 24px; margin-top: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); }
+.charts > * { min-width: 0; }

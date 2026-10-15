@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HW02 · From wallet seed to Ethereum address</title>
+<link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="css/hw02.css">
+</head>
+<body>
+<main class="wrap">
+  <h1>From wallet seed to Ethereum address</h1>
+  <p class="lead">A crypto wallet keeps one secret — a few hundred random bits written down as 12 or 24
+    words — and turns it into as many accounts as you like. Between the words and the
+    <span class="eq">0x…</span> address you paste sit six standards and four different kinds of
+    cryptography. These pages run every step in your browser, show every intermediate value, and measure
+    the statistical properties of each one.</p>
+
+  <p class="notice">Every key on these pages is a <strong>public test key</strong> unless you ask for a
+    random one, which is <strong>for demonstration only</strong>. Nothing is sent anywhere and no key is
+    ever stored. Never type a real seed phrase into this site, or into any website.</p>
+
+  <div class="card">
+    <h2>The exercise</h2>
+    <p>Check the pipeline from a BIP-39 mnemonic to an Ethereum address and explain the role of each
+      standard: <strong>BIP-39</strong>, <strong>BIP-32</strong>, <strong>BIP-44</strong>,
+      <strong>secp256k1</strong>, <strong>Keccak-256</strong> and <strong>EIP-55</strong>. Tell apart key
+      generation and key derivation, public-key cryptography, hashing, checksums and encoding. Place the
+      standards in history, explain why several primitives are combined instead of one, discuss the
+      statistical properties of each step, look at real attacks, and ask whether structured cryptography
+      such as ECDSA is more at risk than hash-based constructions against a much stronger mathematician —
+      with statistics and small simulations as evidence.</p>
+  </div>
+
+  <div class="card">
+    <h2>How to use these pages</h2>
+    <ul class="pagelist">
+      <li><a href="pipeline.html"><strong>Pipeline explorer</strong></a> The seven steps below, one card
+        each, with the formula, the category of the operation and every value in hex. Reveal mode marks
+        what a one-bit change does downstream.</li>
+      <li><a href="bip39.html"><strong>BIP-39 lab</strong></a> A live checksum checker, the 128 valid last
+        words, PBKDF2 accepting any phrase, passphrases, and a real forgotten-word recovery.</li>
+      <li><a href="bip32.html"><strong>BIP-32/44 lab</strong></a> The key tree, a watch-only wallet working
+        from an xpub alone, the xpub + child-key leak, and three wallets’ paths side by side.</li>
+      <li><a href="address.html"><strong>Address &amp; EIP-55 lab</strong></a> Keccak-256 against SHA3-256,
+        a typo playground, and how many check bits an address really has.</li>
+      <li><a href="history.html"><strong>History &amp; hashes</strong></a> The timeline of the standards,
+        Merkle–Damgård against the sponge, and a live length-extension attack.</li>
+      <li><a href="primitives.html"><strong>Why many primitives</strong></a> The category matrix, what would
+        break without each primitive, and where structure is wanted or removed.</li>
+      <li><a href="stats.html"><strong>Statistics lab</strong></a> Eight seeded experiments: the entropy
+        pipe, avalanche, address uniformity, checksum miss rates, weak entropy (including the Coldcard
+        model) and vanity waiting times — each against its theory.</li>
+    </ul>
+    <p class="small muted" style="margin-top:14px">Coming in the next phases: incidents; structure and AI;
+      a safe wallet lab; and the essay.</p>
+    <p class="small muted">Every panel has a “What am I looking at?” box, and the URL keeps the settings —
+      <span class="eq">pipeline.html?words=24&amp;index=1</span> — so a configuration can be linked. Secrets
+      never go in the URL: only the public test vector is selected by name.</p>
+  </div>
+
+  <div class="card">
+    <h2>The pipeline</h2>
+    <p class="small muted">Each box is a value, each arrow the operation that produces the next one. The
+      badge is the kind of operation that created the value; click a box to open that step.</p>
+    <ol class="pipe">
+      <li><a class="box" href="pipeline.html#step-1"><strong>Entropy</strong><span class="size">128–256 random bits</span><span class="cat generation"><i aria-hidden="true">⚄</i>generation</span></a></li>
+      <li class="arrow">append SHA-256 checksum bits, cut into 11-bit groups</li>
+      <li><a class="box" href="pipeline.html#step-1"><strong>Mnemonic</strong><span class="size">12–24 words</span><span class="cat encoding"><i aria-hidden="true">⇄</i>encoding + checksum</span></a></li>
+      <li class="arrow">PBKDF2-HMAC-SHA512, 2048 rounds, salt "mnemonic" + passphrase</li>
+      <li><a class="box" href="pipeline.html#step-2"><strong>Seed</strong><span class="size">512 bits</span><span class="cat derivation"><i aria-hidden="true">↘</i>derivation</span></a></li>
+      <li class="arrow">HMAC-SHA512("Bitcoin seed", seed)</li>
+      <li><a class="box" href="pipeline.html#step-3"><strong>Master key + chain code</strong><span class="size">256 + 256 bits</span><span class="cat derivation"><i aria-hidden="true">↘</i>derivation</span></a></li>
+      <li class="arrow">BIP-32 child derivation along the BIP-44 path m/44'/60'/0'/0/i</li>
+      <li><a class="box" href="pipeline.html#step-4"><strong>Private key k</strong><span class="size">256 bits, 1 ≤ k &lt; n</span><span class="cat derivation"><i aria-hidden="true">↘</i>derivation</span></a></li>
+      <li class="arrow">Q = kG on secp256k1</li>
+      <li><a class="box" href="pipeline.html#step-5"><strong>Public key Q = (x, y)</strong><span class="size">64 bytes</span><span class="cat publickey"><i aria-hidden="true">⊕</i>public-key</span></a></li>
+      <li class="arrow">Keccak-256(x ‖ y), keep the last 20 bytes</li>
+      <li><a class="box" href="pipeline.html#step-6"><strong>Address</strong><span class="size">160 bits, 40 hex characters</span><span class="cat hashing"><i aria-hidden="true">#</i>hashing</span></a></li>
+      <li class="arrow">EIP-55: Keccak-256 of the hex text sets the case of each letter</li>
+      <li><a class="box" href="pipeline.html#step-7"><strong>Checksummed address</strong><span class="size">0x9858EfFD…EcaEda94</span><span class="cat checksum"><i aria-hidden="true">✓</i>checksum in encoding</span></a></li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>Six kinds of operation</h2>
+    <p>The steps look alike — bits in, bits out — but they answer different questions, and confusing them
+      is the most common mistake in writing about wallets.</p>
+    <div class="scroll-x">
+      <table class="data compare prose">
+        <thead><tr><th class="left">kind</th><th class="left">question it answers</th><th class="left">reversible?</th></tr></thead>
+        <tbody>
+          <tr><td class="left"><span class="cat generation"><i aria-hidden="true">⚄</i>generation</span></td><td class="left">Where does the unpredictability come from? The only step that creates any.</td><td class="left">—</td></tr>
+          <tr><td class="left"><span class="cat encoding"><i aria-hidden="true">⇄</i>encoding + checksum</span></td><td class="left">How do I write bits so a person can copy them, and catch slips?</td><td class="left">yes, by anyone</td></tr>
+          <tr><td class="left"><span class="cat derivation"><i aria-hidden="true">↘</i>derivation</span></td><td class="left">How do I turn one secret into many, deterministically?</td><td class="left">no</td></tr>
+          <tr><td class="left"><span class="cat publickey"><i aria-hidden="true">⊕</i>public-key</span></td><td class="left">How do others verify without being able to act?</td><td class="left">no (one-way)</td></tr>
+          <tr><td class="left"><span class="cat hashing"><i aria-hidden="true">#</i>hashing</span></td><td class="left">How do I get a short fingerprint that hides the structure?</td><td class="left">no</td></tr>
+          <tr><td class="left"><span class="cat checksum"><i aria-hidden="true">✓</i>checksum in encoding</span></td><td class="left">How do I catch a typo without changing the format?</td><td class="left">— (adds redundancy)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small muted" style="margin-top:10px">Generation is the only source of entropy: every later step
+      is a deterministic function and cannot add any, <span class="eq">H(f(X)) ≤ H(X)</span>. A wallet built
+      on 128 random bits has at most 128 bits of security, however many 256- and 512-bit values follow.</p>
+  </div>
+
+  <div class="card">
+    <h2>What to try first</h2>
+    <ol class="small">
+      <li>Open the <a href="pipeline.html">pipeline explorer</a> on the test vector and compare the address
+        with <span class="eq">0x9858EfFD232B4033E47d90003D41EC34EcaEda94</span>, the first account any
+        standard wallet shows for <span class="eq">abandon … about</span>.</li>
+      <li>Switch on reveal mode, flip entropy bit 0, and count how many words, seed bits and address bits
+        change.</li>
+      <li>Type a passphrase: every value from the seed down changes, and nothing tells you it is “wrong”.</li>
+      <li>Set index 1 with the MetaMask path, then with Ledger Live: the same words, different second
+        accounts.</li>
+    </ol>
+  </div>
+
+  <p class="small muted">Statistics · MSc Cybersecurity, Sapienza · homework 2 · October 2026</p>
+</main>
+<script type="module">
+  import { mountShell } from '../assets/js/ui/dom.js';
+  import { hw02Shell } from './js/pages/shell.js';
+  mountShell(hw02Shell('index.html'));
+</script>
+</body>
+</html>

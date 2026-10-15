@@ -32,8 +32,9 @@ export function fill(node, kids) {
 /** Header with title and tab nav, plus the footer carrying the homework's
  *  honesty notice and the credits. Called once per page: `links` is
  *  [{href, label}], `current` marks the active tab, and `notice` is the
- *  warning that belongs on every page of that homework. */
-export function mountShell({ title, subtitle, links = [], current = '', home = '../index.html', notice = '' }) {
+ *  warning that belongs on every page of that homework. `footer: false`
+ *  leaves the footer out entirely (hw02 asked for that). */
+export function mountShell({ title, subtitle, links = [], current = '', home = '../index.html', notice = '', footer: withFooter = true }) {
   const header = el('header', { class: 'site-header' }, [
     el('div', { class: 'inner' }, [
       el('div', { class: 'site-brand' }, [
@@ -53,7 +54,7 @@ export function mountShell({ title, subtitle, links = [], current = '', home = '
   ]);
 
   document.body.prepend(header);
-  document.body.append(footer);
+  if (withFooter) document.body.append(footer);
 }
 
 /** The "What am I looking at?" box: the maths of a panel, and why it matters.

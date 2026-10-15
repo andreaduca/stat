@@ -2,6 +2,9 @@
    Development tool only: nothing here ships, and it is not a test framework.
    It exists so a page can be rendered and inspected without a browser. */
 
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
 class El {
   constructor(tag) {
     this.tag = tag; this.children = []; this.attrs = {}; this.handlers = {};
@@ -77,6 +80,19 @@ export function installDom({ search = '', storage = {} } = {}) {
   globalThis.location = { search, pathname: '/page.html' };
   globalThis.history = { replaceState: () => {} };
   globalThis.requestAnimationFrame = (fn) => fn();
+  globalThis.navigator ??= {};
+
+  /* Pages fetch their data files relative to import.meta.url, which under Node
+     is a file: URL that Node's own fetch refuses. Serve those from disk. */
+  if (!globalThis.fetch.shimmed) {
+    const nodeFetch = globalThis.fetch;
+    globalThis.fetch = async (url) => (String(url).startsWith('file:')
+      ? new Response(readFileSync(fileURLToPath(String(url))))
+      : nodeFetch(url));
+    globalThis.fetch.shimmed = true;
+  }
+  /* Experiments run in Web Workers; here a worker simply never answers. */
+  globalThis.Worker = class { postMessage() {} terminate() {} addEventListener() {} };
 
   const mem = new Map(Object.entries(storage));
   globalThis.localStorage = {

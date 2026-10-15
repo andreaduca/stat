@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Address &amp; EIP-55 lab · HW02</title>
+<link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="css/hw02.css">
+</head>
+<body>
+<main class="wrap">
+  <h1>Address and EIP-55</h1>
+  <p class="lead">The last two arrows of the pipeline: a hash that turns a 64-byte public key into a
+    20-byte address, and a checksum hidden in the letter case. Hash the same text with Keccak-256 and
+    SHA3-256, mistype an address and watch the casing check react, and count how many check bits an
+    address really has.</p>
+  <div id="app"></div>
+</main>
+<script type="module" src="js/pages/address-page.js"></script>
+</body>
+</html>

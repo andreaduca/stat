@@ -2,8 +2,8 @@
    custom (p, a, b) and the reading of a curve out of the URL query string.
    The four presets are the ones named in the homework specification. */
 
-import { PrimeField, isPrime } from './field.js';
-import { EllipticCurve, Point } from './curve.js';
+import { PrimeField, isPrime } from '../../../assets/js/core/field.js';
+import { EllipticCurve, Point } from '../../../assets/js/core/curve.js';
 
 export const MAX_P = 5000n;   // enumeration limit: every point is listed in the browser
 

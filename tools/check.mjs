@@ -20,6 +20,9 @@ if (!hw) {
 }
 
 const dir = resolve(hw, 'js/pages');
+/* a homework may opt out of the footer in its shell.js (hw02 does); otherwise
+   the footer and its honesty notice are required on every page */
+const wantsFooter = !/footer:\s*false/.test(readFileSync(join(dir, 'shell.js'), 'utf8'));
 const pages = readdirSync(dir).filter((f) => f.endsWith('-page.js')).sort();
 let failures = 0;
 
@@ -28,6 +31,8 @@ for (const file of pages) {
   let error = null;
   try {
     await import(pathToFileURL(join(dir, file)).href);
+    // an asynchronous render (Web Crypto, fetch) fills #app later: wait for it
+    for (let t = 0; t < 300 && app.children.length === 0; t++) await new Promise((r) => setTimeout(r, 50));
   } catch (e) {
     error = e;
   }
@@ -35,6 +40,7 @@ for (const file of pages) {
   const cards = app.all((n) => n.className === 'card').length;
   const headings = app.all((n) => n.tag === 'h2').map((n) => n.text.trim());
   const errors = app.all((n) => n.className === 'err').map((n) => n.text.trim());
+  const pageError = app.find((n) => n.className.includes('page-error'));
   const hasHeader = !!body.find((n) => n.className === 'site-header');
   const hasNav = !!body.find((n) => n.className === 'tabs');
   const hasNotice = !!body.find((n) => n.className === 'notice');
@@ -42,9 +48,10 @@ for (const file of pages) {
   const problems = [];
   if (error) problems.push(`threw: ${error.message}`);
   if (!error && cards === 0) problems.push('rendered no cards');
+  if (pageError) problems.push(`render failed: ${pageError.text.trim()}`);
   if (!hasHeader) problems.push('no site header');
   if (!hasNav) problems.push('no navigation');
-  if (!hasNotice) problems.push('no footer notice');   // the honesty note must be on every page
+  if (wantsFooter && !hasNotice) problems.push('no footer notice');   // the honesty note must be on every page
 
   console.log(`${problems.length ? 'FAIL' : 'ok  '}  ${hw}/${file}${search}`);
   console.log(`        cards ${cards} · ${headings.join(' | ') || '(no panels)'}`);

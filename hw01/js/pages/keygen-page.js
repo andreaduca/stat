@@ -8,7 +8,7 @@ import { startPage } from '../../../assets/js/ui/page.js';
 import { curveFromParams } from '../core/curves.js';
 import { curveOptions, CURVE_KEYS, CURVE_MEMORY } from './saved-curves.js';
 import { curveInput } from './curve-input.js';
-import { measure } from '../core/curve.js';
+import { measure } from '../../../assets/js/core/curve.js';
 import { hw01Shell } from './shell.js';
 
 const savedExtra = () => curveOptions().filter((o) => o.saved);

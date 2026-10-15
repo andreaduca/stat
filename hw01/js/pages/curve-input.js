@@ -5,7 +5,7 @@
 
 import { el, field, explain } from '../../../assets/js/ui/dom.js';
 import { MAX_P, check, buildCurve } from '../core/curves.js';
-import { Point } from '../core/curve.js';
+import { Point } from '../../../assets/js/core/curve.js';
 import { curveOptions, saveCurve, forgetCurve, selectionParams } from './saved-curves.js';
 
 let flash = null;   // one-shot message, shown on the render after an action

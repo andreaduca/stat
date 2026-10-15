@@ -9,8 +9,8 @@ import { startPage } from '../../../assets/js/ui/page.js';
 import { curveFromParams } from '../core/curves.js';
 import { curveOptions, CURVE_KEYS, CURVE_MEMORY } from './saved-curves.js';
 import { curveInput } from './curve-input.js';
-import { Point } from '../core/curve.js';
-import { divisors } from '../core/field.js';
+import { Point } from '../../../assets/js/core/curve.js';
+import { divisors } from '../../../assets/js/core/field.js';
 import { hw01Shell } from './shell.js';
 
 /* The curve object memoises points, #E and orders, so keep the same instance

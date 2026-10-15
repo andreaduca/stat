@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BIP-39 lab · HW02</title>
+<link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="css/hw02.css">
+</head>
+<body>
+<main class="wrap">
+  <h1>BIP-39: words and seed</h1>
+  <p class="lead">Two ideas in one standard: an encoding of random bits as words with a small checksum,
+    and a slow function that turns any words into a 512-bit seed. Type words and watch the checksum,
+    feed PBKDF2 nonsense and watch it comply, and measure what the 2048 iterations cost an attacker.</p>
+  <div id="app"></div>
+</main>
+<script type="module" src="js/pages/bip39-page.js"></script>
+</body>
+</html>
