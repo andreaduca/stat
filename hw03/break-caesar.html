@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Break Caesar · HW03</title>
+<link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="css/hw03.css">
+</head>
+<body>
+<main class="wrap">
+  <h1>Breaking Caesar with statistics</h1>
+  <p class="lead">Caesar has only 26 keys, so trying them all costs nothing. The real problem is the
+    second half: <strong>recognising</strong>, without a human, which of the 26 decryptions is English. The
+    attack below does it from the ciphertext alone, with six different recognisers built from four
+    novels — then measures how many letters each one needs, and shows the texts on which they all fail.</p>
+  <div id="app"></div>
+</main>
+<script type="module" src="js/pages/break-caesar-page.js"></script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Break toy ECC · HW03</title>
+<link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="css/hw03.css">
+</head>
+<body>
+<main class="wrap">
+  <h1>Breaking the toy EC-ElGamal key</h1>
+  <p class="lead">The toy scheme is the real secp256k1 with one change: the private key is drawn from
+    <span class="eq">[1, 2<sup>bits</sup>]</span> instead of <span class="eq">[1, n − 1]</span>. That single
+    restriction is enough. From the public key alone, three searches below recover
+    <span class="eq">d</span> — by trying every key, by trading memory for time, and with two hopping
+    kangaroos — and the experiment measures how their work grows, all the way to real key sizes.</p>
+  <div id="app"></div>
+</main>
+<script type="module" src="js/pages/break-ecc-page.js"></script>
+</body>
+</html>

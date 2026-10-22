@@ -8,22 +8,18 @@ import { startPage } from '../../../assets/js/ui/page.js';
 import { barChart } from '../../../assets/js/ui/barchart.js';
 import { chiSquare, shannonEntropy } from '../../../assets/js/core/stats.js';
 import { compressedHex, G } from '../../../assets/js/core/secp256k1.js';
-import { keygen, publicFrom, encrypt, decrypt, naiveEncrypt, naiveAttack, naiveAttackOnElGamal, ciphertextBytes, CHUNK } from '../core/elgamal.js';
+import { keygen, encrypt, decrypt, naiveEncrypt, naiveAttack, naiveAttackOnElGamal, ciphertextBytes, CHUNK } from '../core/elgamal.js';
 import { shift } from '../core/caesar.js';
-import { hw03Shell } from './shell.js';
+import { facts, tag } from './widgets.js';
+import { BITS, clampBits, readKey } from './toykey.js';
+import { hw03Shell, STICKY, MEMORY } from './shell.js';
 
-const DEFAULT_MSG = 'ATTACK AT DAWN';
-const BITS = { min: 8, max: 40, def: 20 };
 
 const hex = (v) => v.toString(16);
 const ptHex = (P) => compressedHex(P);
 const shortHex = (h, n = 10) => (h.length > 2 * n + 1 ? `${h.slice(0, n)}…${h.slice(-6)}` : h);
 const bytesHex = (b) => [...b].map((x) => x.toString(16).padStart(2, '0')).join(' ') || '(none)';
 
-/** public / secret tag: colour plus a word, never colour alone */
-const tag = (kind) => el('span', { class: `tag ${kind}`, text: kind });
-const facts = (rows) => el('ul', { class: 'facts' }, rows.filter(Boolean).map(([k, v]) =>
-  el('li', {}, [el('span', { class: 'k', html: k }), el('span', { class: 'v', text: v })])));
 
 /** One labelled value: name, public/secret, the formula, the value (hex). */
 const value = (name, kind, formula, text) => el('div', { class: `val ${kind}` }, [
@@ -31,26 +27,13 @@ const value = (name, kind, formula, text) => el('div', { class: `val ${kind}` },
   el('div', { class: 'hex', text }),
 ]);
 
-/* ---------- state ---------- */
-
-function readState(state, patch) {
-  const msg = state.msg ?? DEFAULT_MSG;
-  const bits = Math.min(BITS.max, Math.max(BITS.min, Number.parseInt(state.bits, 10) || BITS.def));
-  let d = null;
-  try { d = state.d ? BigInt(state.d) : null; } catch { d = null; }
-  if (d === null || d < 1n || d > 2n ** BigInt(bits)) {   // no key yet, or outside the chosen range
-    d = keygen(bits).d;
-    patch({ d: String(d), bits });
-  }
-  return { msg, bits, d, Q: publicFrom(d) };
-}
 
 /* ---------- input card ---------- */
 
 function inputCard({ msg, bits, d, Q }, update) {
   const msgIn = el('input', { id: 'in-msg', class: 'wide', value: msg, spellcheck: 'false', onkeydown: (e) => e.key === 'Enter' && apply() });
   const bitsIn = el('input', { id: 'in-bits', type: 'number', class: 'num', min: BITS.min, max: BITS.max, value: String(bits), onkeydown: (e) => e.key === 'Enter' && apply() });
-  const readBits = () => Math.min(BITS.max, Math.max(BITS.min, Number.parseInt(bitsIn.value, 10) || BITS.def));
+  const readBits = () => clampBits(bitsIn.value);
   function apply() { update({ msg: msgIn.value, bits: readBits() }); }
   const newKey = () => { const b = readBits(); update({ msg: msgIn.value, bits: b, d: String(keygen(b).d) }); };
 
@@ -297,10 +280,10 @@ function histogramPanel({ msg, Q }) {
 
 startPage({
   shell: hw03Shell('ecc.html'),
-  sticky: ['msg'],
-  memory: 'hw03.msg',
+  sticky: STICKY,
+  memory: MEMORY,
   render: ({ state, update, patch }) => {
-    const s = readState(state, patch);
+    const s = readKey(state, patch);
     const ct = encrypt(s.Q, s.msg);
     return [
       inputCard(s, update),

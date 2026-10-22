@@ -90,6 +90,41 @@ function jAdd(p, q) {
 /** P + Q for affine points (𝒪 allowed). */
 export const add = (a, b) => toAffine(jAdd(toJ(a), toJ(b)));
 
+/* ---- Jacobian form, exported for searches (hw03's ECDLP attacks) ----
+   A brute-force walk adds G millions of times; an inversion per step would
+   cost ~30 µs, the Jacobian addition alone a few µs. These let a search stay
+   in Jacobian form and pay for an inversion only when it needs a coordinate. */
+
+/** R (Jacobian) equals the affine point A, without inverting:
+ *  X/Z² = x and Y/Z³ = y  ⇔  X = x·Z² and Y = y·Z³. */
+const jEqualsAffine = (R, A) => {
+  if (R.Z === 0n || A.isInfinity) return R.Z === 0n && !!A.isInfinity;
+  const z2 = mod(R.Z * R.Z);
+  return mod(R.X) === mod(A.x * z2) && mod(R.Y) === mod(A.y * z2 * R.Z);
+};
+
+/** Many Jacobian points to affine with ONE inversion (Montgomery's trick):
+ *  with prefix products cᵢ = Z₁⋯Zᵢ, invert c_n once, then walk back:
+ *  Zᵢ⁻¹ = c_{i−1}·(c_i)⁻¹ and (c_{i−1})⁻¹ = Zᵢ·(c_i)⁻¹. Cost ≈ 3 mults per point. */
+function batchToAffine(points) {
+  const n = points.length, prefix = new Array(n);
+  let acc = 1n;
+  for (let i = 0; i < n; i++) { prefix[i] = acc; if (points[i].Z !== 0n) acc = mod(acc * points[i].Z); }
+  let inv = F.inv(acc);
+  const out = new Array(n);
+  for (let i = n - 1; i >= 0; i--) {
+    const { X, Y, Z } = points[i];
+    if (Z === 0n) { out[i] = INFINITY; continue; }
+    const zi = mod(inv * prefix[i]);
+    inv = mod(inv * Z);
+    const zi2 = mod(zi * zi);
+    out[i] = new Point(mod(X * zi2), mod(Y * zi2 * zi));
+  }
+  return out;
+}
+
+export const jacobian = { INF: J_INF, fromAffine: toJ, toAffine, add: jAdd, double: jDouble, equalsAffine: jEqualsAffine, batchToAffine };
+
 export const neg = (pt) => (pt.isInfinity ? pt : new Point(pt.x, mod(-pt.y)));
 
 /** kP by double-and-add, left to right over the bits of k (as in hw01):

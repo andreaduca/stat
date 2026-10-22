@@ -295,6 +295,7 @@ details.explain p.practice {
 .chart .tick    { font: 11px var(--mono); fill: var(--muted); }
 .chart .axis-ttl{ font: 11px var(--sans); fill: var(--muted); }
 .chart path.line{ fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart path.band{ opacity: .13; stroke: none; }
 .chart .guide   { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0; }
 .chart .guide.on{ opacity: .7; }
 .chart circle.dot { stroke: var(--panel); stroke-width: 2; opacity: 0; }

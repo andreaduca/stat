@@ -22,9 +22,17 @@
       <li><a href="ecc.html"><strong>Toy ECC</strong></a> Why EC-ElGamal (Caesar → naive M + Q → ElGamal),
         the roles of the keys, one encryption and decryption step by step, “encrypt again”, and the byte
         histogram of the ciphertext.</li>
-      <li class="muted"><strong>Caesar</strong> — the cipher, its wheel, and the letter histograms (next).</li>
-      <li class="muted"><strong>Break Caesar</strong> — key recovery from letter statistics, tested over text lengths.</li>
-      <li class="muted"><strong>Break toy ECC</strong> — brute force and baby-step giant-step on the restricted key.</li>
+      <li><a href="caesar.html"><strong>Caesar</strong></a> The same message under a shift cipher: two sliding
+        alphabets, plaintext and ciphertext histograms, the statistics encryption leaves unchanged (IC,
+        entropy, sorted frequencies), repeats and word lengths, and the English model built from six books.</li>
+      <li><a href="break-caesar.html"><strong>Break Caesar</strong></a> The attack as its two steps — all 26
+        keys, then a recogniser scoring each decryption — with six recognisers (χ², likelihood, correlation,
+        bigrams, quadgrams, “top letter = E”), the unicity distance measured from the corpus, the
+        success-rate-against-length experiment with confidence bands, and the texts where it fails.</li>
+      <li><a href="break-ecc.html"><strong>Break toy ECC</strong></a> The restricted key recovered from the public
+        key alone: brute force, baby-step giant-step and Pollard’s kangaroo run live with a picture of each
+        search; the message decrypted; the growth of their work measured (N against √N) and extrapolated to
+        real key sizes.</li>
       <li class="muted"><strong>Compare</strong> — key space against statistical leakage, side by side.</li>
       <li class="muted"><strong>Essay</strong></li>
     </ul>
