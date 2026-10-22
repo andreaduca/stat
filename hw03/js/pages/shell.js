@@ -8,6 +8,8 @@ const LINKS = [
   { href: 'caesar.html', label: 'Caesar' },
   { href: 'break-caesar.html', label: 'Break Caesar' },
   { href: 'break-ecc.html', label: 'Break toy ECC' },
+  { href: 'compare.html', label: 'Compare' },
+  { href: 'essay.html', label: 'Essay' },
 ];
 
 /** Shell arguments for one page of hw03. @param {string} current its filename */

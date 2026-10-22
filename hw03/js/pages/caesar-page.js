@@ -58,6 +58,17 @@ function cipherPanel(msg, k) {
   let sel = first;
   const host = el('div');
 
+  const letters = [...msg].map((c, i) => (isLetter(c) ? i : -1)).filter((i) => i >= 0);
+  const step = (e, cls) => {
+    const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+    if (!d) return;
+    e.preventDefault();
+    const at = letters.indexOf(sel), next = letters[Math.min(letters.length - 1, Math.max(0, at + d))];
+    if (next === undefined) return;
+    sel = next; draw();
+    host.querySelector(`.chars.${cls} button[data-i="${sel}"]`)?.focus();
+  };
+
   const draw = () => {
     const ch = sel >= 0 ? msg[sel] : null;
     const col = ch && isLetter(ch) ? idx(ch) : -1;
@@ -76,7 +87,13 @@ function cipherPanel(msg, k) {
         if (!part) continue;
         if (/^\s+$/.test(part)) { nodes.push(' '); continue; }
         nodes.push(el('span', { class: 'w' }, part.split('').map((c, j) => (isLetter(c)
-          ? el('button', { type: 'button', class: start + j === sel ? 'on' : null, text: c, title: 'show this letter on the strips', onclick: () => { sel = start + j; draw(); } })
+          ? el('button', {
+            type: 'button', class: start + j === sel ? 'on' : null, text: c, title: 'show this letter on the strips',
+            // one tab stop for the whole text; ← → move between letters (a 400-letter text is not 400 tab stops)
+            tabindex: start + j === sel ? 0 : -1, 'data-i': start + j,
+            onclick: () => { sel = start + j; draw(); },
+            onkeydown: (e) => step(e, cls),
+          })
           : c))));
       }
       return el('div', { class: `chars ${cls}` }, nodes);
@@ -86,7 +103,7 @@ function cipherPanel(msg, k) {
       el('div', { class: 'scroll-x' }, [el('div', { class: 'strips', role: 'img', 'aria-label': `plain alphabet above, cipher alphabet shifted by ${k} below` }, [
         ...strip('plain', ALPHABET), ...strip('cipher', shift(ALPHABET, k)),
       ])]),
-      el('p', { class: 'tagline', text: 'plaintext — click a letter to follow it' }), chars(msg, 'plain'),
+      el('p', { class: 'tagline', text: 'plaintext — click a letter to follow it (or Tab here, then ← →)' }), chars(msg, 'plain'),
       el('p', { class: 'tagline', text: 'ciphertext' }), chars(ct, 'cipher'),
       col >= 0 ? el('p', { class: 'formula', style: 'margin-top:10px', text:
         `${ALPHABET[m]} = ${m}  →  ${m} + ${k} = ${m + k}${m + k >= 26 ? ` ≡ ${c}` : ''} (mod 26)  →  ${ALPHABET[c]}      and back: ${c} − ${k} ≡ ${m} → ${ALPHABET[m]}` }) : null,

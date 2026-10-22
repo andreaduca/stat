@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compare · HW03</title>
+<link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="css/hw03.css">
+</head>
+<body>
+<main class="wrap">
+  <h1>Caesar and toy EC-ElGamal, compared</h1>
+  <p class="lead">Both ciphers add a mask in a group, and both are broken on these pages — but for
+    opposite reasons. Caesar leaks the statistics of the language and is broken by recognising English;
+    the toy ElGamal leaks nothing and is broken by searching its small key space. This page puts the two
+    side by side and sorts every weakness by where it comes from: the size of a key space, or the design.</p>
+  <div id="app"></div>
+</main>
+<script type="module" src="js/pages/compare-page.js"></script>
+</body>
+</html>

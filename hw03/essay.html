@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Essay · Caesar vs toy EC-ElGamal · HW03</title>
+<link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="css/hw03.css">
+</head>
+<body>
+<!-- Written from the author's notes (Obsidian vault, Foundations/Statstics HMWK3 and Concepts) and from the
+     measured results of these pages, at the author's request. Numbers are the default runs (seed 1);
+     timings depend on the machine and browser. -->
+<main class="wrap">
+<article class="essay">
+
+  <h1>Where does insecurity come from?</h1>
+  <p class="byline">Caesar against a toy EC-ElGamal on secp256k1 · Statistics · MSc Cybersecurity, Sapienza · Homework 3 · October 2026</p>
+
+  <p class="lead">Two ciphers two thousand years apart, and both broken on these pages. The Caesar cipher
+    shifts every letter by the same secret amount; the toy scheme encrypts with EC-ElGamal on the curve
+    Bitcoin uses, but draws its private key from a small range. Both fall in seconds — for opposite
+    reasons. This essay describes the two schemes, measures what their ciphertexts reveal, breaks each one,
+    and sorts the causes: a key space small enough to search, or a ciphertext that carries the statistics
+    of its plaintext.</p>
+
+  <p class="evidence-key small">Each claim is labelled with its evidence:
+    <span class="evidence theorem">theorem</span> a proved result ·
+    <span class="evidence measurement">measurement</span> computed on these pages, with a link ·
+    <span class="evidence record">historical record</span> with a source ·
+    <span class="evidence opinion">opinion</span> the author’s judgement.</p>
+
+  <nav class="toc" aria-label="Contents">
+    <ol>
+      <li><a href="#intro">Introduction</a></li>
+      <li><a href="#schemes">The two schemes</a></li>
+      <li><a href="#stats">Statistical properties</a></li>
+      <li><a href="#caesar">Breaking Caesar with statistics</a></li>
+      <li><a href="#ecc">Breaking the toy key by search</a></li>
+      <li><a href="#discussion">Discussion: two ways to fail</a></li>
+      <li><a href="#final">Final considerations</a></li>
+      <li><a href="#refs">References</a></li>
+    </ol>
+  </nav>
+
+  <!-- 1 -->
+  <h2 id="intro">1 · Introduction</h2>
+  <p>The Caesar cipher is the classic first example of encryption: Suetonius reports that Julius Caesar
+    wrote to his friends with every letter replaced by the one three places later in the alphabet
+    <span class="evidence record">historical record</span> [1]. Elliptic-curve cryptography is what
+    protects most key exchanges and every Bitcoin signature today. Putting a toy version of the second next
+    to the first is useful because the two share more than it seems — both add a secret mask in a group —
+    and because each fails for a reason the other does not have.</p>
+  <p>The homework asks to encrypt and decrypt one message with both schemes, compare them, break Caesar
+    statistically and the toy ECC scheme through its restricted key space, and explain why the second attack
+    does not carry over to properly configured ECC. The pages of this homework do each of those things live
+    in the browser; this essay collects the results and the argument.</p>
+
+  <!-- 2 -->
+  <h2 id="schemes">2 · The two schemes</h2>
+
+  <h3>Why EC-ElGamal</h3>
+  <p>Part 1 of the previous homework defined key generation on secp256k1: a private key
+    <span class="eq">d</span> and a public key <span class="eq">Q = dG</span>. A curve and a key pair do not
+    encrypt anything by themselves. To encrypt a message the scheme is completed with
+    <strong>EC-ElGamal</strong>, the standard public-key encryption built on the same group [2, 3]: it uses
+    exactly those keys, <span class="eq">Q</span> to encrypt and <span class="eq">d</span> to decrypt, and adds
+    only a fresh random nonce <span class="eq">k</span> per message. Real systems use its hybrid form — ECIES or
+    HPKE: Diffie–Hellman for a key, then a symmetric authenticated cipher for the data [4]. The textbook form
+    is kept here because it makes the comparison with Caesar exact.</p>
+  <p>The clearest way to see why ElGamal looks the way it does is a progression in three steps, each fixing
+    one defect of the previous one (<a href="ecc.html">Toy ECC page, first panel</a>):</p>
+  <table class="data prose compare">
+    <thead><tr><th class="left">step</th><th class="left">ciphertext</th><th class="left">the mask</th><th class="left">what breaks it</th></tr></thead>
+    <tbody>
+      <tr><td class="left">1. Caesar</td><td class="left">cᵢ = mᵢ + k in ℤ₂₆</td><td class="left">fixed, secret, 26 values</td><td class="left">the same mask on every letter, and only 26 of them</td></tr>
+      <tr><td class="left">2. naive M + Q</td><td class="left">C = M + Q in E(𝔽ₚ)</td><td class="left">fixed and <em>public</em></td><td class="left">anyone computes C − Q = M</td></tr>
+      <tr><td class="left">3. EC-ElGamal</td><td class="left">C₁ = kG, C₂ = M + kQ</td><td class="left">S = kQ, fresh and secret</td><td class="left">only the toy’s small range for d</td></tr>
+    </tbody>
+  </table>
+  <p>Step 2 shows that a huge group buys nothing if the mask is public. Step 3 makes the mask secret with
+    Diffie–Hellman — <span class="eq">S = kQ = k(dG) = d(kG) = dC₁</span>, so the sender (who knows
+    <span class="eq">k</span>) and the receiver (who knows <span class="eq">d</span>) reach the same point
+    without exchanging a secret — and fresh, with a new <span class="eq">k</span> each time
+    <span class="evidence theorem">theorem</span>. Caesar fails on both counts.</p>
+
+  <h3>Caesar</h3>
+  <p>Letters are numbers <span class="eq">A = 0, …, Z = 25</span>; the key is
+    <span class="eq">k ∈ ℤ₂₆</span>, shared by both sides. Encryption is
+    <span class="eq">cᵢ = (mᵢ + k) mod 26</span>, decryption <span class="eq">mᵢ = (cᵢ − k) mod 26</span>.
+    The implementation shifts only the letters A–Z, keeps their case and leaves spaces, digits and punctuation
+    alone — a design choice that leaks word boundaries. The key space has 26 elements, about 4.7 bits, and
+    <span class="eq">k = 0</span> changes nothing (<a href="caesar.html">Caesar page</a>).</p>
+
+  <h3>Toy EC-ElGamal</h3>
+  <p>The curve is secp256k1, <span class="eq">y² = x³ + 7</span> over a 256-bit prime field, with a generator
+    <span class="eq">G</span> of prime order <span class="eq">n ≈ 2²⁵⁶</span> [5]. The roles of the values:</p>
+  <ul>
+    <li><span class="eq">d</span>, the <strong>private key</strong>, known only to the receiver, decrypts. In the
+      toy it is drawn with the browser’s CSPRNG from <span class="eq">[1, 2²⁰]</span> by default instead of
+      <span class="eq">[1, n − 1]</span>.</li>
+    <li><span class="eq">Q = dG</span>, the <strong>public key</strong>, lets anyone encrypt to the receiver.</li>
+    <li><span class="eq">k</span>, the <strong>nonce</strong>, known to the sender and then destroyed, makes
+      every encryption different. It is full size and drawn fresh for every message chunk.</li>
+    <li><span class="eq">S = kQ</span>, the <strong>shared secret</strong>, is the one-time mask.</li>
+  </ul>
+  <p>To encrypt, the message bytes are cut into chunks of 29 bytes and each chunk is turned into a curve
+    point <span class="eq">M</span> by Koblitz’s method [6]: the chunk becomes an integer
+    <span class="eq">m</span>, and <span class="eq">x = 256·m + j</span> is tried for
+    <span class="eq">j = 0, 1, …</span> until <span class="eq">x³ + 7</span> is a square mod
+    <span class="eq">p</span>. About half of all <span class="eq">x</span> work, so the number of tries is
+    Geometric(½) with mean 2; over 3 000 chunks the measured mean was 2.008
+    <span class="evidence measurement">measurement</span>. Then <span class="eq">C₁ = kG</span> and
+    <span class="eq">C₂ = M + S</span>. To decrypt, the receiver checks that both points lie on the curve,
+    computes <span class="eq">S′ = dC₁</span>, which equals <span class="eq">S</span>, and recovers
+    <span class="eq">M = C₂ − S′</span>. The <a href="ecc.html">Toy ECC page</a> shows every value of one
+    encryption and its decryption.</p>
+
+  <!-- 3 -->
+  <h2 id="stats">3 · Statistical properties</h2>
+  <p>Shifting every letter by <span class="eq">k</span> moves the bars of the letter histogram and changes
+    none of their heights: <span class="eq">P<sub>cipher</sub>(ℓ) = P<sub>plain</sub>(ℓ − k)</span>. Every
+    statistic that depends only on the multiset of letter counts is therefore identical for plaintext and
+    ciphertext: the index of coincidence, the entropy of the letter distribution, the sorted frequency
+    profile <span class="evidence theorem">theorem</span>. For the 428-letter Frankenstein paragraph used on
+    these pages, both texts have IC 0.0665 and entropy 4.109 bits per letter, for every one of the 26 keys
+    <span class="evidence measurement">measurement</span> (<a href="caesar.html">Caesar page</a>). Caesar is
+    also deterministic — repeated words stay repeated, double letters stay double — and has no diffusion:
+    one changed plaintext letter changes exactly one ciphertext letter.</p>
+  <p>The reference English comes from six public-domain novels of Project Gutenberg [7], normalised the way
+    the ciphertexts are (accents removed, upper case, letters only). Four books train the model, 2.54 million
+    letters with E 12.5 %, T 9.0 %, A 8.1 %, O 7.5 %, IC 0.0654 and entropy 4.17 bits per letter; two others
+    (Frankenstein, Dracula) are kept for testing. All six agree on the IC to within ±0.0004
+    <span class="evidence measurement">measurement</span> — the letter distribution is a property of the
+    language, not of the book.</p>
+  <p>EC-ElGamal is the opposite. Because <span class="eq">k</span> is fresh, the same message encrypted twice
+    gives two unrelated ciphertexts, which public-key encryption must do: anyone holding
+    <span class="eq">Q</span> can encrypt, so a deterministic scheme would let an attacker encrypt guesses and
+    compare. If <span class="eq">S = kQ</span> behaves like a uniform point — the decisional Diffie–Hellman
+    assumption — then <span class="eq">C₂ = M + S</span> is a one-time pad in the curve group and textbook
+    ElGamal is IND-CPA secure [8] <span class="evidence theorem">theorem</span>. On these pages the bytes of
+    many ciphertexts of the same short message (the coordinates of <span class="eq">C₁</span> and
+    <span class="eq">C₂</span>, without the SEC prefix byte, which would spike the histogram) are flat: about
+    7.99 bits per byte, and χ² tests against uniform gave p-values between 0.19 and 0.93 in the runs made
+    <span class="evidence measurement">measurement</span> (<a href="ecc.html">Toy ECC</a>,
+    <a href="compare.html">Compare</a>). The Caesar ciphertext keeps the shape of English; the ElGamal
+    ciphertext keeps nothing to count.</p>
+
+  <!-- 4 -->
+  <h2 id="caesar">4 · Breaking Caesar with statistics</h2>
+  <h3>One search, several recognisers</h3>
+  <p>With 26 keys, exhaustive search is free; the whole difficulty is <em>recognising</em> the right
+    decryption without a human. The attack decrypts with every key and scores each candidate with a
+    recogniser (<a href="break-caesar.html">Break Caesar page</a>). Brute force, frequency analysis and
+    n-gram scoring are therefore not three attacks but one search with different recognisers. Six were
+    compared:</p>
+  <ul>
+    <li><strong>χ² distance</strong> between the decrypted letter counts and those English would give,
+      used as a distance rather than a test — on short texts most expected counts are below 5 and the χ² law
+      does not apply;</li>
+    <li><strong>log-likelihood</strong> of the decryption under independent English letters,
+      <span class="eq">ln L(k) = Σ O<sub>ℓ</sub>(k) ln p<sub>ℓ</sub></span>: the maximum-likelihood estimate of
+      the key, and with a uniform prior also the most probable key;</li>
+    <li><strong>correlation</strong> <span class="eq">Σ q<sub>ℓ</sub>(k) p<sub>ℓ</sub></span> of the decrypted and
+      the English frequencies;</li>
+    <li><strong>bigram</strong> and <strong>quadgram</strong> log-likelihoods, which also see the
+      <em>order</em> of letters (“TH”, “TION”), with a floor for n-grams never seen in training;</li>
+    <li>the textbook shortcut <strong>“most frequent letter = E”</strong>, as a baseline.</li>
+  </ul>
+  <p>The χ² and likelihood methods are closely related. The G-test statistic expands to
+    <span class="eq">G = 2[Σ O ln O − N ln N − Σ O ln p]</span>; a shift only permutes the counts
+    <span class="eq">O</span>, so the first two terms do not depend on the key and
+    <span class="eq">arg min G = arg max ln L</span> exactly; for large <span class="eq">N</span>,
+    <span class="eq">χ² ≈ G</span> <span class="evidence theorem">theorem</span>. The page checks the
+    equivalence on every pair of keys. The likelihood methods also give a confidence: Bayes’ rule with a uniform
+    prior turns the 26 likelihoods into a posterior probability for each key.</p>
+
+  <h3>The experiment</h3>
+  <p>For each length L of 1, 2, 3, 5, 10, 15, 20, 30, 50, 100, 200 and 500 letters, 500 random excerpts were
+    cut from the <em>test</em> books and encrypted with uniform random keys; every recogniser attacked the
+    same excerpts (a paired design), ties for the best score were broken at random, and each success rate
+    received a Wilson 95 % interval. The run is seeded and reproducible
+    (<a href="break-caesar.html?T=500&amp;seed=1">T = 500, seed 1</a>). Success rates, in per cent
+    <span class="evidence measurement">measurement</span>:</p>
+  <div class="scroll-x"><table class="data">
+    <thead><tr><th class="left">recogniser</th><th>1</th><th>2</th><th>3</th><th>5</th><th>10</th><th>15</th><th>20</th><th>30</th><th>50</th><th>500</th><th>≥ 95 % from</th></tr></thead>
+    <tbody>
+      <tr><td class="left">χ²</td><td>12</td><td>21</td><td>30</td><td>45</td><td>79</td><td>87</td><td>94</td><td>100</td><td>100</td><td>100</td><td>30</td></tr>
+      <tr><td class="left">log-likelihood</td><td>12</td><td>21</td><td>33</td><td>48</td><td>82</td><td>94</td><td>98</td><td>100</td><td>100</td><td>100</td><td>20</td></tr>
+      <tr><td class="left">correlation</td><td>12</td><td>21</td><td>28</td><td>43</td><td>73</td><td>87</td><td>94</td><td>98</td><td>100</td><td>100</td><td>30</td></tr>
+      <tr><td class="left">bigrams</td><td>4</td><td>30</td><td>46</td><td>70</td><td>97</td><td>100</td><td>100</td><td>100</td><td>100</td><td>100</td><td>10</td></tr>
+      <tr><td class="left">quadgrams</td><td>4</td><td>5</td><td>4</td><td>86</td><td>99</td><td>100</td><td>100</td><td>100</td><td>100</td><td>100</td><td>10</td></tr>
+      <tr><td class="left">top letter = E</td><td>12</td><td>16</td><td>15</td><td>14</td><td>23</td><td>26</td><td>36</td><td>37</td><td>50</td><td>95</td><td>&gt; 500</td></tr>
+    </tbody>
+  </table></div>
+  <p>Three things stand out. The n-gram recognisers need about 10 letters where the letter-count ones need
+    20–30, and the shortcut is still wrong 5 % of the time at 500 letters. At one letter the unigram methods
+    already beat a blind guess (12 % against 1/26 ≈ 4 %), because they bet on E, which is 12 % of English;
+    the n-gram methods cannot score a text shorter than their n and fall back to chance — the flat start of
+    the quadgram line. And χ² and the log-likelihood nearly coincide, as the expansion above predicts, with the
+    likelihood slightly ahead on short texts, where χ² is a poor approximation.</p>
+
+  <h3>Measured against theory</h3>
+  <p>Shannon’s unicity distance <span class="eq">U = H(K)/D</span> [9] estimates how many letters leave a
+    single plausible key: <span class="eq">H(K) = log₂26 ≈ 4.70</span> bits of key, and every letter gives away
+    <span class="eq">D = log₂26 − H</span> bits, the redundancy the attacker’s model can see. Measured on the
+    training books, the entropy of a letter is 4.17 bits on its own, 3.61 given the previous letter, 3.17 given
+    two, and 2.69 given three, so <span class="eq">U</span> is 8.9, 4.3, 3.1 and 2.3 letters for models that see
+    single letters, pairs, triples and runs of four <span class="evidence measurement">measurement</span>
+    (plug-in estimates; the four-letter one is slightly low, since 2.5 million letters cannot fill 457 000
+    cells). With the entropy rate of English as a whole, roughly 1–1.5 bits per letter by Shannon’s estimates,
+    <span class="eq">U</span> would be about 1.5 letters (the author’s notes; to check in the primary source).
+    The recognisers need a few times more than their <span class="eq">U</span>, as expected of a lower bound
+    for an ideal attacker measured against a demanding 95 % threshold; but the ordering is exactly the
+    predicted one — the more of the language a model captures, the fewer letters it needs.</p>
+
+  <h3>Limitations</h3>
+  <p>The attack is ciphertext-only — it needs no known plaintext and no access to the encryption — and its one
+    requirement is <em>enough typical text</em>. Five texts encrypted with <span class="eq">k = 11</span> show where
+    it bends <span class="evidence measurement">measurement</span> (<a href="break-caesar.html">Where it fails</a>):
+    a list of Polish and Swedish names and codes defeats all six recognisers; a 12-letter message defeats
+    correlation and the shortcut; source code is broken only by quadgrams; a text written without the letter
+    E fools only the shortcut; and Italian, scored with the English model, is still broken by every full
+    recogniser. These are limits of the recogniser, not of the search: a person reading the 26 candidates would
+    break all five at once. The cipher itself offers no protection.</p>
+
+  <!-- 5 -->
+  <h2 id="ecc">5 · Breaking the toy key by search</h2>
+  <h3>An exact test</h3>
+  <p>The attacker knows the curve, <span class="eq">G</span>, the public key <span class="eq">Q</span> and — by
+    Kerckhoffs’s principle — that <span class="eq">d ∈ [1, N]</span>. Against Caesar the recogniser was
+    statistical and could be fooled. Here it is exact: a guess <span class="eq">d′</span> is right if and only if
+    <span class="eq">d′G = Q</span>, with no false positives, and no ciphertext is needed at all. The whole
+    difficulty is the number of candidates (<a href="break-ecc.html">Break toy ECC page</a>).</p>
+
+  <h3>Three searches</h3>
+  <ul>
+    <li><strong>Brute force</strong> walks <span class="eq">G, 2G, 3G, …</span> with one point addition per
+      candidate and stops at <span class="eq">Q</span>: on average <span class="eq">(N + 1)/2</span> candidates and
+      no memory.</li>
+    <li><strong>Baby-step giant-step</strong> [10] writes <span class="eq">d = i·m + j</span> with
+      <span class="eq">m = ⌈√N⌉</span>, stores the baby steps <span class="eq">jG</span>, and walks the giant steps
+      <span class="eq">Q − i·mG</span> until one of them is in the table: about <span class="eq">2√N</span>
+      additions, and <span class="eq">√N</span> points of memory.</li>
+    <li><strong>Pollard’s kangaroo</strong> [11, 12] lets a tame kangaroo start from a known point and a wild one
+      from <span class="eq">Q</span>, both jumping by amounts that depend only on the point they stand on; once
+      the wild one lands on the tame one’s trail it follows it, and a shared stored point gives
+      <span class="eq">d</span>. About <span class="eq">2√N</span> hops and only a few dozen stored points.</li>
+  </ul>
+  <p>On one 20-bit key (<span class="eq">d = 802 491</span>), in Chrome on the author’s laptop
+    <span class="evidence measurement">measurement</span>: brute force tried 802 491 candidates in about 1 s,
+    at roughly 750 000 additions per second; BSGS needed 1 807 additions and 1 023 stored points (31 ms); the
+    kangaroo 2 010 hops, about <span class="eq">2.0√N</span>, with 26 stored points (49 ms). Each then decrypted
+    the shared message. On a 30-bit key BSGS needed 62 908 additions and 32 767 points (170 ms).</p>
+
+  <h3>How the work grows</h3>
+  <p>The experiment attacks seeded keys at every size from <span class="eq">2¹⁰</span> to
+    <span class="eq">2²²</span> (brute force) and <span class="eq">2³²</span> (BSGS, kangaroo), one key per equal
+    slice of the range, and fits the slope of log(additions) against log(N)
+    (<a href="break-ecc.html?seed=1">seed 1</a>). The slopes were 1.03, 0.50 and 0.48 — theory says 1, ½ and ½
+    <span class="evidence measurement">measurement</span>. In time, BSGS grew a little faster than its additions
+    (slope about 0.63): its table grows with <span class="eq">√N</span>, and bigger hash tables mean more cache
+    misses and garbage collection — the memory price of the method appearing as time.</p>
+
+  <h3>Why it does not scale to real ECC</h3>
+  <p>At the measured rates, a 64-bit key range would take brute force about 4·10⁵ years in this browser, and
+    BSGS about 6 hours with 137 GB of table; at 128 bits BSGS would need about 3·10⁶ years and 6·10⁸ TB of memory
+    <span class="evidence measurement">measurement</span> (extrapolated). A properly generated key has
+    <span class="eq">d</span> uniform in <span class="eq">[1, n − 1]</span>, and the best generic attack, Pollard’s
+    rho, needs <span class="eq">√(πn/2) ≈ 2^128.3</span> additions — about 1.4·10¹⁹ years at a generous 10¹²
+    additions per second, a billion times the age of the universe. Three facts close the remaining doors:</p>
+  <ul>
+    <li>no generic algorithm can do much better: in the generic group model any algorithm that only adds and
+      compares points needs on the order of <span class="eq">√n</span> operations [13]
+      <span class="evidence theorem">theorem</span>;</li>
+    <li>for well-chosen curves such as secp256k1 no faster, curve-specific method (such as the index calculus
+      that works in multiplicative groups of finite fields) is known — why 256-bit ECC is considered comparable to
+      3072-bit RSA, about 128-bit security <span class="evidence record">historical record</span>;</li>
+    <li>and there is nothing statistical to exploit instead: <span class="eq">d</span> is uniform and the
+      ciphertexts look uniform (section 3).</li>
+  </ul>
+  <p>The one known exception is a large fault-tolerant quantum computer: Shor’s algorithm solves the discrete
+    logarithm in polynomial time [14], which is why post-quantum key encapsulation (ML-KEM, standardised by NIST
+    in 2024 [15]) is being deployed alongside elliptic curves.</p>
+
+  <!-- 6 -->
+  <h2 id="discussion">6 · Discussion: two ways to fail</h2>
+  <h3>Two attacks compared</h3>
+  <div class="scroll-x"><table class="data prose compare">
+    <thead><tr><th class="left"></th><th class="left">Caesar</th><th class="left">toy ECC</th><th class="left">real ECC</th></tr></thead>
+    <tbody>
+      <tr><td class="left">search space</td><td class="left">26</td><td class="left">N (2²⁰ by default)</td><td class="left">≈ 2²⁵⁶</td></tr>
+      <tr><td class="left">best attack</td><td class="left">26 decryptions + scoring</td><td class="left">≈ 2√N additions (BSGS, kangaroo)</td><td class="left">≈ 2¹²⁸ additions (rho)</td></tr>
+      <tr><td class="left">recogniser</td><td class="left">statistical, can be fooled</td><td class="left">exact: d′G = Q</td><td class="left">exact</td></tr>
+      <tr><td class="left">needs</td><td class="left">enough typical ciphertext</td><td class="left">the public key only</td><td class="left">—</td></tr>
+      <tr><td class="left">bottleneck</td><td class="left">recognition</td><td class="left">search</td><td class="left">search, out of reach</td></tr>
+    </tbody>
+  </table></div>
+  <p>Both schemes add a mask in a group, and that statement is exact: <span class="eq">c = m + κ</span> in a finite
+    abelian group <span class="evidence theorem">theorem</span>. What differs is the group, how the mask is chosen,
+    and how hard it is to compute from public data. Caesar breaks through <em>recognition</em> — searching is free
+    and the work is telling English from noise; the toy ECC breaks through <em>search</em> — recognising is exact
+    and free, and the work is the number of candidates. The Caesar attack exploits the redundancy of the plaintext
+    language; the ECC attack exploits only the smallness of the key space.</p>
+
+  <h3>The 2 × 2 table</h3>
+  <p>The two causes are independent, and a cipher must avoid both (<a href="compare.html">Compare page</a>):</p>
+  <table class="data prose compare">
+    <thead><tr><th class="left"></th><th class="left">small key space</th><th class="left">large key space</th></tr></thead>
+    <tbody>
+      <tr><td class="left">statistics leak</td><td class="left">Caesar</td><td class="left">monoalphabetic substitution (26! ≈ 2⁸⁸ keys, still broken)</td></tr>
+      <tr><td class="left">no statistics leak</td><td class="left">toy EC-ElGamal</td><td class="left"><strong>properly configured ECC</strong></td></tr>
+    </tbody>
+  </table>
+  <p>A large key space alone is not enough — the general substitution cipher has more keys than DES (2⁵⁶) and
+    falls to frequency analysis — and hiding the statistics alone is not enough either — the toy
+    ElGamal hides them perfectly and falls to search <span class="evidence opinion">opinion</span>, the
+    centrepiece of the comparison.</p>
+
+  <h3>Key space or design?</h3>
+  <p>Only two of the weaknesses an EC-ElGamal deployment can have are about the size of a key space: a private
+    key or a nonce drawn from a small range. Only those are cured by a larger key. The others survive a 256-bit
+    key unchanged, because they belong to the design or the code: reusing a nonce, drawing it from a predictable
+    generator, encrypting character by character under one nonce (which would turn the scheme back into a
+    substitution cipher, the Caesar problem in a larger group), accepting ciphertexts that can be altered without
+    the key (textbook ElGamal is malleable), not validating received points, and letting the running time depend
+    on the key. Of these, the toy has the restricted private key on purpose, the malleability of the textbook
+    form, and code that is not constant-time; it avoids the rest by construction — fresh full-size nonces from the
+    CSPRNG, multi-byte chunks and validated points (<a href="compare.html">the table on the Compare page</a>).
+    Nonce failures are in fact the classic way elliptic-curve keys have been lost, mostly in ECDSA signatures
+    rather than encryption, with the Sony PS3 signing key (2010) and Android Bitcoin wallets (2013) as the usual
+    examples <span class="evidence record">historical record</span> (the details should be checked in primary
+    sources before being cited).</p>
+
+  <!-- 7 -->
+  <h2 id="final">7 · Final considerations</h2>
+  <p>The question in the title has two answers, and the two schemes illustrate one each: insecurity comes from a
+    key space small enough to search, or from a ciphertext that still carries the statistics of its plaintext.
+    Caesar has both problems; the toy ECC only the first, and only because it was built that way.</p>
+  <p>A deployable public-key encryption scheme needs more than a large key
+    <span class="evidence opinion">opinion</span>:</p>
+  <ul>
+    <li>the full key space: <span class="eq">d</span> uniform in <span class="eq">[1, n − 1]</span>;</li>
+    <li>a fresh, uniform nonce for every encryption, from a cryptographically secure generator;</li>
+    <li>the hybrid form — ECDH, a key-derivation function and an authenticated cipher (ECIES, HPKE [4]) —
+      which also removes malleability and the need to encode messages as points;</li>
+    <li>validation of every point received;</li>
+    <li>constant-time arithmetic, so that the running time says nothing about the key;</li>
+    <li>and, looking ahead, a post-quantum or hybrid key exchange, since Shor’s algorithm would undo the
+      √n wall that this homework measured.</li>
+  </ul>
+  <p>The comparison also has a statistical lesson. The Caesar attack is an estimation problem — a
+    maximum-likelihood estimate of the key whose error rate depends on the sample size, which is why it was tested
+    with confidence intervals over text length. The ECC attack is not statistical at all; its cost is a
+    deterministic function of the key space, and its only randomness is in which key one happens to face. That is
+    exactly what modern cryptography aims for: nothing left to estimate, and too much to search.</p>
+
+  <h2 id="refs">References</h2>
+  <ol class="refs small">
+    <li>Suetonius, <em>The Lives of the Caesars</em>, Julius Caesar, §56.</li>
+    <li>T. ElGamal, A public key cryptosystem and a signature scheme based on discrete logarithms, IEEE Transactions on Information Theory 31(4), 1985.</li>
+    <li>V. Miller, Use of elliptic curves in cryptography, CRYPTO ’85; N. Koblitz, Elliptic curve cryptosystems, Mathematics of Computation 48, 1987.</li>
+    <li>R. Barnes et al., RFC 9180: Hybrid Public Key Encryption (HPKE), 2022; SEC 1 v2.0 (ECIES).</li>
+    <li>Certicom Research, SEC 2: Recommended Elliptic Curve Domain Parameters, v2.0, 2010 (secp256k1).</li>
+    <li>N. Koblitz, Elliptic curve cryptosystems (as [3]), on encoding messages as points.</li>
+    <li>Project Gutenberg eBooks #1342 (Pride and Prejudice), #2701 (Moby-Dick), #98 (A Tale of Two Cities), #1661 (The Adventures of Sherlock Holmes), #84 (Frankenstein), #345 (Dracula), <a href="https://www.gutenberg.org">gutenberg.org</a>.</li>
+    <li>J. Katz, Y. Lindell, <em>Introduction to Modern Cryptography</em>, chapters on public-key encryption (ElGamal, IND-CPA under DDH).</li>
+    <li>C. E. Shannon, Communication theory of secrecy systems, Bell System Technical Journal 28, 1949; Prediction and entropy of printed English, BSTJ 30, 1951.</li>
+    <li>D. Shanks, Class number, a theory of factorization, and genera, Proc. Symp. Pure Math. 20, 1971 (baby-step giant-step).</li>
+    <li>J. M. Pollard, Monte Carlo methods for index computation (mod p), Mathematics of Computation 32, 1978.</li>
+    <li>P. C. van Oorschot, M. J. Wiener, Parallel collision search with cryptanalytic applications, Journal of Cryptology 12, 1999.</li>
+    <li>V. Shoup, Lower bounds for discrete logarithms and related problems, EUROCRYPT 1997.</li>
+    <li>P. Shor, Polynomial-time algorithms for prime factorization and discrete logarithms on a quantum computer, SIAM Journal on Computing 26, 1997.</li>
+    <li>NIST FIPS 203, Module-Lattice-Based Key-Encapsulation Mechanism Standard (ML-KEM), 2024.</li>
+  </ol>
+
+</article>
+</main>
+<script type="module">
+  import { mountShell } from '../assets/js/ui/dom.js';
+  import { hw03Shell } from './js/pages/shell.js';
+  mountShell(hw03Shell('essay.html'));
+</script>
+</body>
+</html>

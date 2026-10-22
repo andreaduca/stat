@@ -59,8 +59,8 @@ const liveBusy = () => [...jobs].some(([k, j]) => k.startsWith('live') && j.stat
 
 /** A progress line that follows a running job without redrawing the page. */
 function progressView(job, text) {
-  const bar = el('progress', { max: 1, value: job.progress?.fraction ?? 0 });
-  const label = el('span', { class: 'small muted', text: text(job.progress) });
+  const label = el('span', { class: 'small muted', role: 'status', text: text(job.progress) });
+  const bar = el('progress', { max: 1, value: job.progress?.fraction ?? 0, 'aria-label': 'progress' });
   job.nodes.add((p) => { bar.value = p.fraction ?? 0; label.textContent = text(p); });
   return el('div', { class: 'running' }, [label, bar, el('button', { type: 'button', text: 'Cancel', onclick: () => job.cancel() })]);
 }

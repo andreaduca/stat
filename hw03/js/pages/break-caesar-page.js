@@ -77,8 +77,9 @@ function keysPanel(s, L, view, redraw) {
     const isBest = res.ties.includes(k), isTrue = k === s.truek;
     return el('tr', {
       class: [isBest ? 'best' : '', k === view.pick ? 'picked' : ''].join(' ').trim() || null,
-      tabindex: 0, title: 'show how this score is made',
-      onclick: () => { view.pick = k; redraw(); }, onkeydown: (e) => { if (e.key === 'Enter') { view.pick = k; redraw(); } },
+      tabindex: 0, title: 'show how this score is made', 'data-k': k,
+      onclick: () => { view.pick = k; redraw(); },
+      onkeydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); view.pick = k; view.refocus = k; redraw(); } },
     }, [
       el('td', { text: String(k) }),
       el('td', { class: 'left cand', text: oneLine(decrypt(s.raw, k), 44) }),
@@ -275,7 +276,7 @@ function experimentPanel(state, update, L, view, redraw) {
   ];
 
   if (!done || done.error) {
-    const bar = el('progress', { max: 1, value: 0 });
+    const bar = el('progress', { max: 1, value: 0, 'aria-label': 'experiment progress' });
     if (job) job.node = bar;
     return el('div', { class: 'card lab' }, [...head, done?.error
       ? el('p', { class: 'err', text: done.error })
@@ -392,7 +393,7 @@ function failPanel(L, update) {
 
 let language = null;
 // what the reader is looking at; method and order also live in the URL
-const view = { method: 'quadgram', sort: 'key', pick: null, hidden: new Set(), patch: () => {} };
+const view = { method: 'quadgram', sort: 'key', pick: null, refocus: null, hidden: new Set(), patch: () => {} };
 
 startPage({
   shell: hw03Shell('break-caesar.html'),
@@ -418,6 +419,8 @@ startPage({
       const s = { raw, c: toLetters(normalise(raw)), truek, msg };
       const redraw = () => drawLive(n);
       live.replaceChildren(keysPanel(s, L, view, redraw), breakdownPanel(s, L, view), verdictPanel(s, L));
+      // a keyboard choice redraws the table: give the focus back to the row that was chosen
+      if (view.refocus !== null) { live.querySelector(`table.keys tr[data-k="${view.refocus}"]`)?.focus(); view.refocus = null; }
     };
     const drawExp = () => exp.replaceChildren(experimentPanel(state, update, L, view, drawExp));
     drawLive(n0);

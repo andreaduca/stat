@@ -12,6 +12,7 @@ assets/           the shared shell and maths, reused by every homework
   js/core/
     field.js        the prime field F_p (BigInt, no DOM)
     curve.js        elliptic-curve points, group law, scalar multiplication
+    secp256k1.js    secp256k1 at full size, Jacobian coordinates (hw02 keys, hw03 ElGamal and searches)
     stats.js        χ² with exact p-values, z-tests, Bonferroni, Wilson, reference laws, entropy
     rng.js          seeded xoshiro128** for reproducible simulations (never for keys)
   js/ui/
@@ -38,11 +39,21 @@ hw02/             homework 2 — from wallet seed to Ethereum address
   data/             the official BIP-39 English wordlist (SHA-256 checked at load), timeline.json,
                     incidents.json
   js/core/          the maths, documented for study: bytes, sha256 (sync, with length extension),
-                    hash (Web Crypto), keccak, secp256k1, entropy, bip39, bip32, address, pipeline, data,
+                    hash (Web Crypto), keccak, entropy, bip39, bip32, address, pipeline, data,
                     yasmarang (the Coldcard generator model), toycurves, ecdsa, lamport,
                     lab/ (one module per experiment, S2–S11)
   js/workers/lab.js the Web Worker that runs the statistics-lab experiments
   js/pages/         shell.js, wallet-input.js (shared input card), widgets.js, one *-page.js per page
+hw03/             homework 3 — Caesar vs toy EC-ElGamal on secp256k1
+  index.html ecc.html caesar.html break-caesar.html break-ecc.html compare.html essay.html
+  css/hw03.css      public/secret tags, alphabet strips, n-gram tiles, diagrams, essay
+  data/             model.json (letter, bigram and entropy statistics of four Gutenberg books),
+                    quadgrams.bin (26⁴ quadgram counts), test.txt (two test books, letters only)
+  js/core/          the maths, documented for study: elgamal (textbook EC-ElGamal, Koblitz encoding),
+                    caesar (cipher and letter statistics), attack (Caesar recognisers, experiment),
+                    ecdlp (brute force, baby-step giant-step, Pollard kangaroo, experiment), data
+  js/workers/       experiment.js (Caesar experiment), ecdlp.js (the key searches and their experiment)
+  js/pages/         shell.js, toykey.js (the shared toy key), widgets.js, one *-page.js per page
 tools/            development aids; not part of the published site
 docs/             the specification and the conventions (not committed)
 ```
@@ -79,6 +90,7 @@ node tools/check.mjs hw01 '?curve=C2&k=7' # ...with those parameters
 tools/shot.sh hw01/curve.html out.png     # screenshot a page (starts a server if needed)
 node tools/new-homework.mjs hw 02 "Title" "subtitle"   # scaffold the next homework
 node tools/new-homework.mjs page 02 entropy "Entropy"  # add a page to it
+node tools/build-corpus.mjs <dir>                     # rebuild hw03/data from Gutenberg books (see its header)
 ```
 
 `check.mjs` renders the pages under a minimal DOM in Node. It verifies that they build
