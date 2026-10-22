@@ -7,7 +7,7 @@
 
 import { bytesToHex, hexToBytes, utf8 } from './bytes.js';
 import { keccak256 } from './keccak.js';
-import { publicKey, ethereumHex } from './secp256k1.js';
+import { publicKey, ethereumHex } from '../../../assets/js/core/secp256k1.js';
 
 /** Address of a public key: the last 20 bytes (bytes 12…31) of
  *  Keccak-256(x‖y). The hash compresses 64 bytes to 20 and destroys the

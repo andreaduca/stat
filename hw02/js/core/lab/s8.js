@@ -8,7 +8,7 @@
 import { SeededRng } from '../../../../assets/js/core/rng.js';
 import { bytesToBigInt, bigIntToBytes } from '../bytes.js';
 import { keccak256 } from '../keccak.js';
-import { N, mulG, add } from '../secp256k1.js';
+import { N, mulG, add } from '../../../../assets/js/core/secp256k1.js';
 import { TOY_CURVES } from '../toycurves.js';
 import { simulationKey } from './common.js';
 

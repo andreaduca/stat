@@ -1,0 +1,76 @@
+/* hw03.css — styles used only by this homework: public/secret tags, the
+   three-step progression, the numbered encryption steps, hex values.
+   Shared components live in assets/css/base.css; colours only via its tokens. */
+
+.card { overflow-wrap: break-word; }
+.eq, .card p, .facts .v { overflow-wrap: anywhere; }
+.facts .k { flex: 0 1 auto; }
+.mono { font-family: var(--mono); }
+
+/* ---------- public / secret: a word and a colour, never colour alone ---------- */
+
+.tag {
+  display: inline-block; padding: 0 7px; border-radius: 999px;
+  font: 600 .7rem var(--sans); letter-spacing: .04em; text-transform: uppercase;
+  border: 1px solid var(--c); color: var(--c);
+  background: color-mix(in srgb, var(--c) 10%, var(--panel));
+}
+.tag.public { --c: var(--c-result); }
+.tag.secret { --c: var(--c-third); }
+
+/* ---------- labelled values ---------- */
+
+.val { margin: 4px 0 8px; }
+.val-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; font-size: .85rem; margin-bottom: 3px; }
+.val-head .eq { font-size: .85rem; color: var(--muted); }
+.hex {
+  font: .84rem/1.5 var(--mono); word-break: break-all; white-space: pre-wrap;
+  padding: 5px 9px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel-alt);
+}
+.val.secret .hex { border-left: 3px solid var(--c-third); }
+.val.public .hex { border-left: 3px solid var(--c-result); }
+
+.formula {
+  font-family: var(--mono); background: var(--panel-alt); border-radius: 7px;
+  padding: 7px 10px; margin: 0 0 12px; overflow-wrap: anywhere; font-size: .9rem;
+}
+.step-no {
+  display: inline-grid; place-items: center; flex: none;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--accent); color: var(--accent-ink); font: 600 .85rem var(--sans);
+}
+
+/* ---------- the progression ---------- */
+
+.prog { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); align-items: start; }
+.prog > * { min-width: 0; }
+.prog-step { border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; background: var(--panel); }
+.prog-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.prog-head h3 { margin: 0; color: var(--ink); font-size: 1rem; }
+.prog-step .formula { font-size: .85rem; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+.chip { font-size: .75rem; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line); }
+.chip.ok  { color: var(--c-result); border-color: currentColor; }
+.chip.bad { color: var(--c-third);  border-color: currentColor; }
+.chip.ok::before  { content: "✔ "; }
+.chip.bad::before { content: "✘ "; }
+.attacker { font-size: .85rem; border-radius: 8px; padding: 8px 10px; margin: 8px 0; }
+.attacker.warn   { background: var(--warn-bg); border: 1px solid var(--warn-line); color: var(--warn-ink); }
+.attacker.ok-box { background: var(--panel-alt); border: 1px solid var(--line); }
+.fixes { font-size: .82rem; color: var(--muted); margin: 8px 0 0; }
+
+/* ---------- numbered steps of Enc / Dec ---------- */
+
+ol.steps { margin: 0 0 12px; padding-left: 1.4em; }
+ol.steps > li { margin: 0 0 10px; }
+ol.steps > li::marker { color: var(--muted); font-weight: 600; }
+ol.steps .what { display: block; font-size: .88rem; margin-bottom: 3px; }
+ol.steps p.ok, ol.steps p.err { margin: 2px 0 0; }
+.chunk h3 { margin-top: .6em; }
+
+table.data.prose td, table.data.prose th { font-family: var(--sans); }
+table.data.roles td { vertical-align: top; }
+table.data.roles td.mono { font-family: var(--mono); font-size: .8rem; }
+
+ul.pagelist { margin: 0; padding-left: 1.1em; }
+ul.pagelist li { margin: 0 0 .5em; }

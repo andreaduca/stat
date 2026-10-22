@@ -16,7 +16,7 @@
 
 import { bytesToHex, bytesToBigInt, bigIntToBytes, concat, hexToBytes, ser32, utf8 } from './bytes.js';
 import { hmacSha512 } from './hash.js';
-import { N, publicKey, mulG, add, compressedHex } from './secp256k1.js';
+import { N, publicKey, mulG, add, compressedHex } from '../../../assets/js/core/secp256k1.js';
 
 export const HARDENED = 0x80000000;   // 2³¹: indices from here on are hardened
 

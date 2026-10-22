@@ -7,7 +7,7 @@ import { el, field } from '../../../assets/js/ui/dom.js';
 import { startPage } from '../../../assets/js/ui/page.js';
 import { eip55, checkAddress, EthAccount } from '../core/address.js';
 import { fillPath } from '../core/bip32.js';
-import { compressedHex, ethereumHex } from '../core/secp256k1.js';
+import { compressedHex, ethereumHex } from '../../../assets/js/core/secp256k1.js';
 import { loadWallet, walletInput, WALLET_KEYS, WALLET_MEMORY } from './wallet-input.js';
 import { stepCard, facts } from './widgets.js';
 import { spongePanel } from './hash-demo.js';

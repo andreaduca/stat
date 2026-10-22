@@ -11,7 +11,7 @@ import { SeededRng } from '../../../../assets/js/core/rng.js';
 import { chiSquare, monobit } from '../../../../assets/js/core/stats.js';
 import { loadWordlist, Mnemonic } from '../bip39.js';
 import { HDNode } from '../bip32.js';
-import { compressedHex } from '../secp256k1.js';
+import { compressedHex } from '../../../../assets/js/core/secp256k1.js';
 import { coldcardEntropy } from '../yasmarang.js';
 
 const PATH = "m/84'/0'/0'/0/0";

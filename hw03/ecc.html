@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Toy EC-ElGamal · HW03</title>
+<link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="css/hw03.css">
+</head>
+<body>
+<main class="wrap">
+  <h1>Toy EC-ElGamal on secp256k1</h1>
+  <p class="lead">Part 1 defined key generation — a private key <span class="eq">d</span> and a public
+    key <span class="eq">Q = dG</span> — but an elliptic curve alone does not encrypt anything. To
+    encrypt a message we complete the scheme with <strong>EC-ElGamal</strong>, the standard public-key
+    encryption on the same group: <span class="eq">Q</span> encrypts, <span class="eq">d</span> decrypts,
+    and a fresh nonce <span class="eq">k</span> randomises each message. We keep the textbook form,
+    not the hybrid one real systems use, because it makes the comparison with Caesar exact: both add a
+    mask in a group. The curve is the real secp256k1; only the range of <span class="eq">d</span> is toy.</p>
+  <div id="app"></div>
+</main>
+<script type="module" src="js/pages/ecc-page.js"></script>
+</body>
+</html>

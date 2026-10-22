@@ -7,7 +7,7 @@ import { el, field } from '../../../assets/js/ui/dom.js';
 import { startPage } from '../../../assets/js/ui/page.js';
 import { bytesToHex } from '../core/bytes.js';
 import { HDNode, HARDENED, PATH_PRESETS, fillPath, parsePath, keyHex, recoverParentKey, BIP44_LEVELS } from '../core/bip32.js';
-import { compressedHex } from '../core/secp256k1.js';
+import { compressedHex } from '../../../assets/js/core/secp256k1.js';
 import { EthAccount } from '../core/address.js';
 import { loadWallet, walletInput, WALLET_KEYS, WALLET_MEMORY } from './wallet-input.js';
 import { stepCard, hexValue, facts } from './widgets.js';

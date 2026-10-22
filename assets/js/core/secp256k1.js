@@ -4,6 +4,7 @@
    multiplication needs one inversion instead of hundreds. Category:
    public-key cryptography. Note 04 §1, HMWK 1 notes 03–05,
    [[Digital signatures and ECDSA]], [[Discrete logarithm problem]].
+   Shared: hw02 uses it for wallet keys, hw03 for toy EC-ElGamal.
 
    The parameters (SEC 2, §2.4.1):
      p = 2²⁵⁶ − 2³² − 977         the field: arithmetic mod a 78-digit prime
@@ -24,8 +25,8 @@
    k, so its timing depends on the key — a side channel. Real wallets use
    libsecp256k1, which avoids every secret-dependent branch and memory access. */
 
-import { PrimeField } from '../../../assets/js/core/field.js';
-import { Point, INFINITY } from '../../../assets/js/core/curve.js';
+import { PrimeField } from './field.js';
+import { Point, INFINITY } from './curve.js';
 
 export const P = 2n ** 256n - 2n ** 32n - 977n;
 export const N = 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141n;   // order of G, prime

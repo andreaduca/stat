@@ -4,7 +4,7 @@
 
 import { chiSquare, monobit, zPValue, bonferroni } from '../../../../assets/js/core/stats.js';
 import { bytesToBigInt, bytesToHex } from '../bytes.js';
-import { N } from '../secp256k1.js';
+import { N } from '../../../../assets/js/core/secp256k1.js';
 import { eip55 } from '../address.js';
 
 /** A simulation key: 32 PRNG bytes reduced to [1, n − 1]. Reproducible from

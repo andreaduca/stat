@@ -9,7 +9,7 @@ import { bytesToHex, bytesToBits } from '../core/bytes.js';
 import { sha256 } from '../core/sha256.js';
 import { PBKDF2_ITERATIONS } from '../core/bip39.js';
 import { BIP44_LEVELS, INVALID_CHILD_PROBABILITY, keyHex } from '../core/bip32.js';
-import { compressedHex, uncompressedHex, ethereumHex } from '../core/secp256k1.js';
+import { compressedHex, uncompressedHex, ethereumHex } from '../../../assets/js/core/secp256k1.js';
 import { loadWallet, walletInput, useHexEntropy, WALLET_KEYS, WALLET_MEMORY } from './wallet-input.js';
 import { hexValue, stepCard, facts } from './widgets.js';
 import { hw02Shell } from './shell.js';

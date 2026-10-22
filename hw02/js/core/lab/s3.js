@@ -5,7 +5,7 @@
 
 import { SeededRng } from '../../../../assets/js/core/rng.js';
 import { bytesToHex, hexToBytes } from '../bytes.js';
-import { mulG, ethereumHex } from '../secp256k1.js';
+import { mulG, ethereumHex } from '../../../../assets/js/core/secp256k1.js';
 import { keccak256 } from '../keccak.js';
 import { simulationKey, addressTests } from './common.js';
 

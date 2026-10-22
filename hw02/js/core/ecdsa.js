@@ -9,7 +9,7 @@
 import { PrimeField } from '../../../assets/js/core/field.js';
 import { bytesToBigInt, utf8 } from './bytes.js';
 import { keccak256 } from './keccak.js';
-import { N, mulG, mul, add } from './secp256k1.js';
+import { N, mulG, mul, add } from '../../../assets/js/core/secp256k1.js';
 
 const Fn = new PrimeField(N);          // arithmetic mod the group order n (a prime)
 

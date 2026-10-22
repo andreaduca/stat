@@ -10,7 +10,7 @@ import { startPage } from '../../../assets/js/ui/page.js';
 import { heatmap } from '../../../assets/js/ui/heatmap.js';
 import { wilson, dickmanRho, ruleOfThree } from '../../../assets/js/core/stats.js';
 import { bytesToHex, bigIntToBytes } from '../core/bytes.js';
-import { N, publicKey, compressedHex } from '../core/secp256k1.js';
+import { N, publicKey, compressedHex } from '../../../assets/js/core/secp256k1.js';
 import { messageHash, sign, verify, recoverFromReusedNonce, recoverFromRelatedNonces } from '../core/ecdsa.js';
 import { TOY_CURVES, ANOMALOUS } from '../core/toycurves.js';
 import { levelSet, spectrum, peaks } from '../core/lab/s7.js';
