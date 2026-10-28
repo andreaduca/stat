@@ -37,7 +37,7 @@ for (const file of pages) {
     error = e;
   }
 
-  const cards = app.all((n) => n.className === 'card').length;
+  const cards = app.all((n) => n.className.split(' ').includes('card')).length;   // 'card lab', 'card run-dock' count too
   const headings = app.all((n) => n.tag === 'h2').map((n) => n.text.trim());
   const errors = app.all((n) => n.className === 'err').map((n) => n.text.trim());
   const pageError = app.find((n) => n.className.includes('page-error'));

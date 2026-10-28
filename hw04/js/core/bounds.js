@@ -61,8 +61,13 @@ export const cltApprox = (model, n, eps) => erfc((eps * Math.sqrt(n)) / (model.s
  *    CLT        n ≈ (σ·Φ⁻¹(1 − δ/2)/ε)²   — an estimate, not a guarantee
  *    exact      the true answer, by scanning n with the exact tail.
  *  Because the lattice makes qₙ wobble, the exact search reports two numbers:
- *  the first n with qₙ ≤ δ, and the n from which it never rises above δ again
- *  (searched up to the Hoeffding n, beyond which Hoeffding guarantees it).
+ *  the first n with qₙ ≤ δ, and the n from which it does not rise above δ again.
+ *  The scan covers [0.8·n_CLT, 1.25·n_CLT] around the CLT estimate, after checking
+ *  that the tail is above δ at the start (else the scan starts at n = 1) and below
+ *  δ at the end (else it is widened up to the Hoeffding n). Beyond n_CLT = 50 000
+ *  the exact scan is skipped (exactFirst = null): it would take seconds, and there
+ *  the CLT estimate is within about 1 % of the exact answer. This keeps the
+ *  calculator interactive.
  *  Reference (§8.1): Hoeffding, ε = δ = 0.01, steps in [0, 1] → 26 492. Note 04 §4. */
 export function sampleSizes(model, eps, delta) {
   const hoeff = Math.ceil((model.range ** 2 * Math.log(2 / delta)) / (2 * eps * eps));
@@ -72,17 +77,17 @@ export function sampleSizes(model, eps, delta) {
     const mid = (lo + hi) >> 1;
     if (klChernoff(model, mid, eps).bound <= delta) hi = mid; else lo = mid + 1;
   }
-  let first = null, lastAbove = 0;
-  for (let n = 1; n <= hoeff; n++) {
+  const clt = Math.ceil(((model.sd * normInv(1 - delta / 2)) / eps) ** 2);
+  const sizes = { chebyshev: Math.ceil(model.variance / (delta * eps * eps)), hoeffding: hoeff, kl: lo, clt };
+  if (clt > 50000) return { ...sizes, exactFirst: null, exactFrom: null, scanned: null };
+  let from = Math.max(1, Math.floor(0.8 * clt));
+  if (llnTail(model, from, eps).q <= delta) from = 1;
+  let to = Math.min(hoeff, Math.max(Math.ceil(1.25 * clt), from + 10));
+  if (llnTail(model, to, eps).q > delta) to = hoeff;
+  let first = null, lastAbove = from - 1;
+  for (let n = from; n <= to; n++) {
     if (llnTail(model, n, eps).q <= delta) { if (first === null) first = n; }
     else lastAbove = n;
   }
-  return {
-    chebyshev: Math.ceil(model.variance / (delta * eps * eps)),
-    hoeffding: hoeff,
-    kl: lo,
-    clt: Math.ceil(((model.sd * normInv(1 - delta / 2)) / eps) ** 2),
-    exactFirst: first,
-    exactFrom: lastAbove + 1,
-  };
+  return { ...sizes, exactFirst: first, exactFrom: lastAbove + 1, scanned: [from, to] };
 }

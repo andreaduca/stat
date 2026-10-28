@@ -81,7 +81,7 @@ function overview(run) {
   ]);
   return el('div', { class: 'card' }, [
     el('h2', { text: 'The whole homework in one picture' }),
-    el('p', { html: `The same ${PATHS} Rademacher attackers (seed ${run.seed}), probing up to ${N_MAX.toLocaleString('en-US').replace(/,/g, ' ')} systems each, drawn three ways. Only the scale changes from one panel to the next. Hover to follow one attacker across the three panels.` }),
+    el('p', { html: `The same ${PATHS} Rademacher attackers (seed ${run.seed}), probing up to ${N_MAX.toLocaleString('en-US').replace(/,/g, '\u202f')} systems each, drawn three ways. Only the scale changes from one panel to the next. Hover to follow one attacker across the three panels.` }),
     el('div', { class: 'cols three' }, [
       panel('Sₖ', 'model.html', 'Model & paths', (s) => s, { min: -maxAbs, max: maxAbs, title: 'Sₖ' }, (k) => Math.sqrt(k),
         '<strong>Fans out.</strong> The total wanders further and further from 0, like ±√k: more systems, larger swings both ways.'),
@@ -141,6 +141,7 @@ startPage({
   shell: hw04Shell('index.html'),
   sticky: STICKY,
   memory: MEMORY,
+  preserve: true,
   render: ({ state }) => {
     const run = readRun(state);
     return [exercise(), decisions(), overview(run), quantities(), layers(), pageList()];

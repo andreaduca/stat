@@ -349,3 +349,4 @@ details.explain p.practice {
 .chart .p-ref.dash { stroke-dasharray: 5 4; }
 .chart .p-path  { fill: none; stroke: var(--c); stroke-width: 1; opacity: .4; stroke-linejoin: round; }
 .chart .p-path.lit { stroke-width: 2.5; opacity: 1; }
+.chart text.p-endlbl { font: 11px var(--sans); fill: var(--ink); }   /* text in ink; the line key beside it carries the colour */

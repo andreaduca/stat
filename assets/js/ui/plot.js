@@ -39,8 +39,9 @@ const niceStep = (span, target) => {
 function autoTicks(lo, hi, log, target) {
   if (log) {
     const a = Math.floor(Math.log10(lo)), b = Math.ceil(Math.log10(hi)), out = [];
-    const every = Math.max(1, Math.ceil((b - a) / target));
-    for (let e = a; e <= b; e += every) {
+    // a round number of decades between ticks: 10⁰, 10⁻⁵, 10⁻¹⁰… rather than 10⁰, 10⁻⁷, 10⁻¹⁴
+    const every = [1, 2, 3, 5, 10, 20, 50, 100].find((e) => e >= (b - a) / target) ?? 100;
+    for (let e = Math.floor(a / every) * every; e <= b; e += every) {
       out.push(10 ** e);
       if (b - a <= 2) out.push(2 * 10 ** e, 5 * 10 ** e);
     }
@@ -58,19 +59,20 @@ let clipId = 0;
  * @param {{min?, max?, log?, ticks?, format?, title?}} [o.x]  axis options; min/max default to the data
  * @param {{min?, max?, log?, ticks?, format?, title?}} [o.y]
  * @param {object[]} o.layers  each {type, label?, color?, ...}:
- *    line   {points: [x, y][], dash?, width?, hover = true}
+ *    line   {points: [x, y][], dash?, thin?, hover = true, end?}  dash: true or an SVG dasharray ('2 3');
+ *           `end` writes a direct label at the line's last visible point
  *    step   {points: [x, y][]}               a right-continuous staircase (an ECDF)
  *    points {points: [x, y][], err?: [x, lo, hi][], r?, hollow?}
  *    bars   {bars: [x0, x1, height][]}       histogram bars on the real x axis
  *    band   {band: [x, lo, hi][]}            a translucent ribbon
- *    hline / vline {at, dash?, text?}       reference lines with an optional label
+ *    hline / vline {at, dash?, text?, anchor?} reference lines with an optional label ('start': at the left)
  *    arrows {points: [x, y][]}              downward arrows: "the value is at most y"
  *    paths  {paths: [x, y][][], highlight?} many thin paths; the nearest lights up on hover
  *    shade  {x0, x1} or {y0, y1}            a light region (a band μ ± ε)
  * @param {(x: number, rows: string[]) => string} [o.tip]  custom tooltip text
  */
 export function plot({ x: xo = {}, y: yo = {}, layers, width = 560, height = 240, tip = null, label = '' }) {
-  const pad = { l: 56, r: 14, t: 16, b: xo.title ? 40 : 28 };
+  const pad = { l: 56, r: layers.some((L) => L.end) ? 92 : 14, t: 16, b: xo.title ? 40 : 28 };
   const plotW = width - pad.l - pad.r, plotH = height - pad.t - pad.b;
 
   // data extents (non-finite and, on a log axis, non-positive values ignored)
@@ -131,6 +133,7 @@ export function plot({ x: xo = {}, y: yo = {}, layers, width = 560, height = 240
   };
   const style = (c, extra = '') => `${c ? `--c:${c};` : ''}${extra}`;
   const hoverable = [];
+  const ends = [];      // direct labels, placed after all layers so they can be spread apart
   let pathLayer = null;
 
   for (const L of layers) {
@@ -169,10 +172,16 @@ export function plot({ x: xo = {}, y: yo = {}, layers, width = 560, height = 240
         }
         break;
       }
-      case 'line':
-        g.append(node('path', { class: `p-line${L.dash ? ' dash' : ''}${L.thin ? ' thin' : ''}`, d: d(L.points), style: style(c) }));
+      case 'line': {
+        const pattern = typeof L.dash === 'string' ? `stroke-dasharray:${L.dash};` : '';
+        g.append(node('path', { class: `p-line${L.dash === true ? ' dash' : ''}${L.thin ? ' thin' : ''}`, d: d(L.points), style: style(c, pattern) }));
+        if (L.end) {
+          const last = [...L.points].reverse().find(([px, py]) => okX(px) && okY(py) && px <= x1 && px >= x0 && py >= y0 && py <= y1);
+          if (last) ends.push({ x: X(last[0]), y: Yc(last[1]), text: L.end, c, pattern });
+        }
         if (L.hover !== false) hoverable.push({ L, pts: L.points });
         break;
+      }
       case 'step': {
         const pts = [];
         L.points.forEach(([px, py], i) => { if (i) pts.push([px, L.points[i - 1][1]]); pts.push([px, py]); });
@@ -203,12 +212,26 @@ export function plot({ x: xo = {}, y: yo = {}, layers, width = 560, height = 240
         if (h ? !okY(L.at) : !okX(L.at)) break;
         const at = h ? Y(L.at) : X(L.at);
         g.append(node('line', { class: `p-ref${L.dash === false ? '' : ' dash'}`, ...(h ? { x1: pad.l, x2: pad.l + plotW, y1: at, y2: at } : { y1: pad.t, y2: pad.t + plotH, x1: at, x2: at }), style: style(c) }));
-        if (L.text) svg.append(node('text', { class: 'tick', x: h ? pad.l + plotW - 4 : at + 4, y: h ? at - 4 : pad.t + 10, 'text-anchor': h ? 'end' : 'start' }, L.text));
+        // the label sits at the right end of a horizontal line, or at its left end with anchor: 'start'
+        const left = h && L.anchor === 'start';
+        if (L.text) svg.append(node('text', { class: 'tick', x: h ? (left ? pad.l + 4 : pad.l + plotW - 4) : at + 4, y: h ? at - 4 : pad.t + 10, 'text-anchor': h && !left ? 'end' : 'start' }, L.text));
         break;
       }
       default:
         throw new Error(`plot: unknown layer type ${L.type}`);
     }
+  }
+
+  /* direct labels: sorted by height and pushed apart to at least 12 px, each
+     with a short key in its line's colour and dash, joined to its line end */
+  ends.sort((a, b) => a.y - b.y);
+  for (let i = 1; i < ends.length; i++) ends[i].ly = Math.max(ends[i].y, (ends[i - 1].ly ?? ends[i - 1].y) + 12);
+  if (ends.length) ends[0].ly = ends[0].y;
+  const overflow = Math.max(0, (ends.at(-1)?.ly ?? 0) - (pad.t + plotH - 4));
+  for (const e of ends) {
+    const ly = e.ly - overflow;
+    svg.append(node('path', { class: 'p-line thin', d: `M${e.x + 2} ${e.y}L${e.x + 6} ${ly}L${e.x + 16} ${ly}`, style: style(e.c, e.pattern) }));
+    svg.append(node('text', { class: 'p-endlbl', x: e.x + 19, y: ly + 4 }, e.text));
   }
 
   const guide = node('line', { class: 'guide', y1: pad.t, y2: pad.t + plotH });

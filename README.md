@@ -18,7 +18,7 @@ assets/           the shared shell and maths, reused by every homework
   js/ui/
     site.js         author, course, repository link — edit here
     dom.js          el(), the page shell, the "What am I looking at?" box
-    page.js         startPage(): state in the URL, remembered between pages
+    page.js         startPage(): state in the URL, remembered between pages; optional in-place redraws
     grid.js         SVG scatter on an integer lattice
     linechart.js    small multi-series line chart
     plot.js         continuous axes (linear/log): lines, steps, error bars, histograms on a real axis, paths
@@ -56,15 +56,16 @@ hw03/             homework 3 — Caesar vs toy EC-ElGamal on secp256k1
   js/workers/       experiment.js (Caesar experiment), ecdlp.js (the key searches and their experiment)
   js/pages/         shell.js, toykey.js (the shared toy key), widgets.js, one *-page.js per page
 hw04/             homework 4 — penetration as a random walk: LLN, variance scaling, CLT
-  index.html (more pages phase by phase)
+  index.html model.html distributions.html variance.html lln.html clt.html thresholds.html (more pages phase by phase)
   css/hw04.css      layer legends, evidence labels, word tables
   js/core/          the maths, documented for study: numeric (erfc, Φ, Φ⁻¹, log-sum-exp, line fit),
                     models (Bernoulli, Rademacher, Beta attackers), exact (binomial laws and tails, LLN tail,
                     exact KS, reflection, hitting times, gambler's ruin), bounds (Chebyshev, Hoeffding,
                     KL–Chernoff, CLT, sample sizes), estimate (moments, ECDF, KS, Q-Q, χ²), sampling,
-                    simulate (the Monte Carlo engine)
+                    simulate (the Monte Carlo engine, and the attacker–defender races)
   js/workers/sim.js the Web Worker that runs a simulation
-  js/pages/         shell.js, run-input.js (shared input card), run.js (worker + cache), widgets.js, one *-page.js per page
+  js/pages/         shell.js, run-input.js (the input dock at the bottom of the window), run.js (worker + cache), lab-panel.js (experiment frame),
+                    widgets.js, one *-page.js per page
 tools/            development aids; not part of the published site
 docs/             the specification and the conventions (not committed)
 ```

@@ -21,8 +21,11 @@ import { load, save } from './store.js';
  * @param {(api: {state: object, update: Function, patch: Function}) => Node[]|Promise<Node[]>} o.render
  * @param {string[]} o.sticky  parameters remembered between pages
  * @param {string|null} o.memory  storage key for those parameters
+ * @param {boolean} [o.preserve]  keep the reader's place across redraws: the scroll
+ *        position and which "What am I looking at?" boxes are open (hw04, where
+ *        changing an input redraws the charts under the reader's eyes)
  */
-export function startPage({ shell, render, sticky = [], memory = null }) {
+export function startPage({ shell, render, sticky = [], memory = null, preserve = false }) {
   mountShell(shell);
   const root = document.getElementById('app');
 
@@ -46,7 +49,24 @@ export function startPage({ shell, render, sticky = [], memory = null }) {
     remember();
   };
 
-  const show = (nodes) => root.replaceChildren(...[].concat(nodes).filter(Boolean));
+  const replace = (nodes) => root.replaceChildren(...[].concat(nodes).filter(Boolean));
+  /* boxes are told apart by their summary text and its occurrence on the page */
+  const boxKeys = () => {
+    const seen = new Map();
+    return [...root.querySelectorAll('details')].map((d) => {
+      const t = d.querySelector('summary')?.textContent ?? '';
+      seen.set(t, (seen.get(t) ?? 0) + 1);
+      return [`${t}#${seen.get(t)}`, d];
+    });
+  };
+  const show = (nodes) => {
+    if (!preserve || typeof window === 'undefined' || !root.querySelectorAll) { replace(nodes); return; }
+    const y = window.scrollY;
+    const open = new Set(boxKeys().filter(([, d]) => d.open).map(([k]) => k));
+    replace(nodes);
+    for (const [k, d] of boxKeys()) if (open.has(k)) d.open = true;
+    if (window.scrollY !== y) window.scrollTo(0, y);
+  };
   // an asynchronous render that fails says so on the page (tools/check.mjs looks for .page-error)
   const failed = (e) => show(el('div', { class: 'card' }, [el('p', { class: 'err page-error', text: e.message })]));
   let drawn = 0;

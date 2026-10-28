@@ -251,3 +251,31 @@ export function column(result, c) {
   for (let j = 0; j < result.m; j++) out[j] = result.S[j * G + c];
   return out;
 }
+
+/** The race between attacker and defender (gambler's ruin), simulated.
+ *  Category: simulation. Each race starts at 0; every step is +1 with
+ *  probability r (the attacker gains a round) or −1 (the defender wins it); the
+ *  race ends at +a (breach) or at −b (the attacker is expelled). The first
+ *  `keep` races are recorded step by step for drawing. r generalises the
+ *  Rademacher step (r = ½); it belongs to this experiment only.
+ *  Exact answers to compare with: exact.js race(r, a, b). [[Gambler's ruin]], note 04 §2.
+ *  @returns {{count, breaches, durations: Int32Array, paths: Int32Array[], outcome: Int8Array}} */
+export function simulateRaces({ r, a, b, count, seed, keep = 20 }) {
+  const rng = new SeededRng(seed);
+  const durations = new Int32Array(count), outcome = new Int8Array(count), paths = [];
+  let breaches = 0;
+  for (let i = 0; i < count; i++) {
+    let s = 0, t = 0;
+    const path = i < keep ? [0] : null;
+    while (s < a && s > -b) {
+      s += rng.float() < r ? 1 : -1;
+      t++;
+      if (path) path.push(s);
+    }
+    durations[i] = t;
+    outcome[i] = s >= a ? 1 : -1;
+    if (s >= a) breaches++;
+    if (path) paths.push(Int32Array.from(path));
+  }
+  return { count, breaches, durations, paths, outcome };
+}

@@ -37,6 +37,23 @@ export function moments(values) {
   };
 }
 
+/** Standard error of any statistic by batch means: split the m values into
+ *  `groups` independent groups (the attackers are i.i.d., so consecutive blocks
+ *  will do), compute the statistic on each, and take sd/√groups.
+ *  Category: estimator. Why: the textbook SEs of skewness (√(6/m)) and kurtosis
+ *  (√(24/m)) hold only for normal data. For Bernoulli(0.01) at n = 10 the
+ *  kurtosis is ≈ 10 and its real SE several times √(24/m). Batch means need
+ *  no such assumption. Returns NaN when the groups would be too small (< 20). */
+export function batchSE(values, stat, groups = 20) {
+  const size = Math.floor(values.length / groups);
+  if (size < 20) return NaN;
+  const est = [];
+  for (let g = 0; g < groups; g++) est.push(stat(values.subarray(g * size, (g + 1) * size)));
+  const mean = est.reduce((s, v) => s + v, 0) / groups;
+  const sd = Math.sqrt(est.reduce((s, v) => s + (v - mean) ** 2, 0) / (groups - 1));
+  return sd / Math.sqrt(groups);
+}
+
 /** The moments of Sₙ/c from those of Sₙ: the mean and its SE divide by c, the
  *  variance and its SE by c²; skewness and kurtosis do not change (they are
  *  scale-free). With c = n^α this gives all three quantities from one pass. */
@@ -59,18 +76,61 @@ export function atoms(sample) {
   return { values: Int32Array.from(values), counts: Int32Array.from(counts), m: sample.length };
 }
 
-/** Fixed-width bins on [lo, hi): counts per bin and density (count / (m·width)).
- *  Category: estimator. The "naive bins" of the CLT page — on a lattice, bins
- *  that do not line up with the atoms hold 1 or 2 atoms alternately, and the
- *  histogram shows a comb that is an artefact of the binning, not of the data. */
-export function binned(sample, lo, hi, bins, scale = 1) {
-  const width = (hi - lo) / bins, counts = new Float64Array(bins);
-  for (const raw of sample) {
-    const v = raw / scale;
-    if (v >= lo && v < hi) counts[Math.floor((v - lo) / width)]++;
+/** A lattice-aligned histogram of Sₙ/c next to its exact law, ready to draw.
+ *  Category: estimator + exact distribution, side by side.
+ *  Every bin holds exactly g consecutive atoms of the lattice (spacing d in Sₙ
+ *  units, so d/c in the units of the quantity), with edges halfway between
+ *  atoms: no bin can catch one atom more than its neighbour, so no comb-shaped
+ *  artefact appears. g = 1 (one bar per atom) unless that would exceed
+ *  `maxBins`. Heights are densities, count/(m·width), so the bars sit on the
+ *  same scale as a limit density φ. The exact layer is the pmf summed over the
+ *  same atoms, divided by the same width.
+ *  @param {{values, counts, m}} at  atoms() of the sample
+ *  @param {{s, prob}} law           exact law of Sₙ (exact.js lawOfTotal)
+ *  @param {number} d                lattice spacing of Sₙ (1 or 2)
+ *  @param {number} c                scale: 1, n or √n — or any function s ↦ quantity via `map`
+ *  @returns {{bars: [x0, x1, density][], exact: [x, density][], g: number, width: number}} */
+export function latticeHistogram(at, law, d, { map = (s) => s, scale = 1, maxBins = 60, tail = 1e-6 } = {}) {
+  // the atoms worth drawing: everything observed, plus the exact law down to `tail`
+  let lo = at.values[0], hi = at.values[at.values.length - 1];
+  for (let k = 0; k < law.s.length; k++) if (law.prob[k] > tail) { lo = Math.min(lo, law.s[k]); break; }
+  for (let k = law.s.length - 1; k >= 0; k--) if (law.prob[k] > tail) { hi = Math.max(hi, law.s[k]); break; }
+  const atomsSpan = Math.round((hi - lo) / d) + 1;
+  const g = Math.max(1, Math.ceil(atomsSpan / maxBins));
+  const bins = Math.ceil(atomsSpan / g), step = g * d;
+  const count = new Float64Array(bins), mass = new Float64Array(bins);
+  const bin = (s) => Math.floor((s - lo) / step);
+  for (let i = 0; i < at.values.length; i++) count[bin(at.values[i])] += at.counts[i];
+  for (let k = 0; k < law.s.length; k++) { const b = bin(law.s[k]); if (b >= 0 && b < bins) mass[b] += law.prob[k]; }
+  const width = step / scale;
+  const bars = [], exact = [];
+  for (let b = 0; b < bins; b++) {
+    const s0 = lo + b * step - d / 2, s1 = s0 + step;       // edges halfway between atoms
+    const x0 = map(s0), x1 = map(s1);
+    if (count[b]) bars.push([x0, x1, count[b] / (at.m * width)]);
+    exact.push([(x0 + x1) / 2, mass[b] / width]);
   }
+  return { bars, exact, g, width };
+}
+
+/** Fixed-width bins on [lo, hi) that ignore the lattice: counts per bin, the
+ *  density count/(m·width), and the exact mass per bin from the law.
+ *  Category: estimator (and a warning). The "naive bins" of the CLT page — on a
+ *  lattice, bins that do not line up with the atoms hold 1 or 2 atoms
+ *  alternately, and the histogram shows a comb. The exact layer, binned the
+ *  same way, shows the same comb: it is an artefact of the binning, not noise.
+ *  `map` turns a value of Sₙ into the plotted variable (e.g. s ↦ s/√n). */
+export function binned(sample, lo, hi, bins, map = (v) => v, law = null) {
+  const width = (hi - lo) / bins, counts = new Float64Array(bins), mass = new Float64Array(bins);
+  const idx = (x) => (x >= lo && x < hi ? Math.floor((x - lo) / width) : -1);
+  for (const v of sample) { const b = idx(map(v)); if (b >= 0) counts[b]++; }
+  if (law) for (let k = 0; k < law.s.length; k++) { const b = idx(map(law.s[k])); if (b >= 0) mass[b] += law.prob[k]; }
   const m = sample.length;
-  return { lo, width, counts, density: Array.from(counts, (c) => c / (m * width)) };
+  return {
+    bars: Array.from(counts, (c, b) => [lo + b * width, lo + (b + 1) * width, c / (m * width)]),
+    exact: Array.from(mass, (q, b) => [lo + (b + 0.5) * width, q / width]),
+    width,
+  };
 }
 
 /** KS distance between the empirical CDF of a lattice sample and a continuous CDF G:
