@@ -17,9 +17,9 @@ export const PAGES = [
     blurb: 'Convergence in distribution of Sₙ/√n to N(0, 1): lattice histograms, ECDF, Q-Q plot, and the Kolmogorov–Smirnov distance against n, where the simulation meets its own noise floor.' },
   { href: 'thresholds.html', label: 'Thresholds', built: true,
     blurb: 'How many observations a defender needs, when an attacker first reaches a level (reflection principle), and the race between attacker and defender (gambler’s ruin).' },
-  { href: 'attackers.html', label: 'Systems & attackers', built: false,
+  { href: 'attackers.html', label: 'Systems & attackers', built: true,
     blurb: 'What system size and the number of attackers do to the aggregate score; the luckiest attacker; and what happens when attackers differ or systems are correlated.' },
-  { href: 'essay.html', label: 'Essay', built: false,
+  { href: 'essay.html', label: 'Essay', built: true,
     blurb: 'The argument in prose, with the measured numbers and the evidence behind each claim.' },
 ];
 
@@ -30,8 +30,11 @@ export const hw04Shell = (current) => ({
   links: PAGES.filter((p) => p.built),
   current,
   home: '../index.html',
-  notice: 'An educational model, not attack data: every step is an independent coin by assumption, and the simulations use a seeded, non-cryptographic generator (xoshiro128**) so that any run can be reproduced from its seed. Everything runs in your browser; nothing is sent anywhere.',
+  footer: false,   // no site footer, by the user’s request (28 Oct 2026); the notice is on the home page instead
 });
+
+/** The honesty note, shown once on the home page (hw04 has no footer). */
+export const NOTICE = 'An educational model, not attack data: every step is an independent coin by assumption, and the simulations use a seeded, non-cryptographic generator (xoshiro128**) so that any run can be reproduced from its seed. Everything runs in your browser; nothing is sent anywhere.';
 
 /* What every page shares: the step model and the run (attackers and seed),
    so that each page looks at the same simulation. */

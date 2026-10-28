@@ -341,7 +341,7 @@ startPage({
         why: 'Defence as a race: patches and detections push the attacker back, exploits push it forward. A slight per-round edge decides most races, and with no lower barrier an attacker at a disadvantage still catches up with probability (r/(1 − r))ᵃ.',
         notes: [
           'Gambler\'s ruin by first-step analysis: P(breach from i) = r·P(from i + 1) + (1 − r)·P(from i − 1), with P = 1 at +a and 0 at −b. Fair game: b/(a + b), mean duration ab. Biased, with s = (1 − r)/r: (1 − sᵇ)/(1 − s^(a+b)).',
-          'PRACTICE: Bitcoin double-spending is this race without a lower barrier. An attacker with a share q of the hash power, z blocks behind, ever catches up with probability (q/(1 − q))^z when q < ½: q = 0.1, z = 5 gives 1.7·10⁻⁵; q = 0.3, z = 5 gives 0.014 (Nakamoto 2008, §11; 📌 the paper adds a Poisson term for the attacker\'s progress meanwhile).',
+          'PRACTICE: Bitcoin double-spending is this race without a lower barrier. An attacker with a share q of the hash power, z blocks behind, ever catches up with probability (q/(1 − q))^z when q < ½: q = 0.1, z = 5 gives 1.7·10⁻⁵; q = 0.3, z = 5 gives 0.014. Nakamoto\'s §11 adds that the attacker has also been mining while the merchant waited for z confirmations (a Poisson number of blocks), which raises the q = 0.1, z = 5 figure to 0.0009137 and the q = 0.3 one to 0.177 (Nakamoto 2008, §11; 📌 check the table in the paper).',
         ],
       }),
     ];

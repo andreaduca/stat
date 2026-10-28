@@ -56,7 +56,7 @@ hw03/             homework 3 — Caesar vs toy EC-ElGamal on secp256k1
   js/workers/       experiment.js (Caesar experiment), ecdlp.js (the key searches and their experiment)
   js/pages/         shell.js, toykey.js (the shared toy key), widgets.js, one *-page.js per page
 hw04/             homework 4 — penetration as a random walk: LLN, variance scaling, CLT
-  index.html model.html distributions.html variance.html lln.html clt.html thresholds.html (more pages phase by phase)
+  index.html model.html distributions.html variance.html lln.html clt.html thresholds.html attackers.html essay.html
   css/hw04.css      layer legends, evidence labels, word tables
   js/core/          the maths, documented for study: numeric (erfc, Φ, Φ⁻¹, log-sum-exp, line fit),
                     models (Bernoulli, Rademacher, Beta attackers), exact (binomial laws and tails, LLN tail,

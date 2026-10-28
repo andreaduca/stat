@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Essay · Penetration as a random walk · HW04</title>
+<link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="css/hw04.css">
+</head>
+<body>
+<!-- Written from the author's notes (Obsidian vault, Courses/Statistics/HMWK4 and its Concepts, and
+     HMWK2 note 09 for the Coldcard case) and from the measured results of these pages, at the author's
+     request. Measured numbers are the default run: Rademacher unless stated, m = 10 000 attackers,
+     seed 20261028 (the links reproduce them). Rerun and update them if the simulation code changes. -->
+<main class="wrap">
+<article class="essay">
+
+  <h1>Many small steps: penetration as a random walk</h1>
+  <p class="byline">The law of large numbers, variance scaling and the central limit theorem for n systems and m attackers · Statistics · MSc Cybersecurity, Sapienza · Homework 4 · October 2026</p>
+
+  <p class="lead">An attack on a large estate is rarely one event. It is a long sequence of probes, each of
+    which succeeds or fails, gains ground or loses it. Summed up, those small random steps form a random
+    walk, and three classical theorems say what such a walk does when it is long: its average settles, its
+    fluctuations take a universal shape, and its extremes are reached later than intuition suggests. This
+    essay follows the total score of an attacker through three normalisations, measures each theorem on
+    simulated attackers next to the exact answer, and asks what system size and the number of attackers
+    mean for a defender.</p>
+
+  <p class="evidence-key small">Each claim is labelled with its evidence:
+    <span class="evidence theorem">theorem</span> proved in the notes, or an exact computation ·
+    <span class="evidence measurement">measured</span> on these pages, with a link to the run ·
+    <span class="evidence record">source</span> from the literature or the record, to be checked ·
+    <span class="evidence opinion">opinion</span> the author’s modelling judgement.</p>
+
+  <nav class="toc" aria-label="Contents">
+    <ol>
+      <li><a href="#intro">Introduction</a></li>
+      <li><a href="#model">The model</a></li>
+      <li><a href="#variance">Three normalisations, one variance law</a></li>
+      <li><a href="#lln">The law of large numbers</a></li>
+      <li><a href="#clt">The central limit theorem</a></li>
+      <li><a href="#attackers">Systems and attackers</a></li>
+      <li><a href="#limits">Limits of the model</a></li>
+      <li><a href="#final">Final considerations: three races</a></li>
+      <li><a href="#refs">References</a></li>
+    </ol>
+  </nav>
+
+  <!-- 1 -->
+  <h2 id="intro">1 · Introduction</h2>
+  <p>A defender who watches attacks on many systems faces three different questions. How much damage will
+    there be in total? How good is a given attacker, judged by its success rate? And how much of what was
+    seen is luck? The three questions correspond to three ways of scaling the same sum, Sₙ, Sₙ/n and
+    Sₙ/√n, and each has its own limit theorem.</p>
+  <p>The homework asks to model n systems and m attackers with independent, identically distributed
+    increments, under a Bernoulli model (Xᵢ ∈ {0, 1}) and a symmetric Rademacher model (Xᵢ ∈ {−1, +1});
+    to simulate trajectories for increasing n; to study the three quantities, the convergence in probability
+    of the average, the variance under each normalisation and the convergence in distribution of Sₙ/√n to
+    N(0, 1); and to interpret the result for systems and attackers.</p>
+  <p>One methodological choice runs through every page. All three quantities are transformations of a
+    binomial count, so their distribution at a finite n can be computed exactly. Every plot therefore shows
+    three layers: the <em>simulation</em>, the <em>exact</em> law at that n, and the <em>limit</em> as
+    n → ∞. The gap between the first two is Monte Carlo noise, which shrinks like 1/√m; the gap between the
+    last two is the error of the theorem at this n. Without the middle layer, a mismatch between a histogram
+    and a bell curve could be blamed on either <span class="evidence opinion">opinion</span>.</p>
+
+  <!-- 2 -->
+  <h2 id="model">2 · The model</h2>
+  <p>Each attacker probes the systems one after the other, and Xᵢ is the score it obtains on system i;
+    its running total is Sₖ = X₁ + … + Xₖ. The <strong>n systems are the n steps</strong>. The
+    <strong>m attackers are m independent trajectories</strong>, and the distribution of Sₙ at a fixed n is
+    seen across them. Everything is assumed i.i.d., across systems and across attackers: this is the
+    assumption the whole analysis rests on, and section 7 is about where it breaks
+    <span class="evidence opinion">opinion</span>.</p>
+  <table class="data compare prose">
+    <thead><tr><th class="left"></th><th>Bernoulli(p)</th><th>Rademacher</th></tr></thead>
+    <tbody>
+      <tr><td class="left">a step means</td><td>1 = system penetrated, 0 = attempt failed</td><td>+1 = attacker gains ground, −1 = defender pushes back</td></tr>
+      <tr><td class="left">mean μ, variance σ²</td><td>p, p(1 − p)</td><td>0, 1</td></tr>
+      <tr><td class="left">Sₙ</td><td>Binomial(n, p): systems penetrated</td><td>2B − n, B ~ Binomial(n, ½): net advantage</td></tr>
+    </tbody>
+  </table>
+  <p>The two models are one coin seen two ways: for p = ½ a Rademacher step is 2B − 1, so
+    Sₙᴿ = 2Sₙᴮ − n <span class="evidence theorem">theorem</span>. The simulation makes this literal: it reads
+    the same random bits as either model, and the identity holds path by path
+    (<a href="model.html?model=rad&amp;m=10000&amp;seed=20261028">Model &amp; paths</a>)
+    <span class="evidence measurement">measured</span>. Rademacher is the fair Bernoulli with its drift
+    removed, which is exactly why the assignment calls it the symmetric, zero-mean case.</p>
+  <p>The random numbers come from xoshiro128**, a fast <em>seeded</em> generator: every result on these
+    pages is reproducible from its seed, which a simulation needs and a key generator must never have. For
+    p = ½, one 32-bit word gives 32 steps at once (a population count); for other p the simulation jumps
+    over runs of failures with a geometric gap. Both fast engines were checked against a naive
+    one-draw-per-step engine with a two-sample χ² test, and all exact formulas against the reference values of
+    the specification <span class="evidence measurement">measured</span>.</p>
+
+  <!-- 3 -->
+  <h2 id="variance">3 · Three normalisations, one variance law</h2>
+  <p>The three quantities are one family, Sₙ/n<sup>α</sup> with α = 0, 1 and ½. Independence makes
+    variances add, so Var(Sₙ) = nσ², and dividing by n<sup>α</sup> divides the variance by n<sup>2α</sup>:
+    Var(Sₙ/n<sup>α</sup>) = n<sup>1 − 2α</sup>σ² <span class="evidence theorem">theorem</span>. On log-log
+    axes the three variances are straight lines of slope +1, −1 and 0. This single plot is the answer to the
+    question on "the behaviour of the variance under the different normalisations".</p>
+  <p>Measured on 10 000 Rademacher attackers, the variance of Sₙ grows from 10.2 at n = 10 to 10 014 at
+    n = 10 000; that of Sₙ/n falls from 0.102 to 1.0·10⁻⁴; that of Sₙ/√n stays between 0.995 and 1.023. The
+    fitted slopes are +0.999, −1.001 and −0.001 (standard error 0.002), with R² = 0.99998
+    (<a href="variance.html?model=rad&amp;m=10000&amp;seed=20261028">Variance</a>)
+    <span class="evidence measurement">measured</span>.</p>
+  <p>Only α = ½ gives a limit that is neither infinite nor a single point. Below ½ the spread explodes;
+    above it everything collapses onto μ, which is a limit but says nothing about the fluctuations
+    <span class="evidence theorem">theorem</span>. That is the short answer to "why √n?". For Bernoulli
+    steps there is a catch: Var(Sₙ/√n) = p(1 − p) is constant, but the mean p√n is not. With p = 0.1 the
+    measured mean of Sₙ/√n goes 0.32, 1.00, 3.17, 10.00 at n = 10, 100, 1 000, 10 000. Constant width,
+    escaping centre: raw Sₙ/√n has no limit, and only the centred (Sₙ − np)/√n converges, to N(0, p(1 − p))
+    (de Moivre–Laplace) <span class="evidence measurement">measured</span>
+    <span class="evidence theorem">theorem</span>.</p>
+
+  <!-- 4 -->
+  <h2 id="lln">4 · The law of large numbers</h2>
+  <p>Convergence in probability of Sₙ/n to μ means that for every ε the probability
+    qₙ(ε) = P(|Sₙ/n − μ| &gt; ε) goes to 0. Chebyshev's inequality proves it in one line, qₙ ≤ σ²/(nε²)
+    <span class="evidence theorem">theorem</span>. The simulation estimates qₙ as the fraction of attackers
+    outside the band, with a Wilson interval; the binomial law gives it exactly.</p>
+  <table class="data">
+    <thead><tr><th class="left">n</th><th>attackers outside ±0.1</th><th>q̂ₙ</th><th>exact qₙ</th></tr></thead>
+    <tbody>
+      <tr><td class="left">10</td><td>7 579</td><td>0.758</td><td>0.754</td></tr>
+      <tr><td class="left">100</td><td>2 695</td><td>0.270</td><td>0.271</td></tr>
+      <tr><td class="left">1 000</td><td>17</td><td>0.0017</td><td>0.00139</td></tr>
+      <tr><td class="left">3 000</td><td>0</td><td>≤ 3.8·10⁻⁴</td><td>3.8·10⁻⁸</td></tr>
+      <tr><td class="left">10 000</td><td>0</td><td>≤ 3.8·10⁻⁴</td><td>1.3·10⁻²³</td></tr>
+    </tbody>
+  </table>
+  <p>The exact value lies inside the 95 % interval at all seven checkpoints
+    (<a href="lln.html?model=rad&amp;m=10000&amp;seed=20261028&amp;eps=0.1">LLN</a>)
+    <span class="evidence measurement">measured</span>. From n = 3 000 on no attacker leaves the band and the
+    simulation can only say "at most 3.84/m"; the exact curve carries on down to 10⁻²³. A simulation of m
+    attackers cannot see probabilities much below 1/m, which is why the exact layer is on every plot
+    <span class="evidence opinion">opinion</span>.</p>
+  <p>The bounds differ by orders of magnitude. At n = 1 000 they overshoot the exact 0.00139 by a factor 72
+    (Chebyshev), 9.7 (Hoeffding) and 9.6 (KL–Chernoff); for Bernoulli(0.1) with ε = 0.05 the factors are
+    1.3·10⁵, 4.8·10⁴ and 17.5 <span class="evidence theorem">theorem</span>. Chebyshev uses only the variance
+    and falls like 1/n; Hoeffding is exponential but ignores the variance; the KL form has the right exponent.
+    Turned around, they say how many observations a defender needs: to know a fair attacker's rate to within
+    ε = 0.01 except with probability δ = 0.01, Chebyshev asks for 250 000 probes, Hoeffding 26 492, the CLT
+    estimate 16 588, and the exact answer is 16 650
+    (<a href="thresholds.html?model=ber&amp;p=0.5&amp;eps=0.01&amp;delta=0.01">Thresholds</a>)
+    <span class="evidence theorem">theorem</span>. Every method scales like 1/ε²: an attacker only slightly
+    better than baseline hides in the noise for a long time.</p>
+  <p>The same law decides the "suitable m" of the assignment. Estimating one tail probability from the first
+    100, 1 000, 10 000 and 100 000 attackers of one run, the half-width of the interval times √m stays at
+    0.83, 0.87, 0.87, 0.87, against 1.96·√(q(1 − q)) = 0.871
+    <span class="evidence measurement">measured</span>. Choosing m is itself an application of the theorems
+    being studied.</p>
+
+  <!-- 5 -->
+  <h2 id="clt">5 · The central limit theorem</h2>
+  <p>For Rademacher steps the moment generating function of Sₙ/√n is cosh(t/√n)ⁿ, and cosh(t/√n) = 1 + t²/(2n)
+    + O(1/n²), so it tends to e^(t²/2), the generating function of N(0, 1): Sₙ/√n converges in distribution to
+    the standard normal <span class="evidence theorem">theorem</span>. The pages show it four ways: a histogram
+    against the normal density, the empirical CDF against Φ, a Q-Q plot, and the Kolmogorov–Smirnov distance
+    against n (<a href="clt.html?model=rad&amp;m=10000&amp;seed=20261028">CLT</a>).</p>
+  <p>Two details matter. Sₙ/√n lives on a lattice of spacing 2/√n, so a histogram must use bins of whole
+    lattice points; with arbitrary bins of width 0.25 the histogram at n = 100 turns into a comb, and the exact
+    law binned the same way shows the same comb. The comb is an artefact of the binning, not noise and not a
+    failure of the theorem <span class="evidence measurement">measured</span>. And the lattice sets a floor
+    on the distance itself: a step function cannot be closer than half a jump to a continuous curve, and the
+    jump at 0 is ≈ √(2/(πn)), so sup|Fₙ − Φ| ≥ ≈ 0.399/√n <span class="evidence theorem">theorem</span>.
+    The exact distances, 0.123, 0.0398, 0.0126, 0.0040 at n = 10, 100, 1 000, 10 000, essentially attain
+    it.</p>
+  <p>The measured distance is the error of the theorem plus sampling noise of about 0.87/√m
+    (Kolmogorov). With m = 10 000 it follows the exact curve, 0.122, 0.046, 0.026, until n = 1 000; there the
+    exact error, 0.0126, falls below the 95 % noise level 0.0136 and the measurements flatten (0.022, 0.012,
+    0.011). With m = 100 000 the same happens only at n = 10 000 (measured 0.0066, exact 0.0040)
+    <span class="evidence measurement">measured</span>. Past this knee every n looks equally "normal" to the
+    simulation: to see the theorem at size n one needs m well above 5n.</p>
+  <p>The rate also depends on the step. Berry–Esseen bounds the distance by 0.4748·ρ/(σ³√n), with
+    ρ/σ³ = 1 for Rademacher and ≈ 9.85 for Bernoulli(0.01) <span class="evidence theorem">theorem</span>
+    (the constant from Shevtsova, 2011 <span class="evidence record">source</span>). The exact distances at
+    n = 1 000 are 0.013, 0.027 and 0.083 for p = 0.5, 0.1 and 0.01. A skewed, rare-event coin needs many
+    more systems before the normal approximation can be trusted; for rare breaches the Poisson limit is the
+    better description <span class="evidence opinion">opinion</span>.</p>
+
+  <!-- 6 -->
+  <h2 id="attackers">6 · Systems and attackers</h2>
+  <h3>The size of the estate</h3>
+  <p>System size makes <strong>rates</strong> predictable and <strong>fluctuations</strong> universal. With a
+    drift, the total grows like np while its spread grows only like √(np(1 − p)): a large estate is compromised
+    predictably, in proportion p <span class="evidence theorem">theorem</span>. With zero drift the total does
+    not grow on average, but its typical size does, E|Sₙ| ≈ √(2n/π), about 80 at n = 10 000: more systems,
+    larger swings in both directions <span class="evidence theorem">theorem</span>. A consequence for
+    monitoring: alarm thresholds should scale like nμ to catch a drift and like c√n for zero-mean noise
+    <span class="evidence opinion">opinion</span>.</p>
+  <h3>Thresholds and races</h3>
+  <p>Call a breach the first time the score reaches a level a. For the symmetric walk the reflection
+    principle gives P(Mₙ ≥ a) = 2P(Sₙ &gt; a) + P(Sₙ = a) <span class="evidence theorem">theorem</span>. For
+    a = 20 it is 0.046 within 100 systems and 0.8415 within 10 000; the simulation gives 0.045 and 0.8418
+    (<a href="thresholds.html?model=rad&amp;m=10000&amp;seed=20261028&amp;a=20">Thresholds</a>)
+    <span class="evidence measurement">measured</span>. Zero drift does not protect: every fixed level is
+    reached with probability 1, but P(Tₐ &gt; n) ≈ a√(2/(πn)) decays so slowly that the expected breach time
+    is infinite <span class="evidence theorem">theorem</span>. Certain, yet with no finite average waiting
+    time.</p>
+  <p>Reading the −1 steps as the defender winning a round turns the attack into a race between two barriers:
+    breach at +a, expulsion at −b. Gambler's ruin gives the outcome: b/(a + b) for a fair game, and with
+    a = b = 10, winning 55 % of the rounds wins 88 % of the races <span class="evidence theorem">theorem</span>.
+    A small edge per round becomes a large edge per race. Simulated fair races between ±10 end in a breach
+    49.7 % of the time after 99.3 rounds on average, against 50 % and 100
+    <span class="evidence measurement">measured</span>.</p>
+  <h3>The number of attackers</h3>
+  <p>The total over m attackers is a single walk of nm steps: doubling the attackers is statistically the
+    same as doubling the systems <span class="evidence theorem">theorem</span>. The other aggregates are not
+    symmetric. If each attacker breaches with probability q, at least one of m does with probability
+    1 − (1 − q)ᵐ. With q = 0.046 (level 20 within 100 systems), 15 attackers make a breach more likely than
+    not and 100 make it 99 % certain <span class="evidence theorem">theorem</span>, which splitting the
+    simulated attackers into groups reproduces
+    (<a href="attackers.html?model=rad&amp;m=10000&amp;seed=20261028">Systems &amp; attackers</a>)
+    <span class="evidence measurement">measured</span>. Rare per attacker is not rare per population. The
+    luckiest attacker, by contrast, gains little from numbers: the expected best of m standard normal scores
+    is 2.51 for m = 100, 3.24 for 1 000 and 3.85 for 10 000, growing like √(2 ln m)
+    <span class="evidence theorem">theorem</span>; the simulated best of 100 averaged 2.53
+    <span class="evidence measurement">measured</span>. For a defender, the danger of many attackers lies in
+    their number, not in the luck of the best one <span class="evidence opinion">opinion</span>.</p>
+
+  <!-- 7 -->
+  <h2 id="limits">7 · Limits of the model</h2>
+  <p><strong>Attackers differ.</strong> If each attacker has its own skill pⱼ ~ Beta(α, β), its average
+    converges to pⱼ, not to a common μ, and the spread across attackers converges to Var(pⱼ) instead of 0:
+    Var(Sₙ/n) = p̄(1 − p̄)(1/n + (n − 1)ρ/n) with ρ = 1/(α + β + 1)
+    <span class="evidence theorem">theorem</span>. With Beta(2, 18) the measured variance of the average stalls
+    at 0.00427 at n = 10 000 (theory 0.00429), 474 times the i.i.d. value
+    <span class="evidence measurement">measured</span>.</p>
+  <p><strong>Systems share a weakness.</strong> The same formula describes systems with a common hidden
+    factor: one library, one configuration, one credential. Correlation ρ &gt; 0 puts a floor ρσ² under the
+    variance of the average, and averaging over more systems stops helping
+    <span class="evidence theorem">theorem</span>. This is the quantitative core of the monoculture argument:
+    diversity of software is a statistical defence <span class="evidence record">source</span> (Geer et al.,
+    2003, to be checked) <span class="evidence opinion">opinion</span>.</p>
+  <p><strong>Nothing stands still, and some steps are huge.</strong> Attackers learn and defenders patch, so
+    p drifts in time and the LLN describes a moving target. A single zero-day can be worth more than every
+    other probe together; with heavy-tailed steps (infinite variance) the √n scaling and the CLT fail, and
+    with no finite mean (a Cauchy step) even the LLN does <span class="evidence theorem">theorem</span>
+    <span class="evidence opinion">opinion</span>.</p>
+
+  <!-- 8 -->
+  <h2 id="final">8 · Final considerations: three races</h2>
+  <p>The same three theorems sit underneath a good part of cryptography. Three examples, two of them races.</p>
+  <h3>Randomness testing is the Rademacher CLT</h3>
+  <p>NIST's frequency (monobit) test maps bits to ±1, computes |Sₙ|/√n and reports the p-value
+    erfc(|Sₙ|/√(2n)) <span class="evidence record">source</span> (NIST SP 800-22, §2.1). It is the CLT of
+    section 5, applied to a bit stream: 100 bits with Sₙ = 10 give p = 0.317
+    <span class="evidence theorem">theorem</span>. Its blind spot is the one homework 2 met: a stream from a
+    tiny, guessable state passes it as easily as a truly random one.</p>
+  <h3>The double-spend race is gambler's ruin</h3>
+  <p>In Bitcoin, an attacker with a share q &lt; ½ of the hash power trying to replace a payment that has z
+    confirmations is in the race of section 6 without a lower barrier: each new block moves the gap by one,
+    up with probability q, down with probability 1 − q. The chance of ever catching up is (q/(1 − q))<sup>z</sup>
+    <span class="evidence theorem">theorem</span>: 1.7·10⁻⁵ for q = 0.1, z = 5, and 0.014 for q = 0.3.
+    Nakamoto's paper adds that the attacker kept mining while the merchant waited for those z blocks, a
+    Poisson number of blocks, which raises the figures to 0.0009137 and 0.177
+    <span class="evidence record">source</span> (Nakamoto, 2008, §11; recomputed here). It is a true random
+    walk race, decided by many small random steps, and the edge per step (q against 1 − q) is everything.</p>
+  <h3>The Coldcard sweeps: a race of a different kind</h3>
+  <p>From March 2021 to July 2026, Coldcard hardware wallets generated seeds from a non-cryptographic
+    software generator seeded with a chip ID and a timer, roughly 40 bits of real uncertainty on older models
+    and about 72 bits on newer ones, instead of 128 or 256
+    <span class="evidence record">source</span> (Coinkite advisory; Wizardsardine; homework 2, note 09).
+    Attackers enumerated the small seed space offline and swept wallets in waves from 30 July 2026: the first
+    took hundreds of wallets in well under an hour, and totals reported by early August exceed 1 400 BTC, with
+    estimates up to about 2 000 <span class="evidence record">source</span> (AnChain, TRM Labs, Galaxy
+    Research; the figures differ and are still being revised).</p>
+  <p>Some wallets were emptied at once; others were taken when their owners tried to move them. The
+    reports describe a race in the mempool: owners who tried to rescue funds were front-run by higher-fee
+    replacement transactions, and in later waves owners who spotted a pending sweep tried to outbid it with a
+    higher-fee transaction of their own <span class="evidence record">source</span> (homework 2 note 09;
+    press reports of the fourth wave, to be checked). A reading consistent with this, though not documented
+    as a deliberate strategy, is that attackers swept in batches and kept watching addresses they could already
+    sign for, so that an owner's transaction in between simply triggered an earlier, better-paid sweep
+    <span class="evidence opinion">opinion</span>.</p>
+  <p>This race is not the one of the previous paragraph. Once two parties hold the same key, a spend is an
+    auction for the next block: miners include the transaction that pays more, and replace-by-fee lets a
+    pending transaction be outbid. Nothing accumulates step by step; the winner is whoever bids more and reacts
+    faster, and the attacker, who loses nothing it owned, can bid up to the whole balance. The owner's only
+    advantages are speed and a willingness to give most of the funds to the miners rather than to the thief
+    <span class="evidence opinion">opinion</span>. Where this homework does apply is the other side of the
+    story: at least a dozen independent attackers were reported working the same seed space
+    <span class="evidence record">source</span> (press reports of early August 2026, to be checked). With m independent
+    searchers each finding a given weak wallet with probability q, the wallet survives with probability
+    (1 − q)ᵐ, and for a seed space small enough to enumerate q is close to 1 already for one of them
+    <span class="evidence theorem">theorem</span>. The failure itself was not statistical in the output:
+    the hashed seeds passed every test. It was a small key space, found once and then exploited by many.</p>
+  <h3>In one paragraph</h3>
+  <p>System size makes rates predictable and fluctuations universal. Neither makes a positive-drift attacker
+    less dangerous: the total grows linearly. The number of attackers turns per-attacker rarities into
+    near-certainties. The zero-mean model is the most deceptive: no attacker is winning on average, yet every
+    fixed threshold is eventually crossed, at a time with infinite mean. All of it assumes independence; when
+    systems share a weakness, as every Coldcard shared one generator, many small risks become one large one
+    <span class="evidence opinion">opinion</span>.</p>
+
+  <h2 id="refs">References</h2>
+  <ol class="refs small">
+    <li>The author's notes, HMWK4 (Penetration model; What to show; Simulation design; Interpretation; Crypto and security connections) and the concept notes on expectation and variance of sums, the weak law, the CLT, Chernoff and Hoeffding bounds, first passage, gambler's ruin, Monte Carlo estimation and the KS distance.</li>
+    <li>W. Feller, <em>An Introduction to Probability Theory and Its Applications</em>, vol. 1, 3rd ed., Wiley, 1968 (random walks, reflection principle, ruin problems).</li>
+    <li>W. Hoeffding, Probability inequalities for sums of bounded random variables, <em>Journal of the American Statistical Association</em> 58, 1963.</li>
+    <li>H. Chernoff, A measure of asymptotic efficiency for tests of a hypothesis based on the sum of observations, <em>Annals of Mathematical Statistics</em> 23, 1952.</li>
+    <li>I. Shevtsova, On the absolute constants in the Berry–Esseen type inequalities for identically distributed summands, 2011, arXiv:1111.6554 (the constant 0.4748; check).</li>
+    <li>G. Marsaglia, W. W. Tsang, J. Wang, Evaluating Kolmogorov's distribution, <em>Journal of Statistical Software</em> 8(18), 2003.</li>
+    <li>E. B. Wilson, Probable inference, the law of succession, and statistical inference, <em>Journal of the American Statistical Association</em> 22, 1927.</li>
+    <li>NIST SP 800-22 Rev. 1a, <em>A Statistical Test Suite for Random and Pseudorandom Number Generators for Cryptographic Applications</em>, 2010, §2.1.</li>
+    <li>S. Nakamoto, Bitcoin: A Peer-to-Peer Electronic Cash System, 2008, §11.</li>
+    <li>D. Geer et al., <em>CyberInsecurity: The Cost of Monopoly</em>, CCIA, 2003 (check before citing).</li>
+    <li>D. Blackman, S. Vigna, Scrambled linear pseudorandom number generators, 2018 (xoshiro128**); M. J. Wichura, Algorithm AS 241, <em>Applied Statistics</em> 37, 1988; G. Marsaglia, W. W. Tsang, A simple method for generating gamma variables, <em>ACM TOMS</em> 26, 2000.</li>
+    <li>Coldcard incident (check the latest versions; figures differ): Coinkite, Coldcard Security Advisory, 30 July 2026, blog.coinkite.com; Wizardsardine, Coldcard: the technical autopsy of an entropy failure; <a href="https://www.trmlabs.com/resources/blog/the-largest-hardware-wallet-exploit-of-2026-inside-the-usd-116-million-coldcard-hack">TRM Labs</a>; <a href="https://techcrunch.com/2026/08/04/hackers-steal-over-130-million-by-exploiting-bug-in-offline-hardware-wallets/">TechCrunch, 4 Aug 2026</a>; <a href="https://www.cryptotimes.io/2026/08/03/coldcard-hack-enters-wave-4-449-btc-swept-live-as-victims-race-to-save-funds/">The Crypto Times, 3 Aug 2026</a>; homework 2, note 09.</li>
+  </ol>
+
+</article>
+</main>
+<script type="module">
+  import { mountShell } from '../assets/js/ui/dom.js';
+  import { hw04Shell } from './js/pages/shell.js';
+  mountShell(hw04Shell('essay.html'));
+</script>
+</body>
+</html>

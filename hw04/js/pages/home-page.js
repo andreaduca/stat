@@ -11,7 +11,7 @@ import { StepModel } from '../core/models.js';
 import { Simulation } from '../core/simulate.js';
 import { readRun } from './run-input.js';
 import { SIM, LIMIT, legend } from './widgets.js';
-import { hw04Shell, PAGES, STICKY, MEMORY } from './shell.js';
+import { hw04Shell, PAGES, STICKY, MEMORY, NOTICE } from './shell.js';
 
 const N_MAX = 10000, PATHS = 20;
 const link = (href, text) => (PAGES.find((p) => p.href === href)?.built ? `<a href="${href}">${text}</a>` : text);
@@ -127,6 +127,19 @@ function layers() {
   ]);
 }
 
+/** The results in four lines (default run: Rademacher, m = 10 000, seed 20261028; the pages recompute them). */
+function results() {
+  return el('div', { class: 'card' }, [
+    el('h2', { text: 'The results in four lines' }),
+    el('ul', {}, [
+      el('li', { html: '<strong>One law, three slopes.</strong> Var(Sₙ/n<sup>α</sup>) = n<sup>1 − 2α</sup>σ²: measured slopes +0.999, −1.001, −0.001 for Sₙ, Sₙ/n, Sₙ/√n. Only √n keeps the spread fixed.' }),
+      el('li', { html: '<strong>LLN.</strong> The fraction of attackers whose average is more than 0.1 from μ falls from 0.758 (n = 10) to none from n = 3 000 on; the exact probability is 1.3·10⁻²³ at n = 10 000, far below what any bound guarantees.' }),
+      el('li', { html: '<strong>CLT.</strong> Sₙ/√n approaches N(0, 1) with an error ≈ 0.4/√n set by the lattice; 10 000 attackers stop seeing that error from n = 1 000, 100 000 from n = 10 000.' }),
+      el('li', { html: '<strong>Systems and attackers.</strong> Zero drift still reaches every threshold (but with infinite mean time); a 4.6 % chance per attacker becomes 99 % with 100 attackers; correlated systems or unequal attackers stop the average from converging.' }),
+    ]),
+  ]);
+}
+
 function pageList() {
   return el('div', { class: 'card' }, [
     el('h2', { text: 'The pages, in reading order' }),
@@ -144,6 +157,6 @@ startPage({
   preserve: true,
   render: ({ state }) => {
     const run = readRun(state);
-    return [exercise(), decisions(), overview(run), quantities(), layers(), pageList()];
+    return [el('p', { class: 'notice', text: NOTICE }), exercise(), decisions(), overview(run), quantities(), layers(), results(), pageList()];
   },
 });
