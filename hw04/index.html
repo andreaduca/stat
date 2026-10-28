@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HW04 · Penetration as a random walk</title>
+<link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="css/hw04.css">
+</head>
+<body>
+<main class="wrap">
+  <h1>Penetration as a random walk</h1>
+  <p class="lead">m attackers probe n systems one after the other, and every probe adds a small random
+    score: 0 or 1 (Bernoulli), or −1 or +1 (Rademacher). The total is a random walk. As n grows,
+    the <strong>average</strong> score settles on a constant (law of large numbers). The
+    <strong>fluctuations</strong>, scaled by √n, take the same Gaussian shape whatever the step
+    (central limit theorem). These pages simulate it, compute the exact answers next to the simulation,
+    and ask what system size and the number of attackers mean for a defender.</p>
+  <div id="app"></div>
+</main>
+<script type="module" src="js/pages/home-page.js"></script>
+</body>
+</html>

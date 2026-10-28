@@ -1,0 +1,58 @@
+/* hw04.css — styles used only by this homework. Anything belonging to a
+   shared component lives in assets/css/base.css (the plot styles included). */
+
+/* six categorical series (the LLN page's six curves): hw03's validated slots —
+   adjacent CVD ΔE ≥ 8.4, normal-vision ΔE ≥ 19.3 on both panel surfaces */
+:root { --m1: #2a78d6; --m2: #eb6834; --m3: #1baf7a; --m4: #eda100; --m5: #e87ba4; --m6: #008300; }
+@media (prefers-color-scheme: dark) {
+  :root { --m1: #3987e5; --m2: #d95926; --m3: #199e70; --m4: #c98500; --m5: #d55181; --m6: #008300; }
+}
+
+/* ---------- layout ---------- */
+
+.cols.three { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+h3.panel-title { color: var(--ink); font-size: 1rem; margin: 0 0 4px; }
+h3.panel-title .eq, h3.panel-title { font-family: var(--sans); }
+.row.tight { gap: 4px; }
+button.mini { min-height: 28px; padding: 2px 8px; font-size: .82rem; }
+ul.pagelist { margin: 0; padding-left: 1.1em; }
+ul.pagelist li { margin: 0 0 .5em; }
+
+/* the m × n picture of the model */
+table.data.grid-model td, table.data.grid-model th { text-align: center; }
+table.data.grid-model td.total { font-weight: 650; border-left: 1px solid var(--line); }
+
+/* ---------- legends whose keys show the mark ---------- */
+
+.legend.keys i.key { width: 14px; height: 10px; border-radius: 0; background: none; }
+.legend.keys i.key.bar  { background: var(--c); opacity: .7; border-radius: 2px; }
+.legend.keys i.key.dot  { width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
+.legend.keys i.key.line { height: 0; border-top: 2px solid var(--c); }
+.legend.keys i.key.dash { height: 0; border-top: 2px dashed var(--c); }
+.legend.keys i.key.path { height: 0; border-top: 1px solid var(--c); opacity: .7; }
+
+/* ---------- figures ---------- */
+
+figure.fig { margin: 0 0 12px; }
+figure.fig figcaption { font-size: .85rem; color: var(--muted); margin-top: 4px; }
+
+/* ---------- evidence labels (as hw02/hw03) ---------- */
+
+.evidence {
+  display: inline-block; font-size: .7rem; letter-spacing: .05em; text-transform: uppercase; font-weight: 650;
+  border-radius: 4px; padding: 1px 6px; border: 1px solid var(--c); color: var(--ink);
+  background: color-mix(in srgb, var(--c) 12%, var(--panel)); white-space: nowrap; vertical-align: 1px;
+}
+.evidence.theorem     { --c: var(--c-third); }
+.evidence.measurement { --c: var(--c-result); }
+.evidence.record      { --c: var(--c-operand); }
+.evidence.opinion     { --c: var(--muted); }
+
+/* ---------- a run in progress ---------- */
+
+.running { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 6px 0 12px; }
+.running progress { flex: 1 1 200px; height: 10px; accent-color: var(--accent); }
+
+/* tables of words, not numbers: the sans font and left alignment read better */
+table.data.prose td, table.data.prose th { font-family: var(--sans); text-align: left; }
+table.data.prose td.eq { font-family: var(--mono); white-space: nowrap; }

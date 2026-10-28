@@ -21,6 +21,7 @@ assets/           the shared shell and maths, reused by every homework
     page.js         startPage(): state in the URL, remembered between pages
     grid.js         SVG scatter on an integer lattice
     linechart.js    small multi-series line chart
+    plot.js         continuous axes (linear/log): lines, steps, error bars, histograms on a real axis, paths
     barchart.js     bars (histograms, counts) with a theory overlay
     heatmap.js      an n × n grid on a canvas (2-D spectra), with hover and click
     worker.js       run a job in a module Web Worker, with progress and cancel
@@ -54,6 +55,16 @@ hw03/             homework 3 — Caesar vs toy EC-ElGamal on secp256k1
                     ecdlp (brute force, baby-step giant-step, Pollard kangaroo, experiment), data
   js/workers/       experiment.js (Caesar experiment), ecdlp.js (the key searches and their experiment)
   js/pages/         shell.js, toykey.js (the shared toy key), widgets.js, one *-page.js per page
+hw04/             homework 4 — penetration as a random walk: LLN, variance scaling, CLT
+  index.html (more pages phase by phase)
+  css/hw04.css      layer legends, evidence labels, word tables
+  js/core/          the maths, documented for study: numeric (erfc, Φ, Φ⁻¹, log-sum-exp, line fit),
+                    models (Bernoulli, Rademacher, Beta attackers), exact (binomial laws and tails, LLN tail,
+                    exact KS, reflection, hitting times, gambler's ruin), bounds (Chebyshev, Hoeffding,
+                    KL–Chernoff, CLT, sample sizes), estimate (moments, ECDF, KS, Q-Q, χ²), sampling,
+                    simulate (the Monte Carlo engine)
+  js/workers/sim.js the Web Worker that runs a simulation
+  js/pages/         shell.js, run-input.js (shared input card), run.js (worker + cache), widgets.js, one *-page.js per page
 tools/            development aids; not part of the published site
 docs/             the specification and the conventions (not committed)
 ```
