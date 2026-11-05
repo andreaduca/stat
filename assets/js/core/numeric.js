@@ -1,12 +1,16 @@
-/* numeric.js — the special functions behind every exact curve in hw04: the
-   complementary error function, the standard normal (density, CDF, upper tail,
-   quantile), a log-space sum, and a least-squares line. Pure functions on
-   Numbers, no DOM; they run in the page, in the worker and under Node.
-   The Γ function and its incomplete form come from the shared stats.js
-   (Lanczos, g = 7): this file builds on them rather than repeating them.
-   HMWK4 note 02 §3; [[Central limit theorem]], [[Monte Carlo estimation]]. */
+/* numeric.js — the special functions behind the exact curves of hw04 and hw05:
+   the complementary error function and the standard normal (density, CDF,
+   upper tail, quantile); the regularised incomplete gamma P and beta I, and
+   through them the Student t and χ² laws with their quantiles; a log-space
+   sum; a least-squares line; Simpson's rule. Pure functions on Numbers, no DOM;
+   they run in the page, in a worker and under Node.
+   The Γ function and the upper incomplete gamma Q come from stats.js (Lanczos,
+   g = 7): this file builds on them rather than repeating them.
+   Moved here from hw04/js/core/numeric.js when hw05 needed it too (Nov 2026).
+   HMWK4 note 02 §3; HW5 [[Chi-squared and Student t distributions]],
+   [[Confidence intervals and coverage]], [[Beta distribution]]. */
 
-import { gammaQ } from '../../../assets/js/core/stats.js';
+import { gammaQ, lnGamma } from './stats.js';
 
 /* ---------- the normal distribution ---------- */
 
@@ -131,3 +135,107 @@ export function simpson(f, a, b, steps = 4000) {
   for (let i = 1; i < n; i++) s += (i % 2 ? 4 : 2) * f(a + i * h);
   return (s * h) / 3;
 }
+
+/* ---------- incomplete gamma and beta (hw05) ---------- */
+
+/** Regularised lower incomplete gamma P(a, x) = γ(a, x)/Γ(a) = 1 − Q(a, x).
+ *  Category: special function (the χ² CDF: P(χ²ₖ ≤ s) = P(k/2, s/2)).
+ *  Formula: where the series converges fast (x < a + 1) it is summed directly,
+ *    P(a, x) = e⁻ˣ xᵃ/Γ(a + 1) · Σₙ xⁿ / ((a + 1)…(a + n)),
+ *  so a small P keeps all its digits (1 − Q would lose them); elsewhere 1 − Q,
+ *  which is then at least about ½ and safe to subtract. */
+export function gammaP(a, x) {
+  if (x <= 0) return 0;
+  if (x >= a + 1) return 1 - gammaQ(a, x);
+  let term = 1 / a, sum = term;
+  for (let n = 1; n < 1000 && Math.abs(term) > Math.abs(sum) * 1e-16; n++) { term *= x / (a + n); sum += term; }
+  return Math.min(1, sum * Math.exp(-x + a * Math.log(x) - lnGamma(a)));
+}
+
+/* The continued fraction of the incomplete beta (Numerical Recipes §6.4),
+   evaluated by the modified Lentz method: converges fast for x < (a+1)/(a+b+2). */
+function betaCF(x, a, b) {
+  const tiny = 1e-300;
+  let c = 1, d = 1 - ((a + b) * x) / (a + 1);
+  if (Math.abs(d) < tiny) d = tiny;
+  d = 1 / d;
+  let h = d;
+  for (let m = 1; m <= 10000; m++) {
+    const m2 = 2 * m;
+    // even step: d_{2m} = m(b − m)x / ((a + 2m − 1)(a + 2m))
+    let an = (m * (b - m) * x) / ((a + m2 - 1) * (a + m2));
+    d = 1 + an * d; if (Math.abs(d) < tiny) d = tiny;
+    c = 1 + an / c; if (Math.abs(c) < tiny) c = tiny;
+    d = 1 / d; h *= d * c;
+    // odd step: d_{2m+1} = −(a + m)(a + b + m)x / ((a + 2m)(a + 2m + 1))
+    an = (-(a + m) * (a + b + m) * x) / ((a + m2) * (a + m2 + 1));
+    d = 1 + an * d; if (Math.abs(d) < tiny) d = tiny;
+    c = 1 + an / c; if (Math.abs(c) < tiny) c = tiny;
+    d = 1 / d;
+    const step = d * c;
+    h *= step;
+    if (Math.abs(step - 1) < 1e-16) break;
+  }
+  return h;
+}
+
+/** Regularised incomplete beta I_x(a, b) = B(x; a, b)/B(a, b): the CDF of Beta(a, b) at x.
+ *  Category: special function.
+ *  Formula: I_x(a, b) = xᵃ(1 − x)ᵇ / (a·B(a, b)) · CF(x; a, b), with the
+ *  continued fraction above. It converges quickly only for x < (a + 1)/(a + b + 2);
+ *  beyond that the symmetry I_x(a, b) = 1 − I_{1−x}(b, a) is used.
+ *  Example: I_0.3(2, 5) = 0.579825; I_0.5(2, 5) = 0.890625 (exactly 57/64). */
+export function betaInc(x, a, b) {
+  if (x <= 0) return 0;
+  if (x >= 1) return 1;
+  const lnFront = lnGamma(a + b) - lnGamma(a) - lnGamma(b) + a * Math.log(x) + b * Math.log1p(-x);
+  if (x < (a + 1) / (a + b + 2)) return (Math.exp(lnFront) * betaCF(x, a, b)) / a;
+  return 1 - (Math.exp(lnFront) * betaCF(1 - x, b, a)) / b;
+}
+
+/* ---------- Student t and χ² (hw05) ---------- */
+
+/** CDF of Student's t with k degrees of freedom.
+ *  Category: reference law (the pivot (x̄ − μ)/(s/√n) ~ t_{n−1} for normal data).
+ *  Formula: with x = k/(k + t²), P(T > |t|) = ½·I_x(k/2, ½); so
+ *  F(t) = 1 − ½I_x for t ≥ 0 and ½I_x for t < 0. Example: tCdf(2, 9) = 0.9617236. */
+export function tCdf(t, k) {
+  const tail = 0.5 * betaInc(k / (k + t * t), k / 2, 0.5);
+  return t >= 0 ? 1 - tail : tail;
+}
+
+/** CDF of χ² with k degrees of freedom: P(V ≤ x) = P(k/2, x/2).
+ *  Category: reference law ((n − 1)s²/σ² ~ χ²_{n−1} for normal data). */
+export const chi2Cdf = (x, k) => gammaP(k / 2, x / 2);
+
+/** χ² density with k degrees of freedom: x^{k/2−1} e^{−x/2} / (2^{k/2} Γ(k/2)).
+ *  Category: reference law (overlaid on the histogram of (n − 1)s²/σ²). */
+export function chi2Pdf(x, k) {
+  if (x <= 0) return k === 2 ? 0.5 : 0;
+  return Math.exp((k / 2 - 1) * Math.log(x) - x / 2 - (k / 2) * Math.LN2 - lnGamma(k / 2));
+}
+
+/* Invert an increasing CDF on [lo, hi] by bisection to 1e−14 relative.
+   Bisection rather than Newton: it cannot overshoot in the long tails of t₁. */
+function invert(cdf, p, lo, hi) {
+  while (cdf(hi) < p) { lo = hi; hi *= 2; }
+  for (let i = 0; i < 400 && hi - lo > 1e-14 * Math.max(1, Math.abs(hi)); i++) {
+    const mid = (lo + hi) / 2;
+    if (cdf(mid) < p) lo = mid; else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+/** Quantile t_{k, p} of Student's t: the t with tCdf(t, k) = p.
+ *  Category: reference law (the multiplier of the t-interval).
+ *  By symmetry only p > ½ is searched. Examples: t_{9, 0.975} = 2.262157, t_{1, 0.975} = 12.706205. */
+export function tInv(p, k) {
+  if (p === 0.5) return 0;
+  if (p < 0.5) return -tInv(1 - p, k);
+  return invert((t) => tCdf(t, k), p, 0, 16);
+}
+
+/** Quantile χ²_{k, p}: the x with chi2Cdf(x, k) = p.
+ *  Category: reference law (the ends of the χ² interval for σ²).
+ *  Example: k = 9 → 2.7003895 (p = 0.025), 19.022768 (p = 0.975). */
+export const chi2Inv = (p, k) => invert((x) => chi2Cdf(x, k), p, 0, Math.max(1, 2 * k));

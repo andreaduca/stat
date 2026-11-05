@@ -12,7 +12,7 @@ import { plot } from '../../../assets/js/ui/plot.js';
 import { modelFrom } from '../core/models.js';
 import { GRID, column } from '../core/simulate.js';
 import { lawOfTotal, ksToNormal } from '../core/exact.js';
-import { normPdf, normCdf } from '../core/numeric.js';
+import { normPdf, normCdf } from '../../../assets/js/core/numeric.js';
 import { atoms, latticeHistogram, binned, ksToContinuous, ksToExact, qqPoints, moments } from '../core/estimate.js';
 import { readRun, runCard } from './run-input.js';
 import { getRun, pending, updatingFlag } from './run.js';

@@ -15,7 +15,7 @@ import { modelFrom } from '../core/models.js';
 import { GRID, simulateRaces } from '../core/simulate.js';
 import { probMaxAtLeast, hitTimePmf, hitTimeSurvival, hitTimeSurvivalAsymptotic, hitTimeMoments, atLeastOne, race, catchUp } from '../core/exact.js';
 import { sampleSizes, klChernoff } from '../core/bounds.js';
-import { normInv, normSf } from '../core/numeric.js';
+import { normInv, normSf } from '../../../assets/js/core/numeric.js';
 import { moments } from '../core/estimate.js';
 import { readRun, runCard } from './run-input.js';
 import { getRun, pending, updatingFlag } from './run.js';

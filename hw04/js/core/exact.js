@@ -9,7 +9,7 @@
    the theorem at this n (note 01 §4). Pure functions, no DOM. */
 
 import { lnGamma } from '../../../assets/js/core/stats.js';
-import { normCdf, normPdf, simpson } from './numeric.js';
+import { normCdf, normPdf, simpson } from '../../../assets/js/core/numeric.js';
 
 /* ---------- the binomial in log space ---------- */
 

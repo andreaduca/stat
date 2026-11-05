@@ -68,12 +68,9 @@ ol.steps .what { display: block; font-size: .88rem; margin-bottom: 3px; }
 ol.steps p.ok, ol.steps p.err { margin: 2px 0 0; }
 .chunk h3 { margin-top: .6em; }
 
-table.data.prose td, table.data.prose th { font-family: var(--sans); }
 table.data.roles td { vertical-align: top; }
 table.data.roles td.mono { font-family: var(--mono); font-size: .8rem; }
 
-ul.pagelist { margin: 0; padding-left: 1.1em; }
-ul.pagelist li { margin: 0 0 .5em; }
 
 /* ---------- Caesar page ---------- */
 
@@ -107,13 +104,6 @@ td.diff { color: var(--c-third); font-family: var(--sans); text-align: left; }
 
 /* ---------- Break Caesar ---------- */
 
-/* experiment series: six categorical slots, validated (dataviz validator) on
-   both panel surfaces — adjacent CVD ΔE ≥ 8.4, normal-vision ΔE ≥ 19.3; the
-   light-mode contrast warning is answered by the legend and the rates table */
-:root { --m1: #2a78d6; --m2: #eb6834; --m3: #1baf7a; --m4: #eda100; --m5: #e87ba4; --m6: #008300; }
-@media (prefers-color-scheme: dark) {
-  :root { --m1: #3987e5; --m2: #d95926; --m3: #199e70; --m4: #c98500; --m5: #d55181; --m6: #008300; }
-}
 
 .step-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-bottom: 8px; }
 .step-head h2 { margin: 0; }

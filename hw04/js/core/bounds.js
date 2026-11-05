@@ -7,7 +7,7 @@
    HMWK4 note 02 §1, note 04 §4; [[Markov and Chebyshev inequalities]],
    [[Chernoff bound and Hoeffding inequality]]. */
 
-import { erfc, normInv } from './numeric.js';
+import { erfc, normInv } from '../../../assets/js/core/numeric.js';
 import { llnTail } from './exact.js';
 
 /** Chebyshev: P(|Sₙ/n − μ| ≥ ε) ≤ σ²/(nε²).

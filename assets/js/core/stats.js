@@ -169,3 +169,49 @@ export const shannonEntropy = (probs) => -probs.reduce((s, p) => s + (p > 0 ? p 
 /** Min-entropy H∞ = −log₂ max pᵢ: the attacker's view — how hard the single
  *  best guess is. Security is set by this, not by Shannon entropy. */
 export const minEntropy = (probs) => -Math.log2(Math.max(...probs));
+
+/* ---------- sample moments (moved here from hw04/js/core/estimate.js, Nov 2026) ---------- */
+
+/** Sample moments of m values, with standard errors.
+ *  Category: estimator.
+ *    mean x̄, unbiased variance s² = Σ(x − x̄)²/(m − 1),
+ *    skewness g₁ = m₃/m₂^{3/2}, excess kurtosis g₂ = m₄/m₂² − 3 (mₖ central moments),
+ *    SE(x̄) = s/√m, SE(s²) ≈ s²·√(2/(m − 1) + g₂/m)  (HMWK4 [[Monte Carlo estimation]] lemma 3).
+ *  The relative error of a variance is ≈ √(2/m): 1.4 % at m = 10⁴ (note 03 §2). */
+export function moments(values) {
+  const m = values.length;
+  let sum = 0;
+  for (let i = 0; i < m; i++) sum += values[i];
+  const mean = sum / m;
+  let m2 = 0, m3 = 0, m4 = 0;
+  for (let i = 0; i < m; i++) {
+    const d = values[i] - mean, d2 = d * d;
+    m2 += d2; m3 += d2 * d; m4 += d2 * d2;
+  }
+  const variance = m > 1 ? m2 / (m - 1) : 0;
+  m2 /= m; m3 /= m; m4 /= m;
+  const skewness = m2 > 0 ? m3 / m2 ** 1.5 : 0;
+  const exKurtosis = m2 > 0 ? m4 / (m2 * m2) - 3 : 0;
+  return {
+    m, mean, variance, sd: Math.sqrt(variance), skewness, exKurtosis,
+    seMean: Math.sqrt(variance / m),
+    seVar: variance * Math.sqrt(Math.max(0, 2 / Math.max(1, m - 1) + exKurtosis / m)),
+  };
+}
+
+/** Standard error of any statistic by batch means: split the m values into
+ *  `groups` independent groups (the attackers are i.i.d., so consecutive blocks
+ *  will do), compute the statistic on each, and take sd/√groups.
+ *  Category: estimator. Why: the textbook SEs of skewness (√(6/m)) and kurtosis
+ *  (√(24/m)) hold only for normal data. For Bernoulli(0.01) at n = 10 the
+ *  kurtosis is ≈ 10 and its real SE several times √(24/m). Batch means need
+ *  no such assumption. Returns NaN when the groups would be too small (< 20). */
+export function batchSE(values, stat, groups = 20) {
+  const size = Math.floor(values.length / groups);
+  if (size < 20) return NaN;
+  const est = [];
+  for (let g = 0; g < groups; g++) est.push(stat(values.subarray(g * size, (g + 1) * size)));
+  const mean = est.reduce((s, v) => s + v, 0) / groups;
+  const sd = Math.sqrt(est.reduce((s, v) => s + (v - mean) ** 2, 0) / (groups - 1));
+  return sd / Math.sqrt(groups);
+}

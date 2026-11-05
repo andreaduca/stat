@@ -13,7 +13,7 @@ import { wilson } from '../../../assets/js/core/stats.js';
 import { modelFrom, HeterogeneousBernoulli } from '../core/models.js';
 import { GRID, column } from '../core/simulate.js';
 import { probMaxAtLeast, atLeastOne, expectedMaxNormal, betaPdf, betaBinomialPmf, lawOfTotal, llnTail, race } from '../core/exact.js';
-import { linFit } from '../core/numeric.js';
+import { linFit } from '../../../assets/js/core/numeric.js';
 import { moments, scaleMoments, atoms, latticeHistogram } from '../core/estimate.js';
 import { readRun, runCard } from './run-input.js';
 import { getRun, pending, updatingFlag } from './run.js';

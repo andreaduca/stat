@@ -12,7 +12,7 @@ import { plot, short } from '../../../assets/js/ui/plot.js';
 import { modelFrom } from '../core/models.js';
 import { GRID, column } from '../core/simulate.js';
 import { lawOfTotal } from '../core/exact.js';
-import { normPdf } from '../core/numeric.js';
+import { normPdf } from '../../../assets/js/core/numeric.js';
 import { moments, scaleMoments, atoms, latticeHistogram, gofToExact, batchSE } from '../core/estimate.js';
 import { readRun, runCard } from './run-input.js';
 import { getRun, pending, updatingFlag } from './run.js';

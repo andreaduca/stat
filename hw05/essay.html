@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Essay · Running mean and variance: from Welford's three lines to a hacker census · HW05</title>
+<link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="css/hw05.css">
+</head>
+<body>
+<!-- Written from the author's notes (Obsidian vault, Courses/Statistics/…) and from the measured
+     results of these pages. Measured numbers come from the default run (say which seed); rerun and
+     update them if the code changes. -->
+<main class="wrap">
+<article class="essay">
+
+  <h1>Running mean and variance: from Welford's three lines to a hacker census</h1>
+  <p class="byline">Subtitle · Statistics · MSc Cybersecurity, Sapienza · Homework 5</p>
+
+  <p class="lead">The argument in a paragraph.</p>
+
+  <p class="evidence-key small">Each claim is labelled with its evidence:
+    <span class="evidence theorem">theorem</span> proved in the notes, or an exact computation ·
+    <span class="evidence measurement">measured</span> on these pages, with a link to the run ·
+    <span class="evidence record">source</span> from the literature or the record ·
+    <span class="evidence opinion">opinion</span> the author’s judgement.</p>
+
+  <nav class="toc" aria-label="Contents">
+    <ol>
+      <li><a href="#intro">Introduction</a></li>
+      <li><a href="#refs">References</a></li>
+    </ol>
+  </nav>
+
+  <h2 id="intro">1. Introduction</h2>
+  <p>A claim. <span class="evidence theorem">theorem</span></p>
+
+  <h2 id="refs">References</h2>
+  <ol class="refs">
+    <li>…</li>
+  </ol>
+
+</article>
+</main>
+<script type="module">
+  import { mountShell } from '../assets/js/ui/dom.js';
+  import { hw05Shell } from './js/pages/shell.js';
+  mountShell(hw05Shell('essay.html'));
+</script>
+</body>
+</html>

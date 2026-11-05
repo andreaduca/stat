@@ -36,7 +36,6 @@
 .facts .k { flex: 0 1 auto; }
 
 /* a table of words rather than numbers */
-table.data.prose td, table.data.prose th { font-family: var(--sans); }
 
 /* ---------- category badges ---------- */
 
@@ -149,7 +148,7 @@ textarea { font: inherit; font-family: var(--mono); color: var(--ink); backgroun
 /* ---------- home: the list of pages, as tiles ---------- */
 
 ul.pagelist { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
-ul.pagelist li { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-alt); padding: 10px 14px; font-size: .9rem; }
+ul.pagelist li { margin: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-alt); padding: 10px 14px; font-size: .9rem; }
 ul.pagelist li a { display: block; margin-bottom: 2px; font-size: 1rem; }
 
 /* ---------- home: the pipeline as a list of linked boxes ---------- */

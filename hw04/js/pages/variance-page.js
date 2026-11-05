@@ -10,7 +10,7 @@ import { startPage } from '../../../assets/js/ui/page.js';
 import { plot, short } from '../../../assets/js/ui/plot.js';
 import { modelFrom } from '../core/models.js';
 import { GRID, column } from '../core/simulate.js';
-import { linFit } from '../core/numeric.js';
+import { linFit } from '../../../assets/js/core/numeric.js';
 import { moments, scaleMoments } from '../core/estimate.js';
 import { readRun, runCard } from './run-input.js';
 import { getRun, pending, updatingFlag } from './run.js';

@@ -1,0 +1,41 @@
+/* hw05.css — styles used only by this homework. Anything belonging to a
+   shared component (lab panels, essays, evidence labels, charts) lives in
+   assets/css/base.css. */
+
+/* ---------- the Welford mechanism drawings (E1) ---------- */
+
+svg.mech { width: 100%; min-width: 520px; max-width: 640px; height: auto; display: block; margin: 4px 0 10px; }
+svg.mech .axis { stroke: var(--muted); stroke-width: 1; }
+svg.mech .tick { fill: var(--muted); font: 11px var(--mono); }
+svg.mech .lbl { fill: var(--ink); font: 12px var(--sans); }
+svg.mech circle.old { fill: var(--muted); opacity: .7; }
+svg.mech circle.new { fill: var(--s1); stroke: var(--panel); stroke-width: 1.5; }
+svg.mech path.oldmean { fill: var(--muted); }
+svg.mech path.newmean { fill: var(--s2); }
+svg.mech text.oldmean { fill: var(--muted); }
+svg.mech text.newmean { fill: var(--s2); }
+svg.mech path.arrow { fill: none; stroke-width: 1.8; }
+svg.mech path.arrow.d { stroke: var(--m1); }
+svg.mech path.arrow.nd { stroke: var(--m3); }
+svg.mech path.arrow.step { stroke: var(--s2); }
+svg.mech text.lbl.d { fill: var(--m1); }
+svg.mech text.lbl.nd { fill: var(--m3); }
+svg.mech text.lbl.step { fill: var(--s2); }
+svg.mech rect.sq { fill: none; stroke: var(--muted); stroke-dasharray: 4 3; }
+svg.mech rect.own { fill: color-mix(in srgb, var(--m3) 55%, var(--panel)); stroke: var(--m3); }
+svg.mech rect.strip { fill: color-mix(in srgb, var(--m2) 55%, var(--panel)); stroke: var(--m2); }
+svg.mech rect.track { fill: var(--panel-alt); stroke: var(--line); }
+svg.mech rect.seg.s0 { fill: color-mix(in srgb, var(--s1) 45%, var(--panel)); }
+svg.mech rect.seg.s1 { fill: color-mix(in srgb, var(--s1) 25%, var(--panel)); }
+svg.mech rect.seg.cur { fill: var(--s2); }
+
+table.data.trace tr.sel td { background: color-mix(in srgb, var(--s2) 16%, var(--panel)); font-weight: 600; }
+table.data.derive td.eqcell { font-family: var(--sans); text-align: left; }
+table.data.stab td .err, table.data.stab td .ok { font-size: inherit; font-weight: 600; }
+
+pre.code { font: 12.5px/1.45 var(--mono); background: var(--panel-alt); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; overflow-x: auto; margin: 4px 0 10px; }
+.card textarea { width: 100%; font: 13px var(--mono); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 7px; padding: 6px 9px; }
+table.data.prose td, table.data.prose th { text-align: left; }
+table.data.derive math { math-style: normal; }
+table.data.derive td { padding-top: 9px; padding-bottom: 9px; vertical-align: middle; white-space: normal; }
+table.data.derive td.left { min-width: 10em; }

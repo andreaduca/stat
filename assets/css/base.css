@@ -383,6 +383,46 @@ details.explain p.practice {
 .card.lab .chart, .card.lab table.data { transition: opacity .2s; }
 .card.lab.is-stale .chart, .card.lab.is-stale table.data, .card.lab.is-stale .answer { opacity: .5; }
 
+/* ---------- six categorical series (hw03's validated slots, shared since hw05):
+   adjacent CVD ΔE ≥ 8.4, normal-vision ΔE ≥ 19.3 on both panel surfaces ---------- */
+:root { --m1: #2a78d6; --m2: #eb6834; --m3: #1baf7a; --m4: #eda100; --m5: #e87ba4; --m6: #008300; }
+@media (prefers-color-scheme: dark) {
+  :root { --m1: #3987e5; --m2: #d95926; --m3: #199e70; --m4: #c98500; --m5: #d55181; --m6: #008300; }
+}
+
+/* ---------- a home page's list of pages; three panels side by side ---------- */
+ul.pagelist { margin: 0; padding-left: 1.1em; }
+ul.pagelist li { margin: 0 0 .5em; }
+.cols.three { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+h3.panel-title { color: var(--ink); font-size: 1rem; margin: 0 0 4px; font-family: var(--sans); }
+
+/* tables of words, not numbers (hw02–hw05); a dock's short and long number fields (hw04, hw05) */
+table.data.prose td, table.data.prose th { font-family: var(--sans); }
+.input-dock input.num.p-in    { width: calc(6ch + 48px); }
+.input-dock input.num.seed-in { width: calc(10ch + 48px); }
+
+/* ---------- formulas (assets/js/ui/math.js): native MathML in a maths font ---------- */
+math { font-family: "STIX Two Math", "Cambria Math", "Latin Modern Math", math; font-size: 1.1em; }
+.math-block { overflow-x: auto; overflow-y: hidden; margin: .6em 0; padding: .1em 0; }
+.math-block math { font-size: 1.2em; }
+table.data math { font-size: 1.05em; }
+svg tspan.mi { font-style: italic; }
+
+/* ---------- legends whose keys show the mark (assets/js/ui/figure.js) ---------- */
+
+.legend.keys i.key { width: 14px; height: 10px; border-radius: 0; background: none; }
+.legend.keys i.key.bar  { background: var(--c); opacity: .7; border-radius: 2px; }
+.legend.keys i.key.dot  { width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
+.legend.keys i.key.line { height: 0; border-top: 2px solid var(--c); }
+.legend.keys i.key.dash { height: 0; border-top: 2px dashed var(--c); }
+.legend.keys i.key.path { height: 0; border-top: 1px solid var(--c); opacity: .7; }
+.legend.keys i.key.band { height: 10px; background: var(--c); opacity: .3; }
+
+/* ---------- figures ---------- */
+
+figure.fig { margin: 0 0 12px; }
+figure.fig figcaption { font-size: .85rem; color: var(--muted); margin-top: 4px; }
+
 /* ---------- evidence labels: how strong a claim is ---------- */
 
 .evidence {
@@ -443,3 +483,9 @@ input.wide { width: 100%; font-family: var(--mono); }
 body:has(.input-dock) { padding-bottom: 190px; }
 body:has(.input-dock.folded) { padding-bottom: 64px; }
 button.mini { min-height: 28px; padding: 2px 8px; font-size: .82rem; }
+/* aligned display lines (M`a &= b \\ &= c`): a grid, left parts right-aligned, the rest left-aligned on the sign */
+.math-lines { display: grid; grid-template-columns: max-content max-content; justify-content: safe center; align-items: baseline; row-gap: .35em; }
+.math-lines .l { justify-self: end; }
+.math-lines .r { justify-self: start; }
+.math-lines math { math-style: normal; font-size: 1.2em; }
+@media (max-width: 480px) { .math-block math, .math-lines math { font-size: 1.02em; } }

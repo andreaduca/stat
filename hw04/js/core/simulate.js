@@ -8,7 +8,8 @@
    HMWK4 note 03 (simulation design); [[Monte Carlo estimation]]. */
 
 import { SeededRng } from '../../../assets/js/core/rng.js';
-import { popcount32, geometricGap, beta as betaDraw } from './sampling.js';
+import { popcount32, geometricGap } from './sampling.js';
+import { beta as betaDraw } from '../../../assets/js/core/samplers.js';
 
 /** Default checkpoints: a geometric grid, so log axes are evenly filled. */
 export const GRID = [10, 30, 100, 300, 1000, 3000, 10000];
