@@ -58,3 +58,44 @@ svg.heat g.row.sel rect { stroke: var(--s2); stroke-width: 1.2; }
 svg.heat g.row:focus { outline: none; }
 .conclusions { margin-top: 18px; padding-top: 4px; border-top: 1px solid var(--line); }
 .conclusions ol li { margin-bottom: .45em; }
+
+/* ---------- box strips (E7) ---------- */
+svg.boxes { width: 100%; height: auto; display: block; }
+svg.boxes .grid { stroke: var(--line); stroke-width: 1; }
+svg.boxes .tick { fill: var(--muted); font: 11px var(--mono); }
+svg.boxes .axis-ttl { fill: var(--muted); font: 11px var(--sans); }
+svg.boxes .centre { stroke: var(--s2); stroke-width: 1.5; }
+svg.boxes .whisker { stroke: var(--s1); stroke-width: 1.4; }
+svg.boxes .box { fill: color-mix(in srgb, var(--s1) 35%, var(--panel)); stroke: var(--s1); stroke-width: 1.2; }
+svg.boxes .median { stroke: var(--ink); stroke-width: 2; }
+
+/* ---------- coverage tables (E8) ---------- */
+table.data.cov td span.off { font-style: italic; color: var(--warn-ink); }
+.card.lab h4 { margin: 14px 0 6px; font-size: .95rem; }
+table.data.cov td .ci { font-size: .78em; color: var(--muted); }
+table.data.cov td span.off .ci { color: inherit; }
+
+/* ---------- the alarm raster under the score stream (E9) ---------- */
+svg.raster { width: 100%; height: auto; display: block; }
+svg.raster .tick { fill: var(--muted); font: 10px var(--sans); }
+svg.raster .track { stroke: var(--line); stroke-width: 1; }
+svg.raster .alarm { stroke-width: 1.2; }
+.field.inline { flex-direction: row; align-items: center; gap: 6px; }
+/* a chart that uses the whole card (a long stream), with its companion strip */
+.full-width .chart svg { max-width: none; }
+svg.raster .tick { font-size: 11px; }
+
+/* ---------- the merge tree (E10) and the DP info box (E11) ---------- */
+svg.tree { width: 100%; min-width: 520px; max-width: 760px; height: auto; display: block; margin: 8px auto; }
+svg.tree .edge { stroke: var(--muted); stroke-width: 1.2; }
+svg.tree .box { fill: color-mix(in srgb, var(--s1) 18%, var(--panel)); stroke: var(--s1); }
+svg.tree .box.root { fill: color-mix(in srgb, var(--s2) 22%, var(--panel)); stroke: var(--s2); }
+svg.tree .lbl { fill: var(--ink); font: 10px var(--mono); }
+p.info { border-left: 3px solid var(--warn-line); background: var(--warn-bg); color: var(--warn-ink); padding: 8px 12px; border-radius: 6px; margin-top: 14px; }
+
+/* ---------- Nature page ---------- */
+.nature-item { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 12px; }
+.tag { display: inline-block; font-size: .68rem; letter-spacing: .04em; text-transform: uppercase; font-weight: 650; border-radius: 4px; padding: 1px 6px; border: 1px solid var(--muted); color: var(--muted); vertical-align: 2px; }
+.tag.rigorous { border-color: var(--c-result); color: var(--c-result); }
+.tag.analogy { border-color: var(--c-operand); color: var(--c-operand); }
+svg.shot { width: 100%; max-width: 340px; height: auto; display: block; image-rendering: pixelated; }

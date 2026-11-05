@@ -8,7 +8,7 @@ import * as X from '../core/experiments.js';
 
 const KINDS = {
   sampling: X.samplingExperiment, hackers: X.hackerExperiment, sweep: X.nSweep,
-  coverage: X.coverage, anomaly: X.anomalyStudy, merge: X.mergeDemo, dp: X.dpStudy,
+  coverage: X.coverage, coverageGrid: X.coverageGrid, anomaly: X.anomalyStudy, merge: X.mergeDemo, dp: X.dpStudy,
 };
 
 /* every typed array in the result, so they are handed over rather than copied */

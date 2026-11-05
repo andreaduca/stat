@@ -23,7 +23,7 @@ const SYMBOLS = {
   gg: '≫', ll: '≪', Longrightarrow: '⟹', Rightarrow: '⇒', leftarrow: '←', blacksquare: '∎', square: '□', bullet: '•',
 };
 const LARGE = { sum: '∑', prod: '∏', int: '∫' };
-const SPACES = { ',': '0.17em', ';': '0.28em', ':': '0.22em', quad: '1em', qquad: '2em', ' ': '0.28em' };
+const SPACES = { ',': '0.17em', ';': '0.28em', ':': '0.22em', '!': '0em', quad: '1em', qquad: '2em', ' ': '0.28em' };   // \! (negative space) is drawn as no space
 const ACCENTS = { bar: '‾', hat: '^', widehat: '^', widetilde: '~', tilde: '~', vec: '→', dot: '˙', overline: '‾' };   // ‾ (U+203E): two of them stack (x̄̄); ¯ did not
 const BB = { E: '𝔼', R: 'ℝ', N: 'ℕ', Z: 'ℤ', P: 'ℙ', Q: 'ℚ' };
 const OPS = '+-=<>()[],/|!:;.?*\'';
@@ -222,4 +222,17 @@ export function svgTex(textNode, src) {
   };
   textNode.replaceChildren(...parse(tokenize(src)).flatMap((n) => flat(n, null)));
   return textNode;
+}
+
+/** Typeset a static page: every element with class "m" (inline) or "M" (display)
+ *  holds its formula as text and is replaced by the MathML. For the essays,
+ *  which are plain HTML; write < and & in the formula as &lt; and &amp;. */
+export function renderMath(root = document) {
+  for (const node of root.querySelectorAll('.m, .M')) {
+    const src = node.textContent;
+    const display = node.classList.contains('M');
+    const wrap = document.createElement(display ? 'div' : 'span');
+    wrap.innerHTML = display ? M(Object.assign([src], { raw: [src] })) : tex(src);   // M is a tag: hand it a raw strings array
+    node.replaceWith(...wrap.childNodes);
+  }
 }

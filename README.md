@@ -13,13 +13,18 @@ assets/           the shared shell and maths, reused by every homework
     field.js        the prime field F_p (BigInt, no DOM)
     curve.js        elliptic-curve points, group law, scalar multiplication
     secp256k1.js    secp256k1 at full size, Jacobian coordinates (hw02 keys, hw03 ElGamal and searches)
-    stats.js        χ² with exact p-values, z-tests, Bonferroni, Wilson, reference laws, entropy
+    stats.js        χ² with exact p-values, z-tests, Bonferroni, Wilson, reference laws, entropy, sample moments
+    numeric.js      erfc, Φ, Φ⁻¹, incomplete gamma and beta, t and χ² laws and quantiles, line fit (hw04, hw05)
+    samplers.js     normal, Gamma and Beta draws from the seeded generator (hw04, hw05)
     rng.js          seeded xoshiro128** for reproducible simulations (never for keys)
   js/ui/
     site.js         author, course, repository link — edit here
     dom.js          el(), the page shell, the "What am I looking at?" box, facts()
     dock.js         the input dock at the bottom of the window, shared by every homework
     lab.js          the experiment frame: question, steps, result, evidence sections, notes, export
+    run.js          runner(worker): a per-page cache of worker runs, the previous result kept while a new one computes
+    figure.js       legends whose keys show the mark, evidence labels, figures, SVG export
+    math.js         formulas in a small LaTeX subset as native MathML (m``, M``, renderMath), and as SVG text
     format.js       numbers for reading: thin-space thousands, percentages, durations, byte counts
     page.js         startPage(): state in the URL, remembered between pages; optional in-place redraws
     grid.js         SVG scatter on an integer lattice
@@ -61,7 +66,7 @@ hw03/             homework 3 — Caesar vs toy EC-ElGamal on secp256k1
 hw04/             homework 4 — penetration as a random walk: LLN, variance scaling, CLT
   index.html model.html distributions.html variance.html lln.html clt.html thresholds.html attackers.html essay.html
   css/hw04.css      layer legends, evidence labels, word tables
-  js/core/          the maths, documented for study: numeric (erfc, Φ, Φ⁻¹, log-sum-exp, line fit),
+  js/core/          the maths, documented for study (numeric functions and samplers now in assets/js/core):
                     models (Bernoulli, Rademacher, Beta attackers), exact (binomial laws and tails, LLN tail,
                     exact KS, reflection, hitting times, gambler's ruin), bounds (Chebyshev, Hoeffding,
                     KL–Chernoff, CLT, sample sizes), estimate (moments, ECDF, KS, Q-Q, χ²), sampling,
@@ -69,6 +74,17 @@ hw04/             homework 4 — penetration as a random walk: LLN, variance sca
   js/workers/sim.js the Web Worker that runs a simulation
   js/pages/         shell.js, run-input.js (the input dock at the bottom of the window), run.js (worker + cache), lab-panel.js (experiment frame),
                     widgets.js, one *-page.js per page
+hw05/             homework 5 — Welford's recurrences, sampling mean and variance, m hackers × n systems
+  index.html welford.html sampling.html hackers.html n-effect.html intervals.html anomalies.html
+  privacy.html nature.html essay.html
+  css/hw05.css      mechanism drawings, heat strip, box strips, alarm raster, merge tree, shot-noise picture
+  js/core/          the maths, documented for study: running (Welford, Chan merge, traced and exponentially
+                    weighted stats), variance-algos (naive, two-pass, Welford with rounding; exact BigInt
+                    variance), dists (Normal, Exponential, Uniform, scaled Beta, Binomial, novice/expert
+                    mixture), theory (Var(s²), c₄, standard errors, χ² coverage limit, sample sizes), privacy
+                    (Laplace mechanism, sensitivities), experiments (all the Monte Carlo experiments), nature
+  js/workers/sim.js the Web Worker that runs the experiments
+  js/pages/         shell.js, inputs.js (the input dock), widgets.js, one *-page.js per page
 tools/            development aids; not part of the published site
 docs/             the specification and the conventions (not committed)
 ```

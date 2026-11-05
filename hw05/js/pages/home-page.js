@@ -118,6 +118,21 @@ function language() {
   ]);
 }
 
+/** The results in a few lines (default run: 10·Beta(2, 5), m = 2 000, n = 10, seed 20261105; the pages recompute them). */
+function results() {
+  return el('div', { class: 'card' }, [
+    el('h2', { text: 'The results in six lines' }),
+    el('ul', {}, [
+      el('li', { html: `<strong>Welford.</strong> ${m`S_k = S_{k-1} + d_k(x_k - M_k)`}, one application of the shift decomposition: three statements, one pass, three numbers of memory. On ${m`10^9 + \{4, 7, 13, 16\}`} the textbook formula returns −170.67 for a variance of 30; Welford returns 30.` }),
+      el('li', { html: `<strong>Unbiased at every n.</strong> Across 2 000 hackers × 10 systems, ${m`\overline{\bar x} = 2.852`} (μ = 2.857, z = −0.42) and ${m`\overline{s^2} = 2.540`} (σ² = 2.551, z = −0.41); the divisor-n variance misses by ${m`\sigma^2/n`}.` }),
+      el('li', { html: `<strong>One hacker vs many.</strong> One hacker's ${m`s_j^2`} from 10 systems is off by about 46 %; the average over 2 000 hackers by about 1 %. When hackers differ, ${m`\overline{s^2}`} finds only the within-group variance and the spread of the ${m`\bar x_j`} is 15 times ${m`\overline{s^2}/n`}.` }),
+      el('li', { html: `<strong>1/n, with a tail constant.</strong> Both spreads fall like 1/n (fitted slopes −0.995, −1.02), but the variance's constant is ${m`(2+\kappa)\sigma^4`}: about 980 systems pin a hacker's mean to ±0.1, about 720 their variance to ±10 %.` }),
+      el('li', { html: '<strong>Inference.</strong> t-intervals for μ recover their 95 % for every shape; χ² intervals for σ² do not (Exp(1): 0.69 at n = 100, limit 0.67).' }),
+      el('li', { html: '<strong>Uses.</strong> A frozen baseline flags 43 % of an improved attacker’s scores, adaptive ones nearly none after a slow ramp (poisoning); shard summaries merge to 2·10⁻¹⁵, and two of them reveal a record; DP noise beats sampling noise on the mean from about 320 records.' }),
+    ]),
+  ]);
+}
+
 function pageList() {
   return el('div', { class: 'card' }, [
     el('h2', { text: 'The pages, in reading order' }),
@@ -135,6 +150,6 @@ startPage({
   render: ({ state }) => {
     let run = readInputs(state);
     if (run.error) run = readInputs(DEFAULTS);   // the home page has no dock: fall back to the defaults
-    return [el('p', { class: 'notice', text: NOTICE }), exercise(), decisions(run), overview(run), language(), pageList()];
+    return [el('p', { class: 'notice', text: NOTICE }), exercise(), decisions(run), overview(run), language(), results(), pageList()];
   },
 });

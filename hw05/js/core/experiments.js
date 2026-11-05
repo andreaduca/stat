@@ -356,3 +356,24 @@ export function dpStudy({ dist: spec, n, eps = 1, split = 0.5, draws = 1000, see
   for (let i = 0; i < draws; i++) { const s = group(other); sampMeans[i] = s.mean; sampVars[i] = s.variance(1); }
   return { n, eps, split, truth, shown, relMeans, relVars, sampMeans, sampVars };
 }
+
+/**
+ * Coverage of the t and χ² intervals for several distributions and sample
+ * sizes in one job (one worker instead of one per cell).
+ * Category: inference (E8). Each cell is coverage() with its own sub-stream.
+ * @returns {{level, R, ns, cells: {[distKey]: {[n]: ReturnType<typeof coverage>}}}}
+ */
+export function coverageGrid({ dists, ns, R, level = 0.95, seed, keep = 50, onProgress }) {
+  const total = dists.length * ns.reduce((s, n) => s + n, 0);
+  let done = 0;
+  const cells = {};
+  for (const { key, spec } of dists) {
+    cells[key] = {};
+    for (const n of ns) {
+      cells[key][n] = coverage({ dist: spec, n, R, level, seed, keep });
+      done += n;
+      onProgress?.(done / total);
+    }
+  }
+  return { level, R, ns, cells };
+}
