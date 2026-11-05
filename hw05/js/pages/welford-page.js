@@ -126,7 +126,7 @@ const ticks = (lo, hi) => {
 
 /** (a) The number line: old points, the new point, both means, and the three arrows. */
 function numberLine(trace, k) {
-  const r = trace[k - 1], W = 600, H = 162, padX = 30;
+  const r = trace[k - 1], W = 500, H = 162, padX = 26;
   const xs = trace.slice(0, k).map((t) => t.x).concat(r.prevMean, r.mean);
   let lo = Math.min(...xs), hi = Math.max(...xs);
   if (hi - lo < 1e-9) { lo -= 1; hi += 1; }
@@ -162,7 +162,7 @@ function numberLine(trace, k) {
 
 /** (b) The rectangle: the increment of S is old deviation × new deviation, inside the square d². */
 function rectangle(r, k) {
-  const W = 640, H = 250, side = 200, x0 = 80, y0 = 20;
+  const W = 520, H = 205, side = 150, x0 = 72, y0 = 16;
   const svg = s('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', class: 'mech',
     'aria-label': `rectangle view at step ${k}: square d squared ${sig(r.d * r.d)}, increment ${sig(r.inc)}` });
   if (k === 1 || r.d === 0) {
@@ -177,17 +177,17 @@ function rectangle(r, k) {
   svg.append(s('rect', { class: 'strip', x: x0 + own, y: y0 + side - own, width: strip, height: own }));
   svg.append(lbl({ class: 'lbl', x: x0 + side / 2, y: y0 + side + 16, 'text-anchor': 'middle' }, `|d| = ${sig(a, 3)}`));
   svg.append(lbl({ class: 'lbl', x: x0 - 6, y: y0 + side - own / 2, 'text-anchor': 'end' }, '|x_k - M_k|'));
-  const L = x0 + side + 30;
+  const L = x0 + side + 22;
   const line = (y, cls, text) => {
     if (cls) svg.append(s('rect', { class: cls, x: L, y: y - 10, width: 12, height: 12 }));
     svg.append(lbl({ class: 'lbl', x: L + (cls ? 18 : 0), y }, text));
   };
-  line(y0 + 10, 'sq', `\\text{square } d^2 = ${sig(r.d * r.d, 4)}`);
-  line(y0 + 40, 'own', `\\text{own square } (x_k - M_k)^2 = ${sig(r.newDev ** 2, 4)}`);
-  line(y0 + 70, 'strip', `\\text{strip } (k-1)(M_k - M_{k-1})^2 = ${sig((k - 1) * (r.d / k) ** 2, 4)}`);
-  line(y0 + 106, null, `\\text{increment of } S = d (x_k - M_k) = ${sig(r.inc, 4)}`);
-  line(y0 + 126, null, `= \\frac{k-1}{k} d^2 = ${sig(f, 3)} \\cdot d^2`);
-  line(y0 + 156, null, `\\text{not added: } \\frac{d^2}{k} = ${sig((r.d * r.d) / k, 4)} \\text{ (the top band)}`);
+  line(y0 + 8, 'sq', `\\text{square } d^2 = ${sig(r.d * r.d, 4)}`);
+  line(y0 + 32, 'own', `\\text{own square } (x_k - M_k)^2 = ${sig(r.newDev ** 2, 4)}`);
+  line(y0 + 56, 'strip', `\\text{strip } (k-1)(M_k - M_{k-1})^2 = ${sig((k - 1) * (r.d / k) ** 2, 4)}`);
+  line(y0 + 88, null, `\\text{increment of } S = d (x_k - M_k) = ${sig(r.inc, 4)}`);
+  line(y0 + 106, null, `= \\frac{k-1}{k} d^2 = ${sig(f, 3)} \\cdot d^2`);
+  line(y0 + 132, null, `\\text{not added: } \\frac{d^2}{k} = ${sig((r.d * r.d) / k, 4)} \\text{ (the top band)}`);
   return svg;
 }
 
@@ -240,10 +240,17 @@ function e1(page, run, update) {
     ]),
     el('div', { class: 'row' }, [field(`step shown: k = ${k} of ${trace.length}`, stepper),
       el('span', { class: 'small muted', html: m`x_{${k}} = ${sig(r.x, 5)}, \quad M_{${k}} = ${sig(r.mean, 5)}, \quad S_{${k}} = ${sig(r.ss, 5)}${k > 1 ? `, \\quad s_{${k}}^2 = ${sig(r.ss / (k - 1), 5)}` : ''}` })]),
-    ...section(1, 'The number line', `Grey: the values before step ${m`k`}; the large dot is ${m`x_k`}. The top arrow is the innovation ${m`d`}, measured from the OLD mean; the middle one is the new deviation ${m`x_k - M_k`}, measured from the NEW mean; the bottom one is how far the mean moved.`),
-    wide(numberLine(trace, k)),
-    ...section(2, 'The rectangle: old deviation × new deviation', `The increment of ${m`S`} is a rectangle with sides ${m`|d|`} and ${m`|x_k - M_k| = \frac{k-1}{k}|d|`}, inside the square ${m`d^2`}. It splits into the new point's own square and a strip: the extra spread of the ${m`k-1`} old points around the moved centre.`),
-    wide(rectangle(r, k)),
+    // side by side, so one move of the step slider changes both pictures in view
+    el('div', { class: 'cols mech-pair' }, [
+      el('div', {}, [
+        ...section(1, 'The number line', `Grey: the values before step ${m`k`}; the large dot is ${m`x_k`}. Top arrow: the innovation ${m`d`}, from the OLD mean; middle: the new deviation ${m`x_k - M_k`}, from the NEW mean; bottom: how far the mean moved.`),
+        wide(numberLine(trace, k)),
+      ]),
+      el('div', {}, [
+        ...section(2, 'The rectangle: old deviation × new deviation', `The increment of ${m`S`} has sides ${m`|d|`} and ${m`|x_k - M_k| = \frac{k-1}{k}|d|`}, inside the square ${m`d^2`}: the new point's own square plus a strip, the extra spread of the ${m`k-1`} old points around the moved centre.`),
+        wide(rectangle(r, k)),
+      ]),
+    ]),
     ...section(3, 'S as a stack of increments', `Each segment is one step's increment ${m`d_k (x_k - M_k) \ge 0`}; the current one is highlighted. ${m`S`} only ever grows.`),
     wide(stackBar(trace, k)),
     ...section(4, 'The trace', `Every step of the recurrence. With the preset the last row is ${m`M_8 = 5`}, ${m`S_8 = 32`}, ${m`s^2 = 32/7 = 4.5714`}, ${m`\mathrm{SS}/n = 4`}.`),

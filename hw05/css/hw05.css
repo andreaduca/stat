@@ -4,7 +4,7 @@
 
 /* ---------- the Welford mechanism drawings (E1) ---------- */
 
-svg.mech { width: 100%; min-width: 520px; max-width: 640px; height: auto; display: block; margin: 4px 0 10px; }
+svg.mech { width: 100%; min-width: 420px; max-width: 640px; height: auto; display: block; margin: 4px 0 10px; }
 svg.mech .axis { stroke: var(--muted); stroke-width: 1; }
 svg.mech .tick { fill: var(--muted); font: 11px var(--mono); }
 svg.mech .lbl { fill: var(--ink); font: 12px var(--sans); }
@@ -39,3 +39,22 @@ table.data.prose td, table.data.prose th { text-align: left; }
 table.data.derive math { math-style: normal; }
 table.data.derive td { padding-top: 9px; padding-bottom: 9px; vertical-align: middle; white-space: normal; }
 table.data.derive td.left { min-width: 10em; }
+/* E1: number line and rectangle side by side on a wide screen, stacked below about 900 px */
+.cols.mech-pair { grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); align-items: start; }
+.cols.mech-pair svg.mech { max-width: none; }
+
+/* ---------- small multiples ---------- */
+.cols.four { grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr)); gap: 14px; }
+/* measured-vs-theory tables: the first column is words and formulas, not numbers */
+table.data.cmp td:first-child { font-family: var(--sans); white-space: normal; }
+table.data.roles td:last-child { font-family: var(--sans); text-align: left; white-space: normal; }
+
+/* ---------- the hackers' heat strip (E5) ---------- */
+svg.heat { max-width: 100%; height: auto; display: block; }
+svg.heat .tick { fill: var(--muted); font: 9px var(--mono); }
+svg.heat g.row { cursor: pointer; }
+svg.heat g.row:hover rect, svg.heat g.row:focus rect { stroke: var(--ink); stroke-width: .6; }
+svg.heat g.row.sel rect { stroke: var(--s2); stroke-width: 1.2; }
+svg.heat g.row:focus { outline: none; }
+.conclusions { margin-top: 18px; padding-top: 4px; border-top: 1px solid var(--line); }
+.conclusions ol li { margin-bottom: .45em; }

@@ -24,7 +24,7 @@ const SYMBOLS = {
 };
 const LARGE = { sum: '∑', prod: '∏', int: '∫' };
 const SPACES = { ',': '0.17em', ';': '0.28em', ':': '0.22em', quad: '1em', qquad: '2em', ' ': '0.28em' };
-const ACCENTS = { bar: '¯', hat: '^', tilde: '~', vec: '→', dot: '˙', overline: '¯' };
+const ACCENTS = { bar: '‾', hat: '^', widehat: '^', widetilde: '~', tilde: '~', vec: '→', dot: '˙', overline: '‾' };   // ‾ (U+203E): two of them stack (x̄̄); ¯ did not
 const BB = { E: '𝔼', R: 'ℝ', N: 'ℕ', Z: 'ℤ', P: 'ℙ', Q: 'ℚ' };
 const OPS = '+-=<>()[],/|!:;.?*\'';
 const RAW = new Set(['text', 'mathrm', 'operatorname', 'mathbb', 'mathbf']);
@@ -208,7 +208,7 @@ export function svgTex(textNode, src) {
         return [...part(n.a), span('/', null, shift), ...part(n.b), span(' ', null, shift)];
       }
       case 'sqrt': return [span('√', null, shift), ...flat(n.a, shift)];
-      case 'acc': return [...flat(n.a, shift), span(n.v === '¯' ? '̄' : n.v, null, shift)];
+      case 'acc': return [...flat(n.a, shift), span(n.v === '‾' ? '̄' : n.v, null, shift)];
       case 'large': return [span(n.v, null, shift)];
       case 'script': {
         // a script inside a script is drawn at the same smaller size (one level is enough for labels)
