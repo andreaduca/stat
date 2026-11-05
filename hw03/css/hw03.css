@@ -77,10 +77,6 @@ ul.pagelist li { margin: 0 0 .5em; }
 
 /* ---------- Caesar page ---------- */
 
-textarea {
-  font: .95rem/1.5 var(--mono); color: var(--ink); background: var(--panel);
-  border: 1px solid var(--line); border-radius: 7px; padding: 6px 9px; width: 100%; min-height: 4.5em;
-}
 .tagline { font-size: .8rem; color: var(--muted); margin: 10px 0 3px; }
 
 /* two alphabets, one above the other; the selected column is filled */
@@ -158,25 +154,6 @@ table.data.verdicts td.left, table.data.fails td.left { white-space: normal; }
 table.data.rates td small { font-size: .72rem; }
 table.data.rates th { white-space: nowrap; }
 
-/* the reading order of an experiment (as hw02's statistics lab) */
-.lab .question { font-size: 1.02rem; margin: 0 0 12px; }
-.lab .question::before { content: "The question. "; font-weight: 650; }
-.lab .how { border-left: 3px solid var(--accent); padding: 2px 0 2px 14px; margin: 0 0 16px; }
-.lab .label, .answer .label { font-size: .72rem; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
-.lab .how ol { margin: 0; padding-left: 1.3em; font-size: .92rem; }
-.lab .how li { margin: 2px 0; }
-.lab ul.hints { list-style: none; padding: 0; margin: 10px 0 16px; font-size: .84rem; color: var(--muted); }
-.lab ul.hints li { margin: 3px 0; }
-.lab ul.hints strong { color: var(--ink); font-weight: 600; }
-.answer { border: 1px solid var(--accent); border-radius: var(--radius); background: var(--panel-alt); padding: 10px 14px; margin: 4px 0 16px; }
-.answer p { margin: 0; font-size: 1rem; }
-.lab h3.section { color: var(--ink); font-size: 1rem; margin: 22px 0 6px; }
-.lab h3.section .n { display: inline-grid; place-items: center; width: 22px; height: 22px; margin-right: 8px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: .8rem; }
-.lab .caption { font-size: .88rem; color: var(--muted); margin: 0 0 8px; }
-.running { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 6px 0 12px; }
-.running progress { flex: 1 1 200px; height: 10px; accent-color: var(--accent); }
-.why { font-size: .9rem; color: var(--muted); margin: 14px 0 12px; }
-.why.matters::before { content: "Why it matters: "; font-weight: 600; color: var(--ink); }
 table.data.keys td.cand, table.data.keys td.score { white-space: nowrap; }
 .keys-head { justify-content: space-between; align-items: center; margin-bottom: 4px; }
 /* on a phone: key, candidate and score must fit without scrolling; flags may scroll */
@@ -248,27 +225,8 @@ td.cause.impl   { color: var(--muted); }
   table.data.weak td.what { font-weight: 600; }
 }
 
-/* ---------- essay: a reading column, with evidence labels (as hw02) ---------- */
+/* ---------- essay (the column and the evidence labels are in base.css) ---------- */
 
-.essay { max-width: 72ch; margin: 0 auto; font-size: 1.04rem; }
-.essay p, .essay li { line-height: 1.72; }
-.essay h2 { font-size: 1.3rem; margin: 2.2em 0 .6em; padding-top: .4em; border-top: 1px solid var(--line); }
-.essay h3 { color: var(--ink); font-size: 1.05rem; margin: 1.6em 0 .4em; }
-.essay .byline { color: var(--muted); margin: -.2em 0 1.2em; font-size: .92rem; }
-.essay .evidence-key { color: var(--muted); }
-.essay nav.toc { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 18px; margin: 1em 0 1.5em; }
-.essay nav.toc ol { margin: 0; padding-left: 1.3em; columns: 2 18em; }
-.essay table { margin: .6em 0 1.2em; }
-.essay ol.refs li { margin-bottom: .4em; }
-.evidence {
-  display: inline-block; font-size: .7rem; letter-spacing: .05em; text-transform: uppercase; font-weight: 650;
-  border-radius: 4px; padding: 1px 6px; border: 1px solid var(--c); color: var(--ink);
-  background: color-mix(in srgb, var(--c) 12%, var(--panel)); white-space: nowrap; vertical-align: 1px;
-}
-.evidence.theorem     { --c: var(--c-third); }
-.evidence.measurement { --c: var(--c-result); }
-.evidence.record      { --c: var(--c-operand); }
-.evidence.opinion     { --c: var(--muted); }
 
 /* keyboard focus on a table row (the 26 candidate keys) */
 table.data.keys tr:focus-visible { outline: none; }

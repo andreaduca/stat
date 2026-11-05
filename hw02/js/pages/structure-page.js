@@ -5,7 +5,7 @@
    homomorphism test, S9 linearity as a liability (ECDSA nonce reuse), S10 the
    fragility of hash-based signatures, S11 smooth numbers and index calculus. */
 
-import { el, fmt } from '../../../assets/js/ui/dom.js';
+import { el, fmt, facts } from '../../../assets/js/ui/dom.js';
 import { startPage } from '../../../assets/js/ui/page.js';
 import { heatmap } from '../../../assets/js/ui/heatmap.js';
 import { wilson, dickmanRho, ruleOfThree } from '../../../assets/js/core/stats.js';
@@ -14,7 +14,7 @@ import { N, publicKey, compressedHex } from '../../../assets/js/core/secp256k1.j
 import { messageHash, sign, verify, recoverFromReusedNonce, recoverFromRelatedNonces } from '../core/ecdsa.js';
 import { TOY_CURVES, ANOMALOUS } from '../core/toycurves.js';
 import { levelSet, spectrum, peaks } from '../core/lab/s7.js';
-import { stepCard, evidence, hexValue, facts } from './widgets.js';
+import { stepCard, evidence, hexValue } from './widgets.js';
 import { labPanel, MEASURED, THEORY, pct, table, chart, verdict, section } from './lab-panel.js';
 import { hw02Shell } from './shell.js';
 

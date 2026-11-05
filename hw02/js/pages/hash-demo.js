@@ -1,10 +1,10 @@
 /* hash-demo.js — the Keccak-256 vs SHA3-256 padding demo, shared by the
    address lab and the history page: one sponge, two domain bytes. */
 
-import { el, field } from '../../../assets/js/ui/dom.js';
+import { el, field, facts } from '../../../assets/js/ui/dom.js';
 import { bytesToHex, utf8 } from '../core/bytes.js';
 import { keccak256, sha3_256, padMessage } from '../core/keccak.js';
-import { stepCard, hexValue, facts } from './widgets.js';
+import { stepCard, hexValue } from './widgets.js';
 
 export function spongePanel(state, update) {
   const out = el('div');

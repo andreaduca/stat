@@ -5,6 +5,7 @@
    All of it comes from the moments of Sₙ at each checkpoint: Var(Sₙ/c) = Var(Sₙ)/c². */
 
 import { el, field } from '../../../assets/js/ui/dom.js';
+import { nice } from '../../../assets/js/ui/format.js';
 import { startPage } from '../../../assets/js/ui/page.js';
 import { plot, short } from '../../../assets/js/ui/plot.js';
 import { modelFrom } from '../core/models.js';
@@ -17,7 +18,6 @@ import { labPanel, section, table, verdict } from './lab-panel.js';
 import { SIM, LIMIT, legend, figure, svgButton } from './widgets.js';
 import { hw04Shell, STICKY, MEMORY } from './shell.js';
 
-const nice = (n) => n.toLocaleString('en-US').replace(/,/g, '\u202f');
 /** A signed number with a real minus sign: +0.999, −1.001. */
 const signed = (x, d) => `${x >= 0 ? '+' : '−'}${Math.abs(x).toFixed(d)}`;
 const SERIES = [

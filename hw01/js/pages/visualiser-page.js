@@ -8,7 +8,8 @@ import { LatticeGrid, legend } from '../../../assets/js/ui/grid.js';
 import { startPage } from '../../../assets/js/ui/page.js';
 import { curveFromParams } from '../core/curves.js';
 import { curveOptions, CURVE_KEYS, CURVE_MEMORY } from './saved-curves.js';
-import { curveInput } from './curve-input.js';
+import { curveDock, rejected } from './curve-dock.js';
+import { show as showValue, onCommit } from '../../../assets/js/ui/dock.js';
 import { measure } from '../../../assets/js/core/curve.js';
 import { hw01Shell } from './shell.js';
 
@@ -43,6 +44,7 @@ const CAPTION = {
 };
 
 let grid = null, frames = [], index = 0, timer = null, parts = {};
+const transport = { play: null, progress: null, ops: null };   // in the dock, built once
 let secondsPerStep = 1;
 
 const speed = () => secondsPerStep * 1000;
@@ -50,12 +52,12 @@ const speed = () => secondsPerStep * 1000;
 function stop() {
   if (timer) clearInterval(timer);
   timer = null;
-  if (parts.play) parts.play.textContent = '▶ play';
+  if (transport.play) transport.play.textContent = '▶ play';
 }
 
 function play() {
   if (timer) return stop();
-  parts.play.textContent = '⏸ pause';
+  transport.play.textContent = '⏸ pause';
   timer = setInterval(() => {
     if (index >= frames.length - 1) { stop(); return; }
     show(index + 1);
@@ -131,47 +133,51 @@ function show(next) {
     el('li', {}, [el('span', { class: 'k', text: k }), el('span', { class: 'v', text: v })])));
 
   parts.caption.textContent = CAPTION[phase](t);
-  parts.progress.textContent = `micro-step ${index + 1} / ${frames.length}`;
+  transport.progress.textContent = `micro-step ${index + 1} / ${frames.length}`;
 }
 
 /* ---------- static structure ---------- */
 
-/** The controls this page adds under the shared curve card: which key to walk
- *  through, by which method, and the transport for stepping through it. */
-function extraControls(k, method, update, patch) {
-  const kInput = el('input', { type: 'number', class: 'num', value: String(k), min: 1, onchange: (e) => update({ k: e.target.value }) });
-
-  const methods = el('div', { class: 'radio-row' }, ['double-and-add', 'naive'].map((m) =>
-    el('label', {}, [
-      el('input', { type: 'radio', name: 'method', value: m, checked: m === method, onchange: () => update({ method: m }) }),
-      m,
-    ])));
-
-  /* the speed must not redraw the page: that would restart the animation */
-  const slider = el('input', {
-    type: 'range', min: 0.25, max: 4, step: 0.25, value: String(secondsPerStep),
-    onchange: (e) => { secondsPerStep = Number(e.target.value); patch({ speed: e.target.value }); if (timer) { stop(); play(); } },
-  });
-
-  parts.play = el('button', { class: 'primary', text: '▶ play', onclick: play });
-  parts.progress = el('span', { class: 'small muted' });
-
-  return [
-    el('div', { class: 'row' }, [
-      field('private key k', kInput),
-      field('method', methods),
-      field('seconds per step', slider),
-    ]),
-    el('div', { class: 'row' }, [
-      el('button', { text: '⏮', title: 'back to the start', onclick: () => { stop(); show(0); } }),
-      el('button', { text: '◀ step', onclick: () => { stop(); show(index - 1); } }),
-      parts.play,
-      el('button', { text: 'step ▶', onclick: () => { stop(); show(index + 1); } }),
-      parts.progress,
-      el('span', { class: 'small muted', text: `${parts.trace.length} group operations to reach ${k}G` }),
-    ]),
-  ];
-}
+/** This page's own row in the dock: which key to walk through, by which
+ *  method, and the transport for stepping through it. */
+const WALK = {
+  id: 'walk', label: 'this page',
+  build(apply, later) {
+    const k = el('input', { type: 'number', class: 'num', min: 1, 'aria-label': 'private key k' });
+    onCommit(k, () => apply({ k: k.value }), later);
+    const radios = ['double-and-add', 'naive'].map((m) => el('input', { type: 'radio', name: 'method', value: m, onchange: () => apply({ method: m }) }));
+    const methods = el('div', { class: 'radio-row' }, radios.map((r) => el('label', {}, [r, r.value])));
+    /* the speed must not redraw the page: that would restart the animation */
+    const slider = el('input', {
+      type: 'range', min: 0.25, max: 4, step: 0.25, 'aria-label': 'seconds per step',
+      onchange: (e) => { secondsPerStep = Number(e.target.value); walkPatch({ speed: e.target.value }); if (timer) { stop(); play(); } },
+    });
+    transport.play = el('button', { type: 'button', class: 'primary', text: '▶ play', onclick: play });
+    transport.progress = el('span', { class: 'small muted' });
+    transport.ops = el('span', { class: 'small muted' });
+    return {
+      nodes: [
+        el('div', { class: 'row' }, [field('private key k', k), field('method', methods), field('seconds per step', slider)]),
+        el('div', { class: 'row' }, [
+          el('button', { type: 'button', text: '⏮', title: 'back to the start', onclick: () => { stop(); show(0); } }),
+          el('button', { type: 'button', text: '◀ step', onclick: () => { stop(); show(index - 1); } }),
+          transport.play,
+          el('button', { type: 'button', text: 'step ▶', onclick: () => { stop(); show(index + 1); } }),
+          transport.progress,
+          transport.ops,
+        ]),
+      ],
+      refresh(v) {
+        showValue(k, v.k);
+        for (const r of radios) r.checked = r.value === v.method;
+        showValue(slider, secondsPerStep);
+        transport.ops.textContent = `${v.ops} group operations to reach ${v.k}G`;
+      },
+    };
+  },
+  summary: (v) => `k = ${v.k} · ${v.method}`,
+};
+let walkPatch = () => {};   // startPage's patch, for the speed
 
 function gridPanel(c, base) {
   grid = new LatticeGrid({ modulus: c.p, onHover: (pt) => `(${pt.x}, ${pt.y})` });
@@ -242,20 +248,23 @@ startPage({
   shell: hw01Shell('visualiser.html'),
   sticky: CURVE_KEYS,
   memory: CURVE_MEMORY,
+  preserve: true,
   render: ({ state, update, patch }) => {
     stop();
+    walkPatch = patch;
     const { curve: c, base, presetId, error } = curveFromParams(state, savedExtra());
-    if (error) return [curveInput({ curve: null, base: null, presetId, error, state, update })];
-
     const k = asBig(state.k ?? 6) || 6n;
     const method = state.method === 'naive' ? 'naive' : 'double-and-add';
     secondsPerStep = Number(state.speed ?? 1);
-    const { trace } = measure(c, k, base, method);
+    const trace = error ? [] : measure(c, k, base, method).trace;
+    curveDock({ curve: c ?? null, base: base ?? null, presetId, error: error ?? null, state, update, page: WALK, pageValue: { k, method, ops: trace.length } });
+    if (error) return [rejected(error)];
 
     parts = { curve: c, trace };
     if (trace.length === 0) {
+      frames = [];
+      if (transport.progress) transport.progress.textContent = '';
       return [
-        curveInput({ curve: c, base, presetId, error: null, state, update, extras: extraControls(k, method, update, patch) }),
         el('div', { class: 'card' }, [
           el('p', { class: 'small', text: `k = ${k} needs no group operation at all: 1G is G itself. Try k = 6.` }),
         ]),
@@ -276,9 +285,7 @@ startPage({
     const gridCard = gridPanel(c, base);
     const keyCard = keyPanel(k, method, trace);
     const arithCard = arithPanel();
-    const card = curveInput({ curve: c, base, presetId, error: null, state, update, extras: extraControls(k, method, update, patch) });
-
     queueMicrotask(() => show(0));   // the panels must be in the DOM first
-    return [card, el('div', { class: 'cols wide-first' }, [gridCard, el('div', { class: 'stack' }, [keyCard, arithCard])])];
+    return [el('div', { class: 'cols wide-first' }, [gridCard, el('div', { class: 'stack' }, [keyCard, arithCard])])];
   },
 });

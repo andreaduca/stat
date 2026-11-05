@@ -5,15 +5,15 @@
    first attackers of the run every other page uses (same seed, same stream),
    simulated here directly: 50 × 10⁴ steps take milliseconds. */
 
-import { el, explain, field } from '../../../assets/js/ui/dom.js';
+import { el, explain, field, facts } from '../../../assets/js/ui/dom.js';
 import { startPage } from '../../../assets/js/ui/page.js';
-import { plot, short } from '../../../assets/js/ui/plot.js';
+import { plot } from '../../../assets/js/ui/plot.js';
 import { modelFrom, StepModel } from '../core/models.js';
 import { Simulation } from '../core/simulate.js';
 import { llnTail } from '../core/exact.js';
 import { readRun, runCard } from './run-input.js';
 import { labPanel, section, table } from './lab-panel.js';
-import { SIM, LIMIT, facts, legend, figure, svgButton } from './widgets.js';
+import { SIM, LIMIT, legend, figure, svgButton } from './widgets.js';
 import { hw04Shell, STICKY, MEMORY } from './shell.js';
 
 const N_MAX = 10000, REVEAL = 50, MUTED = 'var(--muted)', BAND = 'var(--s2)';

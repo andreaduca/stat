@@ -5,9 +5,10 @@
 import { el, field, explain, fmt } from '../../../assets/js/ui/dom.js';
 import { lineChart, chartLegend } from '../../../assets/js/ui/linechart.js';
 import { startPage } from '../../../assets/js/ui/page.js';
+import { show, onCommit } from '../../../assets/js/ui/dock.js';
 import { curveFromParams } from '../core/curves.js';
 import { curveOptions, CURVE_KEYS, CURVE_MEMORY } from './saved-curves.js';
-import { curveInput } from './curve-input.js';
+import { curveDock, rejected } from './curve-dock.js';
 import { measure } from '../../../assets/js/core/curve.js';
 import { hw01Shell } from './shell.js';
 
@@ -19,21 +20,22 @@ const asBig = (value, fallback = 6n) => {
   try { const n = BigInt(String(value).trim()); return n < 0n ? -n : n; } catch { return fallback; }
 };
 
-/** The controls this page adds under the shared curve card. */
-function extraControls(k, method, update) {
-  const kInput = el('input', {
-    type: 'number', class: 'num', value: String(k), min: 0, style: 'width:12ch',
-    onchange: (e) => update({ k: e.target.value }),
-  });
-
-  const methods = el('div', { class: 'radio-row' }, ['double-and-add', 'naive'].map((m) =>
-    el('label', {}, [
-      el('input', { type: 'radio', name: 'method', value: m, checked: m === method, onchange: () => update({ method: m }) }),
-      m === 'naive' ? 'naive (k−1 additions)' : 'double-and-add',
-    ])));
-
-  return el('div', { class: 'row' }, [field('private key k', kInput), field('method', methods)]);
-}
+/** This page's own row in the dock: the private key and the method. */
+const KEY = {
+  id: 'key', label: 'this page',
+  build(apply, later) {
+    const k = el('input', { type: 'number', class: 'num', min: 0, style: 'width:12ch', 'aria-label': 'private key k' });
+    onCommit(k, () => apply({ k: k.value }), later);
+    const radios = ['double-and-add', 'naive'].map((m) => el('input', { type: 'radio', name: 'method', value: m, onchange: () => apply({ method: m }) }));
+    const methods = el('div', { class: 'radio-row' }, radios.map((r) =>
+      el('label', {}, [r, r.value === 'naive' ? 'naive (k−1 additions)' : 'double-and-add'])));
+    return {
+      nodes: [el('div', { class: 'row' }, [field('private key k', k), field('method', methods)])],
+      refresh(v) { show(k, v.k); for (const r of radios) r.checked = r.value === v.method; },
+    };
+  },
+  summary: (v) => `k = ${v.k} · ${v.method}`,
+};
 
 function resultPanel(c, base, k, Q) {
   const ord = c.pointOrder(base);
@@ -203,20 +205,20 @@ startPage({
   shell: hw01Shell('keygen.html'),
   sticky: CURVE_KEYS,
   memory: CURVE_MEMORY,
+  preserve: true,
   render: ({ state, update }) => {
     const { curve: c, base, presetId, error } = load(state);
     const k = asBig(state.k ?? 6);
     const method = state.method === 'naive' ? 'naive' : 'double-and-add';
-    const input = (extras) => curveInput({ curve: c ?? null, base: base ?? null, presetId, error: error ?? null, state, update, extras });
+    curveDock({ curve: c ?? null, base: base ?? null, presetId, error: error ?? null, state, update, page: KEY, pageValue: { k, method } });
 
-    if (error) return [input([extraControls(k, method, update)])];
+    if (error) return [rejected(error)];
 
     const fast = measure(c, k, base, 'double-and-add');
     const naive = k <= NAIVE_LIMIT ? measure(c, k, base, 'naive') : null;
     const chosen = method === 'naive' && naive ? naive : fast;
 
     return [
-      input([extraControls(k, method, update)]),
       el('div', { class: 'cols' }, [
         resultPanel(c, base, k, chosen.Q),
         countersPanel(c, base, k, naive ? naive.ops : null, fast.ops),

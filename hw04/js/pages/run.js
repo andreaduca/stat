@@ -7,6 +7,7 @@
 
 import { el } from '../../../assets/js/ui/dom.js';
 import { runWorker } from '../../../assets/js/ui/worker.js';
+import { running } from '../../../assets/js/ui/lab.js';
 
 const WORKER = new URL('../workers/sim.js', import.meta.url);
 const cache = new Map();   // key -> {result, seconds} | {error} | {cancelled}
@@ -64,10 +65,7 @@ export function pending(state, spec, redraw) {
       el('button', { type: 'button', text: 'Run again', onclick: () => { forget(spec); redraw(); } })]);
   }
   const { b, job } = bar(state.key);
-  return el('div', { class: 'running' }, [
-    el('span', { class: 'small', text: 'Simulating in a Web Worker…' }), b,
-    el('button', { type: 'button', text: 'Cancel', onclick: () => job?.cancel() }),
-  ]);
+  return running('Simulating in a Web Worker…', b, () => job?.cancel());
 }
 
 /** The flag a panel wears while it shows the previous result and the new one

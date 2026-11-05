@@ -3,15 +3,17 @@
    "encrypt again" to show randomisation, and the byte histogram of many
    ciphertexts. The maths is in ../core/elgamal.js. */
 
-import { el, explain, field } from '../../../assets/js/ui/dom.js';
+import { el, explain, facts } from '../../../assets/js/ui/dom.js';
+import { escapeHtml } from '../../../assets/js/ui/format.js';
 import { startPage } from '../../../assets/js/ui/page.js';
 import { barChart } from '../../../assets/js/ui/barchart.js';
 import { chiSquare, shannonEntropy } from '../../../assets/js/core/stats.js';
 import { compressedHex, G } from '../../../assets/js/core/secp256k1.js';
-import { keygen, encrypt, decrypt, naiveEncrypt, naiveAttack, naiveAttackOnElGamal, ciphertextBytes, CHUNK } from '../core/elgamal.js';
+import { encrypt, decrypt, naiveEncrypt, naiveAttack, naiveAttackOnElGamal, ciphertextBytes, CHUNK } from '../core/elgamal.js';
 import { shift } from '../core/caesar.js';
-import { facts, tag } from './widgets.js';
-import { BITS, clampBits, readKey } from './toykey.js';
+import { tag } from './widgets.js';
+import { readKey } from './toykey.js';
+import { toyDock } from './toy-dock.js';
 import { hw03Shell, STICKY, MEMORY } from './shell.js';
 
 
@@ -28,37 +30,15 @@ const value = (name, kind, formula, text) => el('div', { class: `val ${kind}` },
 ]);
 
 
-/* ---------- input card ---------- */
+/* ---------- this page's row in the dock ---------- */
 
-function inputCard({ msg, bits, d, Q }, update) {
-  const msgIn = el('input', { id: 'in-msg', class: 'wide', value: msg, spellcheck: 'false', onkeydown: (e) => e.key === 'Enter' && apply() });
-  const bitsIn = el('input', { id: 'in-bits', type: 'number', class: 'num', min: BITS.min, max: BITS.max, value: String(bits), onkeydown: (e) => e.key === 'Enter' && apply() });
-  const readBits = () => clampBits(bitsIn.value);
-  function apply() { update({ msg: msgIn.value, bits: readBits() }); }
-  const newKey = () => { const b = readBits(); update({ msg: msgIn.value, bits: b, d: String(keygen(b).d) }); };
-
-  return el('div', { class: 'card' }, [
-    el('div', { class: 'row' }, [
-      field('message (UTF-8)', msgIn),
-      el('button', { class: 'primary', type: 'button', text: 'Encrypt', onclick: apply }),
-      el('div', { class: 'vrule' }),
-      field('key range: d ≤ 2^bits', bitsIn),
-      el('button', { type: 'button', text: 'New key', onclick: newKey }),
-    ]),
-    el('p', { class: 'small muted', style: 'margin:10px 0 0', html:
-      `The message is what gets encrypted on this page (and, later, by Caesar). ` +
-      `The key range is the toy restriction: <span class="eq">d</span> is drawn with the CSPRNG from ` +
-      `<span class="eq">[1, 2^${bits}]</span> instead of <span class="eq">[1, n − 1]</span>, n ≈ 2²⁵⁶.` }),
-    facts([
-      ['private key <span class="eq">d</span> (toy key, public by construction: it is in the URL)', String(d)],
-      ['public key <span class="eq">Q = dG</span> (compressed)', shortHex(ptHex(Q), 14)],
-    ]),
-    explain([
-      'Every value on this page is computed in your browser on the real secp256k1 curve; only the size of <span class="eq">d</span> is toy. A 20-bit key means about a million candidates — the attack page will search them.',
-      'Each “Encrypt” draws fresh nonces <span class="eq">k</span>, so the ciphertexts change even when the message and the key do not.',
-    ], 'What does each value change?'),
-  ]);
-}
+const AGAIN = {
+  id: 'ecc', label: 'this page',
+  build: (apply) => ({ nodes: [el('div', { class: 'row' }, [
+    el('button', { type: 'button', text: 'Encrypt again (fresh k)', onclick: () => apply({}) }),
+  ])] }),
+  notes: ['Each encryption draws fresh nonces <span class="eq">k</span>, so the ciphertexts change even when the message and the key do not: press <strong>Encrypt again</strong> to see it.'],
+};
 
 /* ---------- 1. the progression ---------- */
 
@@ -110,7 +90,6 @@ function progressionPanel({ msg, Q }, ct) {
   ]);
 }
 
-const escapeHtml = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 /* ---------- 2. the keys ---------- */
 
@@ -282,11 +261,12 @@ startPage({
   shell: hw03Shell('ecc.html'),
   sticky: STICKY,
   memory: MEMORY,
+  preserve: true,
   render: ({ state, update, patch }) => {
     const s = readKey(state, patch);
     const ct = encrypt(s.Q, s.msg);
+    toyDock(s, update, AGAIN);
     return [
-      inputCard(s, update),
       progressionPanel(s, ct),
       keysPanel(s, ct),
       encryptPanel(s, ct),

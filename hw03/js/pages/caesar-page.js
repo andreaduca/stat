@@ -4,48 +4,45 @@
    entropy, sorted profile), repeats, word lengths — and the English model
    the attack will use. The maths is in ../core/caesar.js. */
 
-import { el, explain, field } from '../../../assets/js/ui/dom.js';
+import { el, explain, field, facts } from '../../../assets/js/ui/dom.js';
+import { pct } from '../../../assets/js/ui/format.js';
 import { startPage } from '../../../assets/js/ui/page.js';
 import {
   ALPHABET, KEYS, shift, encrypt, decrypt, normalise, letterCounts, frequencies,
   indexOfCoincidence, letterEntropy, sortedProfile, chiSquaredDistance,
 } from '../core/caesar.js';
 import { loadModel } from '../core/data.js';
-import { facts, chart } from './widgets.js';
+import { chart } from './widgets.js';
+import { readKey } from './toykey.js';
+import { toyDock } from './toy-dock.js';
+import { show, setValue } from '../../../assets/js/ui/dock.js';
 import { hw03Shell, STICKY, MEMORY } from './shell.js';
 
 const DEFAULT_MSG = 'ATTACK AT DAWN';
-const pct = (p, d = 1) => `${(100 * p).toFixed(d)} %`;
 const isLetter = (ch) => /^[A-Za-z]$/.test(ch);
 const idx = (ch) => ch.toUpperCase().charCodeAt(0) - 65;
 const readK = (v) => { const k = Number.parseInt(v, 10); return Number.isFinite(k) ? ((k % 26) + 26) % 26 : 3; };
 
-/* ---------- input card ---------- */
+/* ---------- this page's row in the dock: the key ---------- */
 
-function inputCard({ msg, k }, model, update, onKey) {
-  const text = el('textarea', { id: 'in-msg', rows: 3, spellcheck: 'false' }, [msg]);
-  const out = el('span', { class: 'eq', text: keyLabel(k) });
-  const slider = el('input', {
-    id: 'in-k', type: 'range', min: 0, max: 25, step: 1, value: String(k), 'aria-label': 'key k',
-    // a drag must not rebuild the card it is in: only the panels below are redrawn
-    oninput: (e) => { const v = readK(e.target.value); out.textContent = keyLabel(v); onKey(v); },
-  });
-  const set = (m) => update({ msg: m });
-  return el('div', { class: 'card' }, [
-    field('message', text),
-    el('div', { class: 'row', style: 'margin-top:10px' }, [
-      el('button', { class: 'primary', type: 'button', text: 'Encrypt', onclick: () => set(text.value) }),
-      el('button', { type: 'button', text: `“${DEFAULT_MSG}”`, onclick: () => set(DEFAULT_MSG) }),
-      el('button', { type: 'button', text: `A paragraph of ${model.sample.source.split(', ')[1]} (${normalise(model.sample.text).length} letters)`, onclick: () => set(model.sample.text) }),
-      el('div', { class: 'vrule' }),
-      field('key k', slider),
-      out,
-    ]),
-    el('p', { class: 'small muted', style: 'margin:10px 0 0', text:
-      'The message is shared with the Toy ECC page, so both ciphers encrypt the same text; the paragraph is long enough for the histograms to take shape. ' +
-      'The key is the shift: drag it and watch every panel below follow.' }),
-  ]);
-}
+/* a drag must not rebuild the page: only the panels are redrawn, through this hook */
+let onKey = () => {};
+const KEY = {
+  id: 'caesar', label: 'this page',
+  build() {
+    const out = el('span', { class: 'eq' });
+    const slider = el('input', {
+      type: 'range', min: 0, max: 25, step: 1, 'aria-label': 'key k',
+      oninput: (e) => { const v = readK(e.target.value); out.textContent = keyLabel(v); setValue('caesar', v); onKey(v); },
+    });
+    return {
+      nodes: [el('div', { class: 'row' }, [field('Caesar key k', slider), out])],
+      refresh(k) { show(slider, k); out.textContent = keyLabel(k); },
+    };
+  },
+  summary: (k) => `Caesar k = ${k}`,
+  notes: ['<strong>The Caesar key</strong> is the shift: drag it and watch every panel follow.'],
+};
 
 const keyLabel = (k) => `k = ${k} (A → ${ALPHABET[k]})`;
 
@@ -265,6 +262,7 @@ startPage({
   shell: hw03Shell('caesar.html'),
   sticky: STICKY,
   memory: MEMORY,
+  preserve: true,
   render: async ({ state, update, patch }) => {
     const model = await loadModel();
     const msg = state.msg ?? DEFAULT_MSG;
@@ -273,6 +271,8 @@ startPage({
       cipherPanel(msg, k), histogramPanel(msg, k, model), invariantsPanel(msg, k, model), structurePanel(msg, k), modelPanel(model));
     const k = readK(state.k ?? 3);
     drawPanels(k);
-    return [inputCard({ msg, k }, model, update, (v) => { patch({ k: v }); drawPanels(v); }), panels];
+    onKey = (v) => { patch({ k: v }); drawPanels(v); };
+    toyDock(readKey(state, patch), update, KEY, k);
+    return [panels];
   },
 });

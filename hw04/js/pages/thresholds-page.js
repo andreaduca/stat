@@ -7,8 +7,9 @@
    The maths is in ../core/exact.js, ../core/bounds.js and simulateRaces. */
 
 import { el, field } from '../../../assets/js/ui/dom.js';
+import { nice, sci } from '../../../assets/js/ui/format.js';
 import { startPage } from '../../../assets/js/ui/page.js';
-import { plot, short } from '../../../assets/js/ui/plot.js';
+import { plot } from '../../../assets/js/ui/plot.js';
 import { wilson } from '../../../assets/js/core/stats.js';
 import { modelFrom } from '../core/models.js';
 import { GRID, simulateRaces } from '../core/simulate.js';
@@ -19,14 +20,12 @@ import { moments } from '../core/estimate.js';
 import { readRun, runCard } from './run-input.js';
 import { getRun, pending, updatingFlag } from './run.js';
 import { labPanel, section, table } from './lab-panel.js';
-import { SIM, EXACT, LIMIT, legend, figure, svgButton } from './widgets.js';
+import { SIM, EXACT, LIMIT, legend, figure } from './widgets.js';
 import { hw04Shell, STICKY, MEMORY } from './shell.js';
 
-const nice = (n) => n.toLocaleString('en-US').replace(/,/g, ' ');
 const BOUND = 'var(--m1)', MUTED = 'var(--muted)';
 const BREACH = 'var(--m2)', EXPELLED = 'var(--m1)';
 const DASH = { cheb: '9 4', hoeff: '4 3', kl: '1.5 3' };
-const sci = (x) => (x === 0 ? '0' : x < 1e-3 ? x.toExponential(2) : x.toPrecision(4));
 const num = (v, lo, hi, fallback) => (Number.isFinite(Number(v)) && v !== '' && v !== undefined ? Math.min(hi, Math.max(lo, Number(v))) : fallback);
 const N_CURVE = [...new Set(Array.from({ length: 61 }, (_, i) => Math.round(10 ** (1 + (3 * i) / 60))))];
 const GROUPS = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000];

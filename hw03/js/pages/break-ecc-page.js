@@ -5,15 +5,17 @@
    decrypted with the recovered key; the timing experiment; and the
    extrapolation to real key sizes. The maths is in ../core/ecdlp.js. */
 
-import { el, explain, field, fmt } from '../../../assets/js/ui/dom.js';
+import { el, explain, field, fmt, facts } from '../../../assets/js/ui/dom.js';
+import { humanTime, humanBytes, pow2, sup } from '../../../assets/js/ui/format.js';
 import { startPage } from '../../../assets/js/ui/page.js';
 import { lineChart, chartLegend } from '../../../assets/js/ui/linechart.js';
 import { runWorker } from '../../../assets/js/ui/worker.js';
+import { labPanel, section } from '../../../assets/js/ui/lab.js';
 import { mulG, compressedHex } from '../../../assets/js/core/secp256k1.js';
-import { keygen, encrypt, decrypt } from '../core/elgamal.js';
+import { encrypt, decrypt } from '../core/elgamal.js';
 import { METHODS, SIZES, REPS, expectedOps, rhoFullOps } from '../core/ecdlp.js';
-import { facts, humanTime, humanBytes, pow2 } from './widgets.js';
-import { clampBits, readKey } from './toykey.js';
+import { readKey } from './toykey.js';
+import { toyDock } from './toy-dock.js';
 import { hw03Shell, STICKY, MEMORY } from './shell.js';
 
 const WORKER = new URL('../workers/ecdlp.js', import.meta.url);
@@ -26,8 +28,6 @@ const svgEl = (tag, attrs = {}, text = null) => {
 };
 const hx = (pt) => compressedHex(pt);
 const short = (h, n = 10) => `${h.slice(0, n)}…`;
-const COLOR = Object.fromEntries(METHODS.map((m) => [m.id, m.color]));
-const LABEL = Object.fromEntries(METHODS.map((m) => [m.id, m.label]));
 /* rough rates (additions/s), a little below what Chrome measured on the development
    machine; used only to decide whether a live run starts by itself (≤ AUTO
    seconds) or waits for a click, and to estimate how long it would take */
@@ -65,18 +65,12 @@ function progressView(job, text) {
   return el('div', { class: 'running' }, [label, bar, el('button', { type: 'button', text: 'Cancel', onclick: () => job.cancel() })]);
 }
 
-/* ---------- input ---------- */
+/* ---------- the setting: what the attacker has ---------- */
 
-function inputCard(s, update) {
-  const bitsIn = el('input', { id: 'in-bits', type: 'number', class: 'num', min: 8, max: 40, value: String(s.bits), onkeydown: (e) => e.key === 'Enter' && newKey() });
-  function newKey() { const b = clampBits(bitsIn.value); update({ bits: b, d: String(keygen(b).d) }); }
+function settingCard(s) {
   return el('div', { class: 'card' }, [
-    el('div', { class: 'row' }, [
-      field('key range: d ≤ 2^bits', bitsIn),
-      el('button', { class: 'primary', type: 'button', text: 'New key', onclick: newKey }),
-    ]),
-    el('p', { class: 'small muted', style: 'margin:10px 0 0', html:
-      'The key is shared with the <a href="ecc.html">Toy ECC</a> page: these attacks break the key that page encrypts with. Raise the range to watch the searches slow down — brute force doubles with every extra bit, the other two grow by √2.' }),
+    el('h2', { text: 'The attacker’s position' }),
+    el('p', { class: 'small muted', html: 'The key is shared with the <a href="ecc.html">Toy ECC</a> page: these attacks break the key that page encrypts with. Raise the key range in the dock to watch the searches slow down — brute force doubles with every extra bit, the other two grow by √2.' }),
     el('div', { class: 'cols', style: 'margin-top:12px' }, [
       el('div', {}, [el('h3', { text: 'the attacker knows' }), facts([
         ['the curve and its generator', 'secp256k1, G'],
@@ -292,72 +286,74 @@ function experimentPanel(state, update) {
   if (!liveBusy()) METHODS.forEach((m, i) => { if (!jobs.has(keys[i])) start(keys[i], { job: 'experiment', method: m.id, seed }, update); });
   const parts = METHODS.map((m, i) => ({ m, job: jobs.get(keys[i]) }));
   const sIn = el('input', { type: 'number', class: 'num', min: 0, value: String(seed) });
-  const head = [
-    el('h2', { text: 'The experiment: time against key-space size' }),
-    el('p', { class: 'question', text: 'How does the work of each search grow with the size N of the key space — and does it follow N and √N as the theory says?' }),
-    el('div', { class: 'how' }, [el('div', { class: 'label', text: 'How the experiment works' }), el('ol', {}, [
-      el('li', { html: `For each key range N = 2<sup>b</sup> (brute force: b = ${SIZES.brute[0]}…${SIZES.brute.at(-1)}; BSGS and kangaroo: b = ${SIZES.bsgs[0]}…${SIZES.bsgs.at(-1)}), draw keys d (${REPS.brute} for brute force, ${REPS.bsgs} for the others), one from each equal slice of [1, N], with the seeded generator;` }),
-      el('li', { html: 'publish Q = dG and let the method recover d from Q alone, counting the point additions and timing the run;' }),
-      el('li', { html: 'average per size, and fit a straight line to log(additions) against log(N): its slope is the exponent of the growth — 1 for N, ½ for √N;' }),
-      el('li', { html: 'the three methods run in three workers at once; the additions per second measured here drive the extrapolation below.' }),
-    ])]),
-    el('div', { class: 'row' }, [field('seed', sIn), el('button', { class: 'primary', type: 'button', text: 'Run', onclick: () => update({ seed: sIn.value }) })]),
-    el('ul', { class: 'hints' }, [el('li', { html: '<strong>seed</strong> — the same seed gives the same keys and the same counts; times vary a little from run to run with the machine’s load.' })]),
-  ];
+  const frame = {
+    hw: 'hw03', id: 'ecdlp-timing', notesBox: false,
+    title: 'The experiment: time against key-space size',
+    question: 'How does the work of each search grow with the size N of the key space — and does it follow N and √N as the theory says?',
+    steps: [
+      `For each key range N = 2<sup>b</sup> (brute force: b = ${SIZES.brute[0]}…${SIZES.brute.at(-1)}; BSGS and kangaroo: b = ${SIZES.bsgs[0]}…${SIZES.bsgs.at(-1)}), draw keys d (${REPS.brute} for brute force, ${REPS.bsgs} for the others), one from each equal slice of [1, N], with the seeded generator;`,
+      'publish Q = dG and let the method recover d from Q alone, counting the point additions and timing the run;',
+      'average per size, and fit a straight line to log(additions) against log(N): its slope is the exponent of the growth — 1 for N, ½ for √N;',
+      'the three methods run in three workers at once; the additions per second measured here drive the extrapolation below.',
+    ],
+    controls: [field('seed', sIn), el('button', { class: 'primary', type: 'button', text: 'Run', onclick: () => update({ seed: sIn.value }) })],
+    hints: ['<strong>seed</strong> — the same seed gives the same keys and the same counts; times vary a little from run to run with the machine’s load.'],
+  };
   if (parts.some((p) => !p.job || p.job.status !== 'done')) {
-    return el('div', { class: 'card lab' }, [...head, ...parts.map(({ m, job }) => !job
+    return labPanel({ ...frame, waiting: parts.map(({ m, job }) => !job
       ? el('p', { class: 'small muted', text: `${m.label}: waits until the live searches above have finished (so they do not compete for the processor).` })
       : job.status === 'error' ? el('p', { class: 'err', text: `${m.label}: ${job.error}` })
       : job.status === 'done' ? el('p', { class: 'small ok', text: `${m.label}: done` })
-      : progressView(job, (p) => `${m.label}${p?.label ? ` · ${p.label}` : ''} · about ${Math.round(100 * (p?.fraction ?? 0))} %`))]);
+      : progressView(job, (p) => `${m.label}${p?.label ? ` · ${p.label}` : ''} · about ${Math.round(100 * (p?.fraction ?? 0))} %`)) });
   }
   const R = Object.fromEntries(parts.map(({ m, job }) => [m.id, job.result]));
   const series = (f) => METHODS.map((m) => ({ label: `${m.label} (slope ${f === 'ops' ? R[m.id].opsSlope.slope.toFixed(2) : R[m.id].timeSlope?.slope.toFixed(2) ?? '—'})`, color: m.color, points: R[m.id].rows.map((r) => [r.N, f === 'ops' ? Math.max(1, r.ops) : Math.max(1e-5, r.seconds)]) }));
   const xTicks = [10, 14, 18, 22, 26, 30].map((b) => 2 ** b);
   const p10 = (lo, hi) => Array.from({ length: hi - lo + 1 }, (_, i) => 10 ** (lo + i));
-  const sup = (v) => `10${String(Math.round(Math.log10(v))).replace(/[-\d]/g, (c) => (c === '-' ? '⁻' : '⁰¹²³⁴⁵⁶⁷⁸⁹'[c]))}`;
+  const tenPow = (v) => `10${sup(Math.round(Math.log10(v)))}`;
   const xFormat = (v) => pow2(Math.round(Math.log2(v)));
-  const opsChart = lineChart({ series: series('ops'), logX: true, logY: true, xTicks, yTicks: p10(1, 7), yMin: 10, yMax: 1e7, xFormat, yFormat: sup, endLabels: false, xTitle: 'key range N (log scale)', yTitle: 'point additions (log scale)', height: 260,
+  const opsChart = lineChart({ series: series('ops'), logX: true, logY: true, xTicks, yTicks: p10(1, 7), yMin: 10, yMax: 1e7, xFormat, yFormat: tenPow, endLabels: false, xTitle: 'key range N (log scale)', yTitle: 'point additions (log scale)', height: 260,
     tip: (x, v) => `N = ${xFormat(x)}\n${METHODS.map((m, i) => `${m.label}: ${v[i] === undefined ? '—' : fmt(Math.round(v[i]))}`).join('\n')}` });
-  const timeChart = lineChart({ series: series('time'), logX: true, logY: true, xTicks, yTicks: p10(-4, 2), yMin: 1e-4, yMax: 100, xFormat, yFormat: sup, endLabels: false, xTitle: 'key range N (log scale)', yTitle: 'seconds (log scale)', height: 260,
+  const timeChart = lineChart({ series: series('time'), logX: true, logY: true, xTicks, yTicks: p10(-4, 2), yMin: 1e-4, yMax: 100, xFormat, yFormat: tenPow, endLabels: false, xTitle: 'key range N (log scale)', yTitle: 'seconds (log scale)', height: 260,
     tip: (x, v) => `N = ${xFormat(x)}\n${METHODS.map((m, i) => `${m.label}: ${v[i] === undefined ? '—' : humanTime(v[i])}`).join('\n')}` });
   const allBits = SIZES.bsgs;
-  return el('div', { class: 'card lab' }, [
-    ...head,
-    el('div', { class: 'answer' }, [el('div', { class: 'label', text: 'Result' }), el('p', { html:
-      `The work of brute force grows like N<sup>${R.brute.opsSlope.slope.toFixed(2)}</sup>, that of baby-step giant-step like N<sup>${R.bsgs.opsSlope.slope.toFixed(2)}</sup> and that of the kangaroo like N<sup>${R.kangaroo.opsSlope.slope.toFixed(2)}</sup> — the theory says 1, ½ and ½. ` +
-      `This browser does about ${fmt(Math.round(R.brute.rate))} additions per second.` })]),
-    el('h3', { class: 'section' }, [el('span', { class: 'n', text: '1' }), 'Point additions against N']),
-    el('p', { class: 'caption', text: 'Both axes logarithmic, so a power law is a straight line and its slope is the exponent. Brute force rises one decade per decade of N; the two √N methods half as steeply.' }),
-    opsChart, chartLegend(series('ops')),
-    el('h3', { class: 'section' }, [el('span', { class: 'n', text: '2' }), 'Seconds against N']),
-    el('p', { class: 'caption', text: 'The same in time. At small N fixed costs (setting up tables, one scalar multiplication) flatten the lines; the slopes are fitted from N = 2¹⁴ on.' }),
-    timeChart, chartLegend(series('time')),
-    el('h3', { class: 'section' }, [el('span', { class: 'n', text: '3' }), 'The numbers']),
-    el('p', { class: 'caption', text: 'Mean additions and mean time per key range; memory is the largest table seen (points).' }),
-    el('div', { class: 'scroll-x' }, [el('table', { class: 'data grouped' }, [
-      el('thead', {}, [
-        el('tr', {}, [el('th', {}), ...METHODS.map((m) => el('th', { colspan: m.id === 'brute' ? 2 : 3, class: 'group' }, [el('i', { class: 'swatch', style: `background:${m.color}` }), m.label]))]),
-        el('tr', {}, [el('th', { text: 'N' }), ...METHODS.flatMap((m) => ['additions', 'time', ...(m.id === 'brute' ? [] : ['memory'])].map((h) => el('th', { text: h })))]),
-      ]),
-      el('tbody', {}, allBits.map((b) => {
-        const row = (id) => R[id].rows.find((r) => r.bits === b);
-        return el('tr', {}, [
-          el('td', { text: pow2(b) }),
-          ...METHODS.flatMap((m) => {
-            const r = row(m.id), n = m.id === 'brute' ? 2 : 3;
-            if (!r) return Array.from({ length: n }, () => el('td', { class: 'muted', text: '—' }));
-            return [el('td', { text: fmt(Math.round(r.ops)) }), el('td', { text: humanTime(r.seconds) }), ...(n === 3 ? [el('td', { text: fmt(r.memory) })] : [])];
-          }),
-        ]);
-      })),
-    ])]),
-    el('p', { class: 'why matters', html: 'with an exact test the only defence is the size of the search. Every extra bit of key doubles brute force and multiplies the best generic attacks by √2 — so a key must be twice as long as the security level it promises.' }),
-    explain([
+  return labPanel({
+    ...frame,
+    view: () => ({
+      answer: { text:
+        `The work of brute force grows like N<sup>${R.brute.opsSlope.slope.toFixed(2)}</sup>, that of baby-step giant-step like N<sup>${R.bsgs.opsSlope.slope.toFixed(2)}</sup> and that of the kangaroo like N<sup>${R.kangaroo.opsSlope.slope.toFixed(2)}</sup> — the theory says 1, ½ and ½. ` +
+        `This browser does about ${fmt(Math.round(R.brute.rate))} additions per second.` },
+      body: [
+        ...section(1, 'Point additions against N', 'Both axes logarithmic, so a power law is a straight line and its slope is the exponent. Brute force rises one decade per decade of N; the two √N methods half as steeply.'),
+        opsChart, chartLegend(series('ops')),
+        ...section(2, 'Seconds against N', 'The same in time. At small N fixed costs (setting up tables, one scalar multiplication) flatten the lines; the slopes are fitted from N = 2¹⁴ on.'),
+        timeChart, chartLegend(series('time')),
+        ...section(3, 'The numbers', 'Mean additions and mean time per key range; memory is the largest table seen (points).'),
+        el('div', { class: 'scroll-x' }, [el('table', { class: 'data grouped' }, [
+          el('thead', {}, [
+            el('tr', {}, [el('th', {}), ...METHODS.map((m) => el('th', { colspan: m.id === 'brute' ? 2 : 3, class: 'group' }, [el('i', { class: 'swatch', style: `background:${m.color}` }), m.label]))]),
+            el('tr', {}, [el('th', { text: 'N' }), ...METHODS.flatMap((m) => ['additions', 'time', ...(m.id === 'brute' ? [] : ['memory'])].map((h) => el('th', { text: h })))]),
+          ]),
+          el('tbody', {}, allBits.map((b) => {
+            const row = (id) => R[id].rows.find((r) => r.bits === b);
+            return el('tr', {}, [
+              el('td', { text: pow2(b) }),
+              ...METHODS.flatMap((m) => {
+                const r = row(m.id), n = m.id === 'brute' ? 2 : 3;
+                if (!r) return Array.from({ length: n }, () => el('td', { class: 'muted', text: '—' }));
+                return [el('td', { text: fmt(Math.round(r.ops)) }), el('td', { text: humanTime(r.seconds) }), ...(n === 3 ? [el('td', { text: fmt(r.memory) })] : [])];
+              }),
+            ]);
+          })),
+        ])]),
+      ],
+    }),
+    why: 'with an exact test the only defence is the size of the search. Every extra bit of key doubles brute force and multiplies the best generic attacks by √2 — so a key must be twice as long as the security level it promises.',
+    notes: [
       'The fitted slope is a regression of log₂(additions) on log₂(N) over the sizes from 2¹⁴ up. Brute force’s additions are exactly d − 1 for the key drawn, so its slope sits close to 1; the two √N methods vary more from key to key, which is why five keys per size are drawn for them.',
       'Times are less clean than counts, for two reasons worth seeing. Fixed costs (a scalar multiplication, setting up a table) flatten the small sizes. And BSGS’s time usually grows <em>faster</em> than its additions: its table grows with √N, and a bigger hash table means more cache misses and more garbage collection — the memory price of the method, showing up as time. The kangaroo, with its few dozen stored points, does not pay it.',
-    ]),
-  ]);
+    ],
+  });
 }
 
 /* ---------- 6. extrapolation ---------- */
@@ -408,13 +404,15 @@ startPage({
   shell: hw03Shell('break-ecc.html'),
   sticky: STICKY,
   memory: MEMORY,
+  preserve: true,
   render: ({ state, update, patch }) => {
     const k = readKey(state, patch);
     const s = { ...k, N: 2n ** BigInt(k.bits) };
     const seed = Math.max(0, Number.parseInt(state.seed, 10) || 1) >>> 0;
     pruneLive(s);
+    toyDock(k, update);
     return [
-      inputCard(s, update),
+      settingCard(s),
       testCard(),
       brutePanel(s, update),
       bsgsPanel(s, update),

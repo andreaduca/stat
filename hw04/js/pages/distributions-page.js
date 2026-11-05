@@ -6,6 +6,7 @@
    feeds every panel. */
 
 import { el, field } from '../../../assets/js/ui/dom.js';
+import { nice } from '../../../assets/js/ui/format.js';
 import { startPage } from '../../../assets/js/ui/page.js';
 import { plot, short } from '../../../assets/js/ui/plot.js';
 import { modelFrom } from '../core/models.js';
@@ -20,7 +21,6 @@ import { SIM, EXACT, LIMIT, layersLegend, svgButton } from './widgets.js';
 import { hw04Shell, STICKY, MEMORY } from './shell.js';
 
 const DECADES = [10, 100, 1000, 10000];
-const nice = (n) => n.toLocaleString('en-US').replace(/,/g, '\u202f');
 let timer = null;   // the n-slider animation, stopped at every redraw
 
 /* The three quantities as Sₙ/n^α. `center` subtracts nμ first (the centred

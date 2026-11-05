@@ -3,7 +3,8 @@
    PBKDF2 accepts any phrase; the passphrase making unrelated wallets; and the
    measured cost of key stretching, ending in a real missing-word recovery. */
 
-import { el, field, fmt } from '../../../assets/js/ui/dom.js';
+import { el, field, fmt, facts } from '../../../assets/js/ui/dom.js';
+import { humanTime } from '../../../assets/js/ui/format.js';
 import { startPage } from '../../../assets/js/ui/page.js';
 import { bytesToHex, utf8NFKD } from '../core/bytes.js';
 import { Mnemonic, validLastWords, seedFromPhrase, PBKDF2_ITERATIONS } from '../core/bip39.js';
@@ -11,8 +12,8 @@ import { pbkdf2Sha512 } from '../core/hash.js';
 import { HDNode } from '../core/bip32.js';
 import { EthAccount } from '../core/address.js';
 import { recoverMissingWord } from '../core/pipeline.js';
-import { loadWallet, walletInput, WALLET_KEYS, WALLET_MEMORY } from './wallet-input.js';
-import { stepCard, facts, hexBitDistance, humanTime } from './widgets.js';
+import { loadWallet, walletDock, rejected, WALLET_KEYS, WALLET_MEMORY } from './wallet-input.js';
+import { stepCard, hexBitDistance } from './widgets.js';
 import { hw02Shell } from './shell.js';
 
 /* ---------- 1. live checksum checker ---------- */
@@ -138,7 +139,7 @@ async function passphrasePanel(run, wallet) {
     title: 'Same words, different passphrases', cats: ['derivation', 'generation'],
     formula: 'salt = "mnemonic" ‖ passphrase &nbsp;→&nbsp; a different seed, a different tree, different addresses',
     body: [
-      el('p', { class: 'small muted', text: `Words: the wallet above. Path: ${wallet.path}. The row of the passphrase typed on the wallet card is highlighted.` }),
+      el('p', { class: 'small muted', text: `Words: the wallet in the dock. Path: ${wallet.path}. The row of the passphrase typed in the dock is highlighted.` }),
       el('div', { class: 'scroll-x' }, [el('table', { class: 'data' }, [
         el('thead', {}, [el('tr', {}, [el('th', { class: 'left', text: 'passphrase' }), el('th', { class: 'left', text: 'seed' }), el('th', { text: 'seed bits ≠ no passphrase' }), el('th', { class: 'left', text: 'address' })])]),
         el('tbody', {}, rows),
@@ -267,12 +268,12 @@ startPage({
   shell: hw02Shell('bip39.html'),
   sticky: WALLET_KEYS,
   memory: WALLET_MEMORY,
+  preserve: true,
   render: async ({ state, update }) => {
     const { wallet, wordlist, run } = await loadWallet(state);
-    const input = walletInput({ wallet, update });
-    if (!run) return [input];
+    walletDock({ wallet, update });
+    if (!run) return [rejected(wallet.error)];
     return [
-      input,
       checkerPanel(run, wordlist),
       await kdfPanel(run, wordlist),
       await passphrasePanel(run, wallet),

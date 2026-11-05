@@ -74,5 +74,9 @@ export function field(label, control) {
   return el('label', { class: 'field' }, [el('span', { text: label }), control]);
 }
 
+/** Label → value rows (labels may hold markup, values are plain text). */
+export const facts = (rows) => el('ul', { class: 'facts' }, rows.filter(Boolean).map(([k, v]) =>
+  el('li', {}, [el('span', { class: 'k', html: k }), el('span', { class: 'v', text: v })])));
+
 /** Thousands separator for BigInt/Number, keeping tables readable. */
 export const fmt = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');

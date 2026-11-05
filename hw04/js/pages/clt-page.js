@@ -6,8 +6,9 @@
    The maths is in ../core/exact.js (ksToNormal) and ../core/estimate.js. */
 
 import { el, field } from '../../../assets/js/ui/dom.js';
+import { nice } from '../../../assets/js/ui/format.js';
 import { startPage } from '../../../assets/js/ui/page.js';
-import { plot, short } from '../../../assets/js/ui/plot.js';
+import { plot } from '../../../assets/js/ui/plot.js';
 import { modelFrom } from '../core/models.js';
 import { GRID, column } from '../core/simulate.js';
 import { lawOfTotal, ksToNormal } from '../core/exact.js';
@@ -19,7 +20,6 @@ import { labPanel, section, table } from './lab-panel.js';
 import { SIM, EXACT, LIMIT, legend, layersLegend, figure, svgButton } from './widgets.js';
 import { hw04Shell, STICKY, MEMORY } from './shell.js';
 
-const nice = (n) => n.toLocaleString('en-US').replace(/,/g, '\u202f');
 const BOUND = 'var(--m1)', MUTED = 'var(--muted)';
 const BE = 0.4748;                  // Berry–Esseen constant, best known (Shevtsova 2011)
 const KS_MEAN = 0.8687, KS_95 = 1.358;   // mean and 95 % quantile of the Kolmogorov law (√m·D under H₀)
@@ -27,7 +27,6 @@ const KNEE_M = [10000, 100000];
 const P_LIST = [0.5, 0.1, 0.01];
 const SHADE = (i) => `color-mix(in srgb, var(--m1) ${[100, 62, 30][i]}%, var(--muted))`;
 const N_CURVE = [...new Set(Array.from({ length: 49 }, (_, i) => Math.round(10 ** (1 + (3 * i) / 48))))];
-const sci = (x) => (x < 1e-3 ? x.toExponential(2) : x.toPrecision(3));
 const num = (x, d = 3) => `${x < 0 ? '−' : ''}${Math.abs(x).toFixed(d)}`;   // with a real minus sign
 
 /** The standardisation of a step model: s ↦ (s − nμ)/(σ√n), and its lattice. */

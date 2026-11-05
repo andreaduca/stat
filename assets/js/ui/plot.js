@@ -14,7 +14,7 @@ const node = (tag, attrs = {}, text = null) => {
   return n;
 };
 
-const SUP = (s) => String(s).replace(/[-\d]/g, (d) => (d === '-' ? '⁻' : '⁰¹²³⁴⁵⁶⁷⁸⁹'[d]));
+import { sup } from './format.js';
 
 /** A number short enough for a tick: 0.05, 1.2k, 3·10⁻⁴. */
 export function short(v) {
@@ -22,7 +22,7 @@ export function short(v) {
   const a = Math.abs(v);
   if (a >= 1e5 || a < 1e-3) {
     const e = Math.floor(Math.log10(a)), m = v / 10 ** e;
-    return Math.abs(m - 1) < 1e-9 ? `10${SUP(e)}` : `${+m.toFixed(1)}·10${SUP(e)}`;
+    return Math.abs(m - 1) < 1e-9 ? `10${sup(e)}` : `${+m.toFixed(1)}·10${sup(e)}`;
   }
   if (a >= 1e3) return `${+(v / 1e3).toPrecision(3)}k`;
   return String(+v.toPrecision(3));

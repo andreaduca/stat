@@ -5,6 +5,7 @@
    The maths is in ../core/exact.js and ../core/bounds.js. */
 
 import { el, field } from '../../../assets/js/ui/dom.js';
+import { nice, sci } from '../../../assets/js/ui/format.js';
 import { startPage } from '../../../assets/js/ui/page.js';
 import { plot, short } from '../../../assets/js/ui/plot.js';
 import { wilson } from '../../../assets/js/core/stats.js';
@@ -19,11 +20,9 @@ import { labPanel, section, table, verdict } from './lab-panel.js';
 import { SIM, EXACT, LIMIT, legend, figure, svgButton } from './widgets.js';
 import { hw04Shell, STICKY, MEMORY } from './shell.js';
 
-const nice = (n) => n.toLocaleString('en-US').replace(/,/g, '\u202f');
 const BOUND = 'var(--m1)', MUTED = 'var(--muted)', BAND = 'var(--s2)';
 const DASH = { cheb: '9 4', hoeff: '4 3', kl: '1.5 3' };
 const M_LADDER = [100, 1000, 10000, 100000];
-const sci = (x) => (x === 0 ? '0' : x < 1e-3 ? x.toExponential(2) : x.toPrecision(4));
 
 /** n from 10 to 10 000, about 60 integers evenly spread on a log scale. */
 const N_CURVE = [...new Set(Array.from({ length: 61 }, (_, i) => Math.round(10 ** (1 + (3 * i) / 60))))];

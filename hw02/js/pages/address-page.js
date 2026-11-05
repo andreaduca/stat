@@ -3,17 +3,17 @@
    EIP-55 casing check, the number of check bits an address really has, and
    when the public key behind an address stops being hidden. */
 
-import { el, field } from '../../../assets/js/ui/dom.js';
+import { el, field, facts } from '../../../assets/js/ui/dom.js';
+import { pctSig } from '../../../assets/js/ui/format.js';
 import { startPage } from '../../../assets/js/ui/page.js';
 import { eip55, checkAddress, EthAccount } from '../core/address.js';
 import { fillPath } from '../core/bip32.js';
 import { compressedHex, ethereumHex } from '../../../assets/js/core/secp256k1.js';
-import { loadWallet, walletInput, WALLET_KEYS, WALLET_MEMORY } from './wallet-input.js';
-import { stepCard, facts } from './widgets.js';
+import { loadWallet, walletDock, rejected, WALLET_KEYS, WALLET_MEMORY } from './wallet-input.js';
+import { stepCard } from './widgets.js';
 import { spongePanel } from './hash-demo.js';
 import { hw02Shell } from './shell.js';
 
-const pct = (p) => `${(100 * p).toPrecision(3)} %`;
 
 /* ---------- typo playground ---------- */
 
@@ -40,7 +40,7 @@ function typoPanel(run) {
     const text = {
       valid: body.toLowerCase() === original.slice(2).toLowerCase()
         ? 'Valid: this is the address, correctly cased.'
-        : `Passes, although it is a different address! Its own casing happens to match its own hash — with L = ${L} letters that has probability 2^−${L} = ${pct(2 ** -L)}.`,
+        : `Passes, although it is a different address! Its own casing happens to match its own hash — with L = ${L} letters that has probability 2^−${L} = ${pctSig(2 ** -L)}.`,
       invalid: `Rejected: ${r.wrong.length} of the ${L} letters have the wrong case (red). After a typo the hash of the text is unrelated to the old one, so each letter’s expected case is a fresh coin flip.`,
       unchecked: 'Accepted as “no checksum”: all-lowercase and all-uppercase addresses are not checked at all. This is why EIP-55 is optional in practice.',
     }[r.status];
@@ -93,7 +93,7 @@ async function checkBitsPanel(run, wallet) {
     const { letters, checksummed } = eip55(new EthAccount(node.privateKey).lower);
     sum += 2 ** -letters; sumL += letters;
     rows.push(el('tr', { class: i === wallet.index ? 'is-current' : null }, [
-      el('td', { text: i }), el('td', { class: 'left', text: checksummed }), el('td', { text: letters }), el('td', { text: pct(2 ** -letters) }),
+      el('td', { text: i }), el('td', { class: 'left', text: checksummed }), el('td', { text: letters }), el('td', { text: pctSig(2 ** -letters) }),
     ]));
   }
   const L = run.checksum.letters;
@@ -103,15 +103,15 @@ async function checkBitsPanel(run, wallet) {
     body: [
       facts([
         ['letters in this address, L', String(L)],
-        ['P(a random typo passes) for this address', pct(2 ** -L)],
+        ['P(a random typo passes) for this address', pctSig(2 ** -L)],
         ['expected letters per address, 40 × 6/16', '15'],
-        ['2^−15, the “typical” address', pct(2 ** -15)],
-        ['population average (13/16)⁴⁰', pct((13 / 16) ** 40)],
+        ['2^−15, the “typical” address', pctSig(2 ** -15)],
+        ['population average (13/16)⁴⁰', pctSig((13 / 16) ** 40)],
       ]),
       el('div', { class: 'scroll-x', style: 'margin-top:12px' }, [el('table', { class: 'data' }, [
         el('thead', {}, [el('tr', {}, [el('th', { text: 'i' }), el('th', { class: 'left', text: `address at ${wallet.template}` }), el('th', { text: 'L' }), el('th', { text: '2^−L' })])]),
         el('tbody', {}, rows),
-        el('tfoot', {}, [el('tr', {}, [el('td', {}), el('td', { class: 'left', text: 'mean of these ten' }), el('td', { text: (sumL / 10).toFixed(1) }), el('td', { text: pct(sum / 10) })])]),
+        el('tfoot', {}, [el('tr', {}, [el('td', {}), el('td', { class: 'left', text: 'mean of these ten' }), el('td', { text: (sumL / 10).toFixed(1) }), el('td', { text: pctSig(sum / 10) })])]),
       ])]),
     ],
     why: 'the strength of EIP-55 is not a fixed number: it depends on how many letters the address happens to contain.',
@@ -150,12 +150,12 @@ startPage({
   shell: hw02Shell('address.html'),
   sticky: WALLET_KEYS,
   memory: WALLET_MEMORY,
+  preserve: true,
   render: async ({ state, update }) => {
     const { wallet, run } = await loadWallet(state);
-    const input = walletInput({ wallet, update });
-    if (!run) return [input, spongePanel(state, update)];
+    walletDock({ wallet, update });
+    if (!run) return [rejected(wallet.error), spongePanel(state, update)];
     return [
-      input,
       spongePanel(state, update),
       typoPanel(run),
       await checkBitsPanel(run, wallet),

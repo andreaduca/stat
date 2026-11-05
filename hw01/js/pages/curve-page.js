@@ -1,6 +1,6 @@
-/* curve-page.js — the curve explorer: the shared input card, the scatter of
+/* curve-page.js — the curve explorer: the scatter of
    every point, the facts about the curve and its base point, and the table of
-   point orders. The inputs themselves live in curve-input.js, shared with the
+   point orders. The inputs themselves live in curve-dock.js, shared with the
    other pages. */
 
 import { el, explain, fmt } from '../../../assets/js/ui/dom.js';
@@ -8,7 +8,7 @@ import { LatticeGrid, legend } from '../../../assets/js/ui/grid.js';
 import { startPage } from '../../../assets/js/ui/page.js';
 import { curveFromParams } from '../core/curves.js';
 import { curveOptions, CURVE_KEYS, CURVE_MEMORY } from './saved-curves.js';
-import { curveInput } from './curve-input.js';
+import { curveDock, rejected } from './curve-dock.js';
 import { Point } from '../../../assets/js/core/curve.js';
 import { divisors } from '../../../assets/js/core/field.js';
 import { hw01Shell } from './shell.js';
@@ -152,12 +152,12 @@ startPage({
   shell: hw01Shell('curve.html'),
   sticky: CURVE_KEYS,
   memory: CURVE_MEMORY,
+  preserve: true,
   render: ({ state, update }) => {
     const { curve: c, base, presetId, error } = load(state);
-    const input = curveInput({ curve: c ?? null, base: base ?? null, presetId, error: error ?? null, state, update });
-    if (error) return [input];
+    curveDock({ curve: c ?? null, base: base ?? null, presetId, error: error ?? null, state, update });
+    if (error) return [rejected(error)];
     return [
-      input,
       el('div', { class: 'cols wide-first' }, [plotPanel(c, base, update), factsPanel(c, base)]),
       ordersPanel(c),
     ];

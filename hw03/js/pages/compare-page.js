@@ -4,7 +4,8 @@
    space and which from the design, and the curve y² = x³ + 7 over 𝔽₉₇ as an
    illustration. Uses the maths of ../core/caesar.js and ../core/elgamal.js. */
 
-import { el, explain, fmt } from '../../../assets/js/ui/dom.js';
+import { el, explain, fmt, facts } from '../../../assets/js/ui/dom.js';
+import { pct } from '../../../assets/js/ui/format.js';
 import { startPage } from '../../../assets/js/ui/page.js';
 import { LatticeGrid, legend } from '../../../assets/js/ui/grid.js';
 import { PrimeField } from '../../../assets/js/core/field.js';
@@ -13,27 +14,12 @@ import { chiSquare, shannonEntropy } from '../../../assets/js/core/stats.js';
 import { ALPHABET, encrypt as caesarEncrypt, normalise, letterCounts, frequencies, letterEntropy } from '../core/caesar.js';
 import { encrypt, ciphertextBytes } from '../core/elgamal.js';
 import { loadModel } from '../core/data.js';
-import { facts, chart } from './widgets.js';
+import { chart } from './widgets.js';
 import { readKey } from './toykey.js';
+import { toyDock } from './toy-dock.js';
 import { hw03Shell, STICKY, MEMORY } from './shell.js';
 
 const CAESAR_K = 3;
-const pct = (x) => `${(100 * x).toFixed(1)} %`;
-
-/* ---------- input ---------- */
-
-function inputCard(s, model, update) {
-  return el('div', { class: 'card' }, [
-    el('div', { class: 'row' }, [
-      el('button', { type: 'button', text: '“ATTACK AT DAWN”', onclick: () => update({ msg: 'ATTACK AT DAWN' }) }),
-      el('button', { type: 'button', text: `A paragraph of ${model.sample.source.split(', ')[1]}`, onclick: () => update({ msg: model.sample.text }) }),
-    ]),
-    el('p', { class: 'small muted', style: 'margin:10px 0 0', html:
-      `The comparison uses the message and the toy key shared by all pages: “${escapeHtml(s.msg.length > 60 ? `${s.msg.slice(0, 60)}…` : s.msg)}”, d ≤ 2^${s.bits}. ` +
-      'Change them on the <a href="ecc.html">Toy ECC</a> or <a href="caesar.html">Caesar</a> page, or load one of the two texts here.' }),
-  ]);
-}
-const escapeHtml = (t) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 /* ---------- 1. side by side ---------- */
 
@@ -81,7 +67,7 @@ function histogramsPanel(s) {
   const chi = chiSquare(bc);
   return el('div', { class: 'card' }, [
     el('h2', { text: 'The same message, two ciphertexts' }),
-    n < 100 ? el('p', { class: 'notice', text: `The message has only ${n} letters, too few for a letter histogram to take shape. Load the paragraph above for a clearer picture.` }) : null,
+    n < 100 ? el('p', { class: 'notice', text: `The message has only ${n} letters, too few for a letter histogram to take shape. Load the paragraph from the dock below for a clearer picture.` }) : null,
     el('div', { class: 'cols' }, [
       el('div', {}, [
         el('h3', { text: `Caesar ciphertext, k = ${CAESAR_K}: letters` }),
@@ -205,9 +191,11 @@ startPage({
   shell: hw03Shell('compare.html'),
   sticky: STICKY,
   memory: MEMORY,
+  preserve: true,
   render: async ({ state, update, patch }) => {
     const model = await loadModel();
     const s = readKey(state, patch);
-    return [inputCard(s, model, update), sideBySide(s), histogramsPanel(s), quadrantPanel(s), weaknessPanel(), curvePanel()];
+    toyDock(s, update);
+    return [sideBySide(s), histogramsPanel(s), quadrantPanel(s), weaknessPanel(), curvePanel()];
   },
 });

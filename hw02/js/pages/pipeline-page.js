@@ -3,15 +3,15 @@
    mode keeps the values of the moment it was switched on and marks, in every
    later card, what a change of input altered and how many bits flipped. */
 
-import { el, field, explain, fmt } from '../../../assets/js/ui/dom.js';
+import { el, field, explain, fmt, facts } from '../../../assets/js/ui/dom.js';
 import { startPage } from '../../../assets/js/ui/page.js';
 import { bytesToHex, bytesToBits } from '../core/bytes.js';
 import { sha256 } from '../core/sha256.js';
 import { PBKDF2_ITERATIONS } from '../core/bip39.js';
 import { BIP44_LEVELS, INVALID_CHILD_PROBABILITY, keyHex } from '../core/bip32.js';
 import { compressedHex, uncompressedHex, ethereumHex } from '../../../assets/js/core/secp256k1.js';
-import { loadWallet, walletInput, useHexEntropy, WALLET_KEYS, WALLET_MEMORY } from './wallet-input.js';
-import { hexValue, stepCard, facts } from './widgets.js';
+import { loadWallet, walletDock, rejected, useHexEntropy, WALLET_KEYS, WALLET_MEMORY } from './wallet-input.js';
+import { hexValue, stepCard } from './widgets.js';
 import { hw02Shell } from './shell.js';
 
 let baseline = null;   // reveal mode: the values when it was switched on (or reset)
@@ -37,33 +37,45 @@ function snapshot(run) {
 
 /* ---------- reveal mode controls ---------- */
 
-function revealRow(state, update, wallet) {
-  const on = state.reveal === '1';
-  const toggle = el('label', { class: 'small', style: 'display:flex;gap:6px;align-items:center;min-height:34px' }, [
-    el('input', { type: 'checkbox', checked: on, onchange: (e) => { baseline = null; update({ reveal: e.target.checked ? '1' : null }); } }),
-    'Reveal mode: mark what changes',
-  ]);
-  if (!on) return el('div', { class: 'row', style: 'margin-top:12px' }, [toggle]);
-
-  const bits = wallet.bytes * 8;
-  const bitInput = el('input', { type: 'number', class: 'num', min: 0, max: bits - 1, value: '0', id: 'in-flip' });
-  const flip = () => {
-    if (!wallet.entropy) return;
-    const b = Math.max(0, Math.min(bits - 1, parseInt(bitInput.value, 10) || 0));
-    const bytes = wallet.entropy.slice();
-    bytes[b >> 3] ^= 0x80 >> (b & 7);              // bit 0 is the most significant bit of byte 0
-    useHexEntropy(bytesToHex(bytes));
-    update({ src: 'hex' });
-  };
-  return el('div', { class: 'row', style: 'margin-top:12px' }, [
-    toggle,
-    el('div', { class: 'vrule' }),
-    field(`entropy bit (0–${bits - 1})`, bitInput),
-    el('button', { type: 'button', text: 'Flip that bit', onclick: flip }),
-    el('button', { type: 'button', text: 'Index + 1', onclick: () => update({ index: String(wallet.index + 1) }) }),
-    el('button', { type: 'button', text: 'Take current values as baseline', onclick: () => { baseline = null; update({}); } }),
-  ]);
-}
+/** This page's own row in the dock: reveal mode, and the changes worth revealing. */
+let shown = null;   // the wallet on screen, for Flip and Index + 1
+const REVEAL = {
+  id: 'reveal', label: 'this page',
+  build(apply) {
+    const toggle = el('input', { type: 'checkbox', onchange: (e) => { baseline = null; apply({ reveal: e.target.checked ? '1' : null }); } });
+    const bitLabel = el('span');
+    const bitInput = el('input', { type: 'number', class: 'num', min: 0, value: '0', 'aria-label': 'entropy bit' });
+    const flip = () => {
+      if (!shown?.entropy) return;
+      const bits = shown.bytes * 8;
+      const b = Math.max(0, Math.min(bits - 1, parseInt(bitInput.value, 10) || 0));
+      const bytes = shown.entropy.slice();
+      bytes[b >> 3] ^= 0x80 >> (b & 7);              // bit 0 is the most significant bit of byte 0
+      useHexEntropy(bytesToHex(bytes));
+      apply({ src: 'hex' });
+    };
+    const tools = el('div', { class: 'row' }, [
+      el('label', { class: 'field' }, [bitLabel, bitInput]),
+      el('button', { type: 'button', text: 'Flip that bit', onclick: flip }),
+      el('button', { type: 'button', text: 'Index + 1', onclick: () => shown && apply({ index: String(shown.index + 1) }) }),
+      el('button', { type: 'button', text: 'Take current values as baseline', onclick: () => { baseline = null; apply({}); } }),
+    ]);
+    return {
+      nodes: [el('div', { class: 'row' }, [
+        el('label', { class: 'small', style: 'display:flex;gap:6px;align-items:center;min-height:34px' }, [toggle, 'Reveal mode: mark what changes']),
+        tools,
+      ])],
+      refresh({ on, wallet }) {
+        shown = wallet;
+        toggle.checked = on;
+        tools.hidden = !on;
+        bitInput.max = String(wallet.bytes * 8 - 1);
+        bitLabel.textContent = `entropy bit (0–${wallet.bytes * 8 - 1})`;
+      },
+    };
+  },
+  summary: ({ on }) => (on ? 'reveal mode on' : ''),
+};
 
 /* ---------- the seven cards ---------- */
 
@@ -252,10 +264,11 @@ startPage({
   shell: hw02Shell('pipeline.html'),
   sticky: WALLET_KEYS,
   memory: WALLET_MEMORY,
+  preserve: true,
   render: async ({ state, update }) => {
     const { wallet, run } = await loadWallet(state);
-    const input = walletInput({ wallet, update, extras: [revealRow(state, update, wallet)] });
-    if (!run) return [input];
+    walletDock({ wallet, update, page: REVEAL, pageValue: { on: state.reveal === '1', wallet } });
+    if (!run) return [rejected(wallet.error)];
 
     const values = snapshot(run);
     if (state.reveal !== '1') baseline = null;
@@ -263,7 +276,6 @@ startPage({
     const base = state.reveal === '1' && baseline !== values ? baseline : null;
 
     return [
-      input,
       base ? el('p', { class: 'small muted', html: 'Reveal mode: every value is compared with the baseline taken when it was switched on. Changed characters are <span style="color:var(--diff)">red</span>, with the number of changed bits beside each value.' }) : null,
       entropyCard(run, base),
       seedCard(run, base),
@@ -279,7 +291,7 @@ startPage({
           el('div', { class: 'small muted', html: `at <span class="eq">${run.path}</span>` }),
         ]),
         explain([
-          `That is the whole pipeline: ${fmt(wallet.bytes * 8)} random bits in, one address out, through seven deterministic steps. Change any input on the card at the top and every value from that step down changes — switch on reveal mode to see by how much.`,
+          `That is the whole pipeline: ${fmt(wallet.bytes * 8)} random bits in, one address out, through seven deterministic steps. Change any input in the dock at the bottom and every value from that step down changes — switch on reveal mode to see by how much.`,
         ]),
       ]),
     ];

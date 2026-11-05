@@ -5,14 +5,14 @@
    theoretical value next to the measured one. Heavy work runs in a Web
    Worker (js/core/lab/*.js); the frame is lab-panel.js. */
 
-import { el, fmt } from '../../../assets/js/ui/dom.js';
+import { el, fmt, facts } from '../../../assets/js/ui/dom.js';
+import { humanTime } from '../../../assets/js/ui/format.js';
 import { startPage } from '../../../assets/js/ui/page.js';
 import { load, save } from '../../../assets/js/ui/store.js';
 import {
   wilson, meanCI, median, binomialPmf, geometricCdf, geometricMedian, criticalZ, bonferroni, ruleOfThree,
 } from '../../../assets/js/core/stats.js';
 import { WORDS_CHANGED } from '../core/lab/s2.js';
-import { facts, humanTime } from './widgets.js';
 import { labPanel, MEASURED, THEORY, pf, pct, table, chart, verdict, section, flow, histogram } from './lab-panel.js';
 import { hw02Shell } from './shell.js';
 

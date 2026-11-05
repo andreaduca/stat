@@ -4,18 +4,22 @@
    says should suffice, the success-vs-length experiment (in a worker), and
    texts where the attack fails. The maths is in ../core/attack.js. */
 
-import { el, explain, field } from '../../../assets/js/ui/dom.js';
+import { el, explain, field, facts } from '../../../assets/js/ui/dom.js';
+import { pct } from '../../../assets/js/ui/format.js';
 import { startPage } from '../../../assets/js/ui/page.js';
 import { lineChart, chartLegend } from '../../../assets/js/ui/linechart.js';
 import { runWorker } from '../../../assets/js/ui/worker.js';
+import { labPanel, section } from '../../../assets/js/ui/lab.js';
 import { encrypt, decrypt, normalise, ALPHABET } from '../core/caesar.js';
 import { buildLanguage, toLetters, attack, rankOf, METHODS, METHOD, unigramTerms, ngramTerms, unicity, LENGTHS } from '../core/attack.js';
 import { loadModel, loadQuadgrams } from '../core/data.js';
-import { facts, chart } from './widgets.js';
+import { chart } from './widgets.js';
+import { readKey } from './toykey.js';
+import { toyDock } from './toy-dock.js';
+import { show, setValue } from '../../../assets/js/ui/dock.js';
 import { hw03Shell, STICKY, MEMORY } from './shell.js';
 
 const COLORS = { chi2: 'var(--m1)', loglik: 'var(--m2)', corr: 'var(--m3)', bigram: 'var(--m4)', quadgram: 'var(--m5)', top: 'var(--m6)' };
-const pct = (x, d = 0) => `${(100 * x).toFixed(d)} %`;
 const fmtScore = (m, v) => (m.id === 'corr' ? v.toFixed(4) : m.id === 'top' ? String(v) : v.toFixed(1));
 const randomKey = () => { const b = new Uint8Array(1); do crypto.getRandomValues(b); while (b[0] >= 234); return b[0] % 26; };
 
@@ -29,33 +33,48 @@ function prefixWithLetters(text, n) {
   return text;
 }
 
-/* ---------- input ---------- */
+/* ---------- this page's row in the dock: the ciphertext ---------- */
 
-function inputCard(s, model, update, onLength) {
-  const text = el('textarea', { id: 'in-ct', rows: 3, spellcheck: 'false' }, [s.ct]);
-  const out = el('span', { class: 'eq' });
-  const showN = (n) => { out.textContent = `${n} of ${s.N} letters`; };
-  showN(s.n);
-  const slider = el('input', {
-    id: 'in-n', type: 'range', min: 1, max: Math.max(1, s.N), step: 1, value: String(s.n), 'aria-label': 'letters used',
-    oninput: (e) => { const n = Number(e.target.value); showN(n); onLength(n); },
-  });
-  const make = (plain) => { const k = randomKey(); update({ ct: encrypt(plain, k), truek: k, n: null }); };
-  return el('div', { class: 'card' }, [
-    field('ciphertext to break (only the letters A–Z are used)', text),
-    el('div', { class: 'row', style: 'margin-top:10px' }, [
-      el('button', { class: 'primary', type: 'button', text: 'Break it', onclick: () => update({ ct: text.value, truek: null, n: null }) }),
-      el('button', { type: 'button', text: 'Encrypt the shared message, random key', onclick: () => make(s.msg) }),
-      el('button', { type: 'button', text: 'Encrypt the Frankenstein paragraph, random key', onclick: () => make(model.sample.text) }),
-      el('div', { class: 'vrule' }),
-      field('letters used', slider),
-      out,
-    ]),
-    el('p', { class: 'small muted', style: 'margin:10px 0 0', html:
-      (s.truek !== null ? `This ciphertext was made here with <strong>k = ${s.truek}</strong>, shown only so you can check the attack — the attack never looks at it. ` : 'Key unknown: a ciphertext you typed. ') +
-      'Shorten the text with the slider and watch the attack lose its certainty, then fail.' }),
-  ]);
-}
+/* the letters slider redraws only the attack, through this hook */
+let onLength = () => {};
+let current = null;   // {ct, N, n, truek, msg, sample}: what the row shows
+const CIPHERTEXT = {
+  id: 'break', label: 'this page',
+  build(apply) {
+    const text = el('input', { class: 'wide', spellcheck: 'false', 'aria-label': 'ciphertext to break' });
+    const out = el('span', { class: 'small muted' });
+    const note = el('p', { class: 'small muted', style: 'margin:0' });
+    const slider = el('input', {
+      type: 'range', min: 1, step: 1, 'aria-label': 'letters used',
+      oninput: (e) => { const n = Number(e.target.value); out.textContent = `${n} of ${current.N} letters`; current = { ...current, n }; setValue('break', current); onLength(n); },
+    });
+    const make = (plain) => { const k = randomKey(); apply({ ct: encrypt(plain, k), truek: k, n: null }); };
+    return {
+      nodes: [
+        el('div', { class: 'row' }, [
+          field('ciphertext to break (only A–Z count)', text),
+          el('button', { class: 'primary', type: 'button', text: 'Break it', onclick: () => apply({ ct: text.value, truek: null, n: null }) }),
+          el('button', { type: 'button', text: 'Encrypt message, random k', onclick: () => make(current.msg) }),
+          el('button', { type: 'button', text: 'Encrypt paragraph, random k', onclick: () => make(current.sample) }),
+          el('div', { class: 'vrule' }),
+          field('letters used', slider),
+          out,
+        ]),
+        note,
+      ],
+      refresh(v) {
+        current = v;
+        show(text, v.ct);
+        slider.max = String(Math.max(1, v.N));
+        show(slider, v.n);
+        out.textContent = `${v.n} of ${v.N} letters`;
+        note.innerHTML = (v.truek !== null ? `This ciphertext was made here with <strong>k = ${v.truek}</strong>, shown only so you can check the attack — the attack never looks at it. ` : 'Key unknown: a ciphertext you typed. ') +
+          'Shorten the text with the slider and watch the attack lose its certainty, then fail.';
+      },
+    };
+  },
+  summary: (v) => `ciphertext: ${v.n} of ${v.N} letters`,
+};
 
 /* ---------- 1. all 26 keys ---------- */
 
@@ -169,7 +188,7 @@ function gramsView(s, k, m, L) {
     grams.length > shown.length ? el('p', { class: 'small muted', text: `… ${grams.length - shown.length} more` }) : null,
     facts([
       [`groups of ${m.n} letters`, String(grams.length)],
-      ['never seen in the training books', `${unseen} (${pct(unseen / grams.length)})`],
+      ['never seen in the training books', `${unseen} (${pct(unseen / grams.length, 0)})`],
       ['sum of ln p = the score', grams.reduce((a, g) => a + g.logp, 0).toFixed(1)],
     ]),
   ]);
@@ -255,32 +274,33 @@ function experimentPanel(state, update, L, view, redraw) {
 
   const tIn = el('input', { type: 'number', class: 'num', min: 50, max: 5000, step: 50, value: String(T) });
   const sIn = el('input', { type: 'number', class: 'num', min: 0, value: String(seed) });
-  const head = [
-    el('h2', { text: 'The experiment: success rate against text length' }),
-    el('p', { class: 'question', text: 'How many ciphertext letters does each recogniser need to find the key, and how sure can we be of the measured rates?' }),
-    el('div', { class: 'how' }, [el('div', { class: 'label', text: 'How the experiment works' }), el('ol', {}, [
-      el('li', { html: `For each length L in ${LENGTHS.join(', ')} letters, and ${T} times over:` }),
-      el('li', { html: 'cut a random excerpt of L letters from a <strong>test</strong> book (Frankenstein, Dracula — never used to build the model) and pick a key k uniformly from 0–25;' }),
-      el('li', { html: 'encrypt, and let all six recognisers guess k from the ciphertext alone — the <strong>same</strong> excerpt and key for every recogniser (a paired design);' }),
-      el('li', { html: 'success = the guess equals k. A tie for the best score is broken at random, so a method with nothing to go on scores 1/26 ≈ 4 %;' }),
-      el('li', { html: `the success rate s/${T} gets a Wilson 95 % interval, drawn as the band around each line.` }),
-    ])]),
-    el('div', { class: 'row' }, [
+  const frame = {
+    hw: 'hw03', id: 'caesar-length', notesBox: false,
+    title: 'The experiment: success rate against text length',
+    question: 'How many ciphertext letters does each recogniser need to find the key, and how sure can we be of the measured rates?',
+    steps: [
+      `For each length L in ${LENGTHS.join(', ')} letters, and ${T} times over:`,
+      'cut a random excerpt of L letters from a <strong>test</strong> book (Frankenstein, Dracula — never used to build the model) and pick a key k uniformly from 0–25;',
+      'encrypt, and let all six recognisers guess k from the ciphertext alone — the <strong>same</strong> excerpt and key for every recogniser (a paired design);',
+      'success = the guess equals k. A tie for the best score is broken at random, so a method with nothing to go on scores 1/26 ≈ 4 %;',
+      `the success rate s/${T} gets a Wilson 95 % interval, drawn as the band around each line.`,
+    ],
+    controls: [
       field('trials per length T', tIn), field('seed', sIn),
       el('button', { class: 'primary', type: 'button', text: 'Run', onclick: () => update({ T: tIn.value, seed: sIn.value }) }),
-    ]),
-    el('ul', { class: 'hints' }, [
-      el('li', { html: '<strong>T</strong> — more trials, narrower bands: the half-width shrinks like 1/√T (about ±4 % at T = 500 near a 50 % rate).' }),
-      el('li', { html: '<strong>seed</strong> — the seeded generator makes the run reproducible; a different seed gives a different sample of excerpts and keys.' }),
-    ]),
-  ];
+    ],
+    hints: [
+      '<strong>T</strong> — more trials, narrower bands: the half-width shrinks like 1/√T (about ±4 % at T = 500 near a 50 % rate).',
+      '<strong>seed</strong> — the seeded generator makes the run reproducible; a different seed gives a different sample of excerpts and keys.',
+    ],
+  };
 
   if (!done || done.error) {
     const bar = el('progress', { max: 1, value: 0, 'aria-label': 'experiment progress' });
     if (job) job.node = bar;
-    return el('div', { class: 'card lab' }, [...head, done?.error
+    return labPanel({ ...frame, waiting: done?.error
       ? el('p', { class: 'err', text: done.error })
-      : el('div', { class: 'running' }, [el('span', { class: 'small muted', text: `Running ${LENGTHS.length} × ${T} trials × 6 recognisers…` }), bar])]);
+      : el('div', { class: 'running' }, [el('span', { class: 'small muted', text: `Running ${LENGTHS.length} × ${T} trials × 6 recognisers…` }), bar]) });
   }
 
   const { result, seconds } = done;
@@ -300,56 +320,55 @@ function experimentPanel(state, update, L, view, redraw) {
   }, [el('i', { class: 'swatch', style: `background:${COLORS[m.id]}` }), m.short])));
 
   const cell = (r) => el('td', { title: `${r.s}/${r.T}, 95 % CI ${pct(r.lo, 1)}–${pct(r.hi, 1)}` }, [
-    el('span', { text: pct(r.rate) }), el('small', { class: 'muted', text: ` ${(100 * r.lo).toFixed(0)}–${(100 * r.hi).toFixed(0)}` })]);
+    el('span', { text: pct(r.rate, 0) }), el('small', { class: 'muted', text: ` ${(100 * r.lo).toFixed(0)}–${(100 * r.hi).toFixed(0)}` })]);
 
-  return el('div', { class: 'card lab' }, [
-    ...head,
-    el('div', { class: 'answer' }, [el('div', { class: 'label', text: 'Result' }), el('p', { html:
-      `Quadgram scoring finds the key at least 95 % of the time from <strong>${best ?? '—'} letters</strong>; the letter-count likelihood needs <strong>${uni ?? '—'}</strong>; ` +
-      `“most frequent letter = E” is still wrong ${pct(1 - topE.rate)} of the time at ${topE.len} letters. ` +
-      `<span class="muted">(${result.lengths.length * T * 6} attacks in ${seconds.toFixed(1)} s, seed ${seed})</span>` })]),
+  return labPanel({
+    ...frame,
+    view: () => ({
+      answer: { text:
+        `Quadgram scoring finds the key at least 95 % of the time from <strong>${best ?? '—'} letters</strong>; the letter-count likelihood needs <strong>${uni ?? '—'}</strong>; ` +
+        `“most frequent letter = E” is still wrong ${pct(1 - topE.rate, 0)} of the time at ${topE.len} letters. ` +
+        `<span class="muted">(${result.lengths.length * T * 6} attacks in ${seconds.toFixed(1)} s, seed ${seed})</span>` },
+      body: [
+        ...section(1, 'Success rate against length', 'One line per recogniser, the band is its 95 % interval; the length axis is logarithmic. The grey line is the 1/26 of a blind guess. Click a name to hide or show its line.'),
+        toggles,
+        lineChart({
+          series: [...series, { label: 'blind guess', color: 'var(--muted)', points: [[1, 1 / 26], [500, 1 / 26]] }],
+          logX: true, xTicks: [1, 2, 3, 5, 10, 20, 50, 100, 200, 500], yMin: 0, yMax: 1, yTicks: [0, 0.25, 0.5, 0.75, 1],
+          yFormat: (y) => `${y * 100} %`, xTitle: 'ciphertext letters (log scale)', yTitle: 'key found', endLabels: false, height: 280,
+          tip: (x, vals) => `${x} letters\n${[...series.map((s) => s.label), 'blind guess'].map((l, i) => `${l}: ${pct(vals[i], 1)}`).join('\n')}`,
+        }),
+        chartLegend(series),
 
-    el('h3', { class: 'section' }, [el('span', { class: 'n', text: '1' }), 'Success rate against length']),
-    el('p', { class: 'caption', text: 'One line per recogniser, the band is its 95 % interval; the length axis is logarithmic. The grey line is the 1/26 of a blind guess. Click a name to hide or show its line.' }),
-    toggles,
-    lineChart({
-      series: [...series, { label: 'blind guess', color: 'var(--muted)', points: [[1, 1 / 26], [500, 1 / 26]] }],
-      logX: true, xTicks: [1, 2, 3, 5, 10, 20, 50, 100, 200, 500], yMin: 0, yMax: 1, yTicks: [0, 0.25, 0.5, 0.75, 1],
-      yFormat: (y) => `${y * 100} %`, xTitle: 'ciphertext letters (log scale)', yTitle: 'key found', endLabels: false, height: 280,
-      tip: (x, vals) => `${x} letters\n${[...series.map((s) => s.label), 'blind guess'].map((l, i) => `${l}: ${pct(vals[i], 1)}`).join('\n')}`,
+        ...section(2, 'The numbers behind the lines', 'Success rate and its 95 % Wilson interval for every length (hover a cell for s/T).'),
+        el('div', { class: 'scroll-x' }, [el('table', { class: 'data rates' }, [
+          el('thead', {}, [el('tr', {}, [el('th', { text: 'L' }), ...METHODS.map((m) => el('th', {}, [el('i', { class: 'swatch', style: `background:${COLORS[m.id]}` }), m.short]))])]),
+          el('tbody', {}, result.lengths.map((len, i) => el('tr', {}, [el('td', { text: String(len) }), ...METHODS.map((m) => cell(by[m.id].rows[i]))]))),
+        ])]),
+
+        ...section(3, 'Measured against theory', 'Letters needed for a success rate of at least 95 % (from that length on), next to the unicity distance of the model each recogniser uses.'),
+        el('div', { class: 'scroll-x' }, [el('table', { class: 'data prose' }, [
+          el('thead', {}, [el('tr', {}, ['recogniser', 'needs (measured)', 'unicity distance U', 'when wrong, median rank of the true key at 5 letters'].map((h, i) => el('th', { class: i ? null : 'left', text: h })))]),
+          el('tbody', {}, METHODS.map((m) => {
+            const order = m.n ?? 1, r5 = by[m.id].rows[result.lengths.indexOf(5)];
+            return el('tr', {}, [
+              el('td', { class: 'left' }, [el('i', { class: 'swatch', style: `background:${COLORS[m.id]}` }), m.label]),
+              el('td', { text: by[m.id].need ? `${by[m.id].need} letters` : `> ${result.lengths.at(-1)}` }),
+              el('td', { text: m.id === 'top' ? '—' : `${u[order - 1].U.toFixed(1)} letters` }),
+              el('td', { text: r5?.medianFailRank ? String(r5.medianFailRank) : '—' }),
+            ]);
+          })),
+        ])]),
+      ],
     }),
-    chartLegend(series),
-
-    el('h3', { class: 'section' }, [el('span', { class: 'n', text: '2' }), 'The numbers behind the lines']),
-    el('p', { class: 'caption', text: `Success rate and its 95 % Wilson interval for every length (hover a cell for s/T).` }),
-    el('div', { class: 'scroll-x' }, [el('table', { class: 'data rates' }, [
-      el('thead', {}, [el('tr', {}, [el('th', { text: 'L' }), ...METHODS.map((m) => el('th', {}, [el('i', { class: 'swatch', style: `background:${COLORS[m.id]}` }), m.short]))])]),
-      el('tbody', {}, result.lengths.map((len, i) => el('tr', {}, [el('td', { text: String(len) }), ...METHODS.map((m) => cell(by[m.id].rows[i]))]))),
-    ])]),
-
-    el('h3', { class: 'section' }, [el('span', { class: 'n', text: '3' }), 'Measured against theory']),
-    el('p', { class: 'caption', text: 'Letters needed for a success rate of at least 95 % (from that length on), next to the unicity distance of the model each recogniser uses.' }),
-    el('div', { class: 'scroll-x' }, [el('table', { class: 'data prose' }, [
-      el('thead', {}, [el('tr', {}, ['recogniser', 'needs (measured)', 'unicity distance U', 'when wrong, median rank of the true key at 5 letters'].map((h, i) => el('th', { class: i ? null : 'left', text: h })))]),
-      el('tbody', {}, METHODS.map((m) => {
-        const order = m.n ?? 1, r5 = by[m.id].rows[result.lengths.indexOf(5)];
-        return el('tr', {}, [
-          el('td', { class: 'left' }, [el('i', { class: 'swatch', style: `background:${COLORS[m.id]}` }), m.label]),
-          el('td', { text: by[m.id].need ? `${by[m.id].need} letters` : `> ${result.lengths.at(-1)}` }),
-          el('td', { text: m.id === 'top' ? '—' : `${u[order - 1].U.toFixed(1)} letters` }),
-          el('td', { text: r5?.medianFailRank ? String(r5.medianFailRank) : '—' }),
-        ]);
-      })),
-    ])]),
-
-    el('p', { class: 'why matters', html: 'the attack needs no known plaintext and no access to the encryption — only the ciphertext and a corpus of the language. Its single requirement is <em>enough letters</em>, and the recogniser decides how many “enough” is.' }),
-    explain([
+    why: 'the attack needs no known plaintext and no access to the encryption — only the ciphertext and a corpus of the language. Its single requirement is <em>enough letters</em>, and the recogniser decides how many “enough” is.',
+    notes: [
       'The unicity distance is a lower bound for an ideal attacker; real recognisers need a few times more, because U is an average and the success threshold here is a demanding 95 %. The ordering is the point: the more of the language a model captures, the fewer letters it needs — exactly as the redundancy D predicts.',
       'At 1 letter the unigram methods already beat a blind guess (≈ 12 % instead of 4 %): they bet that the letter is E, and about 12 % of English letters are. The n-gram methods cannot score a text shorter than their n and fall back to chance — the dip of the quadgram line at 2–3 letters.',
       'χ² and the log-likelihood nearly coincide, as the theory says (argmin G = argmax ln L, and χ² ≈ G). The log-likelihood is slightly better on short texts, where χ² is a poor approximation.',
       '“Most frequent letter = E” uses one bar out of 26 and converges painfully slowly. Exhaustive search with a good recogniser always beats a shortcut.',
-    ]),
-  ]);
+    ],
+  });
 }
 
 /* ---------- 6. where it fails ---------- */
@@ -399,6 +418,7 @@ startPage({
   shell: hw03Shell('break-caesar.html'),
   sticky: STICKY,
   memory: MEMORY,
+  preserve: true,
   render: async ({ state, update, patch }) => {
     const model = await loadModel();
     language ??= buildLanguage(model, await loadQuadgrams());
@@ -425,9 +445,9 @@ startPage({
     const drawExp = () => exp.replaceChildren(experimentPanel(state, update, L, view, drawExp));
     drawLive(n0);
     drawExp();
-    const s0 = { ct: full, N, n: n0, truek, msg };
+    onLength = (n) => { patch({ n: n === N ? null : n }); view.pick = null; drawLive(n); };
+    toyDock(readKey(state, patch), update, CIPHERTEXT, { ct: full, N, n: n0, truek, msg, sample: model.sample.text });
     return [
-      inputCard(s0, model, update, (n) => { patch({ n: n === N ? null : n }); view.pick = null; drawLive(n); }),
       live,
       unicityPanel(L),
       exp,

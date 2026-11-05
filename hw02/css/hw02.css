@@ -145,9 +145,6 @@ table.data.prose td, table.data.prose th { font-family: var(--sans); }
 .safety { font-size: .78rem; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; color: var(--warn-ink); background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 999px; padding: 1px 9px; }
 
 textarea { font: inherit; font-family: var(--mono); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 7px; padding: 6px 9px; width: 100%; }
-/* a wide text field in a .row: its label grows, the input fills it */
-input.wide { width: 100%; font-family: var(--mono); }
-.row > label.field:has(> input.wide) { flex: 1 1 30ch; min-width: 0; max-width: 52ch; }
 
 /* ---------- home: the list of pages, as tiles ---------- */
 
@@ -249,29 +246,12 @@ ul.confusions li { margin-bottom: 8px; }
 /* ---------- statistics lab ---------- */
 
 .lab-tabs a { cursor: pointer; }
-.running { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 6px 0 12px; }
-.running progress { flex: 1 1 200px; height: 10px; accent-color: var(--accent); }
 .card textarea { min-height: 4.5em; }
 .charts { display: grid; gap: 8px 24px; margin-top: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); }
 .charts > * { min-width: 0; }
 
-/* ---------- statistics lab: the reading order of an experiment ---------- */
+/* ---------- statistics lab (the frame itself is in base.css) ---------- */
 
-.lab .question { font-size: 1.02rem; margin: 0 0 12px; }
-.lab .question::before { content: "The question. "; font-weight: 650; }
-.lab .how { border-left: 3px solid var(--accent); padding: 2px 0 2px 14px; margin: 0 0 16px; }
-.lab .label, .answer .label { font-size: .72rem; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
-.lab .how ol { margin: 0; padding-left: 1.3em; font-size: .92rem; }
-.lab .how li { margin: 2px 0; }
-.lab ul.hints { list-style: none; padding: 0; margin: 10px 0 16px; font-size: .84rem; color: var(--muted); }
-.lab ul.hints li { margin: 3px 0; }
-.lab ul.hints strong { color: var(--ink); font-weight: 600; }
-.answer { border: 1px solid var(--accent); border-radius: var(--radius); background: var(--panel-alt); padding: 10px 14px; margin: 4px 0 16px; }
-.answer.warn { border-color: var(--warn-line); background: var(--warn-bg); }
-.answer p { margin: 0; font-size: 1rem; }
-.lab h3.section { color: var(--ink); font-size: 1rem; margin: 22px 0 6px; }
-.lab h3.section .n { display: inline-grid; place-items: center; width: 22px; height: 22px; margin-right: 8px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: .8rem; }
-.lab .caption { font-size: .88rem; color: var(--muted); margin: 0 0 8px; }
 /* words in tables read better in the text face; numbers stay in the monospaced one */
 .lab table.data td.left, .lab table.data th.left { font-family: var(--sans); }
 
@@ -283,9 +263,9 @@ ul.confusions li { margin-bottom: 8px; }
 .flow .node.public { border-style: dashed; }
 .flow .op { color: var(--muted); font-weight: 650; }
 
-/* ---------- evidence labels (spec §0.7) ---------- */
+/* ---------- evidence labels (spec §0.7): hw02's colours; the label itself is in base.css ---------- */
 
-.evidence { display: inline-block; font-size: .7rem; letter-spacing: .05em; text-transform: uppercase; font-weight: 650; border-radius: 4px; padding: 1px 6px; border: 1px solid var(--c); color: var(--ink); background: color-mix(in srgb, var(--c) 12%, var(--panel)); white-space: nowrap; }
+.evidence { vertical-align: baseline; }   /* hw02's labels sit on the line, except in the essay (below) */
 .evidence.theorem     { --c: var(--cat-pub); }
 .evidence.measurement { --c: var(--cat-hash); }
 .evidence.record      { --c: var(--cat-enc); }
@@ -324,15 +304,5 @@ table.incidents td:first-child { white-space: nowrap; }
 
 /* ---------- essay: a reading column ---------- */
 
-.essay { max-width: 72ch; margin: 0 auto; font-size: 1.04rem; }
-.essay p, .essay li { line-height: 1.72; }
-.essay h2 { font-size: 1.3rem; margin: 2.2em 0 .6em; padding-top: .4em; border-top: 1px solid var(--line); }
-.essay h3 { color: var(--ink); font-size: 1.05rem; margin: 1.6em 0 .4em; }
-.essay .byline { color: var(--muted); margin: -.2em 0 1.2em; font-size: .92rem; }
-.essay .evidence-key { color: var(--muted); }
 .essay .evidence { vertical-align: 1px; }
-.essay nav.toc { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 18px; margin: 1em 0 1.5em; }
-.essay nav.toc ol { margin: 0; padding-left: 1.3em; columns: 2 18em; }
-.essay table { margin: .6em 0 1.2em; }
-.essay ol.refs li { margin-bottom: .4em; }
 table.checklist th { white-space: normal; min-width: 7em; vertical-align: bottom; }

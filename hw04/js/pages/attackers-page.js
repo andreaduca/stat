@@ -5,9 +5,10 @@
    differ in skill (Beta) — the same formula as correlated systems — and the
    interpretation of it all, with an evidence label on every claim. */
 
-import { el, field, explain } from '../../../assets/js/ui/dom.js';
+import { el, field } from '../../../assets/js/ui/dom.js';
+import { nice, sci as sciDigits } from '../../../assets/js/ui/format.js';
 import { startPage } from '../../../assets/js/ui/page.js';
-import { plot, short } from '../../../assets/js/ui/plot.js';
+import { plot } from '../../../assets/js/ui/plot.js';
 import { wilson } from '../../../assets/js/core/stats.js';
 import { modelFrom, HeterogeneousBernoulli } from '../core/models.js';
 import { GRID, column } from '../core/simulate.js';
@@ -20,11 +21,10 @@ import { labPanel, section, table } from './lab-panel.js';
 import { SIM, EXACT, LIMIT, legend, figure, evidence } from './widgets.js';
 import { hw04Shell, STICKY, MEMORY } from './shell.js';
 
-const nice = (n) => n.toLocaleString('en-US').replace(/,/g, ' ');
 const MUTED = 'var(--muted)', IID = 'var(--m1)', HET = 'var(--m3)';   // blue / green: validated pair, apart from the orange exact dots
 const M_COLS = [1, 5, 20, 100, 1000, 10000];
 const GROUPS = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000];
-const sci = (x) => (x === 0 ? '0' : Math.abs(x) < 1e-3 || Math.abs(x) >= 1e6 ? x.toExponential(2) : x.toPrecision(3));
+const sci = (x) => sciDigits(x, 3);   // three significant digits on this page
 const num = (v, lo, hi, fallback) => (v !== undefined && v !== '' && Number.isFinite(Number(v)) ? Math.min(hi, Math.max(lo, Number(v))) : fallback);
 
 /* ---------- E8: aggregates over (n, m) ---------- */

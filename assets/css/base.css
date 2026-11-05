@@ -350,3 +350,96 @@ details.explain p.practice {
 .chart .p-path  { fill: none; stroke: var(--c); stroke-width: 1; opacity: .4; stroke-linejoin: round; }
 .chart .p-path.lit { stroke-width: 2.5; opacity: 1; }
 .chart text.p-endlbl { font: 11px var(--sans); fill: var(--ink); }   /* text in ink; the line key beside it carries the colour */
+
+/* ---------- experiment frame (see assets/js/ui/lab.js): the reading order of an experiment ---------- */
+
+.lab .question { font-size: 1.02rem; margin: 0 0 12px; }
+.lab .question::before { content: "The question. "; font-weight: 650; }
+.lab .how { border-left: 3px solid var(--accent); padding: 2px 0 2px 14px; margin: 0 0 16px; }
+.lab .label, .answer .label { font-size: .72rem; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+.lab .how ol { margin: 0; padding-left: 1.3em; font-size: .92rem; }
+.lab .how li { margin: 2px 0; }
+.lab ul.hints { list-style: none; padding: 0; margin: 10px 0 16px; font-size: .84rem; color: var(--muted); }
+.lab ul.hints li { margin: 3px 0; }
+.lab ul.hints strong { color: var(--ink); font-weight: 600; }
+.answer { border: 1px solid var(--accent); border-radius: var(--radius); background: var(--panel-alt); padding: 10px 14px; margin: 4px 0 16px; }
+.answer.warn { border-color: var(--warn-line); background: var(--warn-bg); }
+.answer p { margin: 0; font-size: 1rem; }
+.lab h3.section { color: var(--ink); font-size: 1rem; margin: 22px 0 6px; }
+.lab h3.section .n { display: inline-grid; place-items: center; width: 22px; height: 22px; margin-right: 8px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: .8rem; }
+.lab .caption { font-size: .88rem; color: var(--muted); margin: 0 0 8px; }
+.running { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 6px 0 12px; }
+.running progress { flex: 1 1 200px; height: 10px; accent-color: var(--accent); }
+.why { font-size: .9rem; color: var(--muted); margin: 14px 0 12px; }
+.why.matters::before { content: "Why it matters: "; font-weight: 600; color: var(--ink); }
+
+/* a panel showing its previous result while the new one computes (lab.js `flag`) */
+.card.lab { position: relative; }
+.updating {
+  position: absolute; top: 12px; right: 14px; z-index: 2; display: flex; align-items: center; gap: 8px;
+  font-size: .78rem; color: var(--muted); background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px;
+}
+.updating progress { width: 90px; height: 6px; accent-color: var(--accent); }
+.card.lab .chart, .card.lab table.data { transition: opacity .2s; }
+.card.lab.is-stale .chart, .card.lab.is-stale table.data, .card.lab.is-stale .answer { opacity: .5; }
+
+/* ---------- evidence labels: how strong a claim is ---------- */
+
+.evidence {
+  display: inline-block; font-size: .7rem; letter-spacing: .05em; text-transform: uppercase; font-weight: 650;
+  border-radius: 4px; padding: 1px 6px; border: 1px solid var(--c); color: var(--ink);
+  background: color-mix(in srgb, var(--c) 12%, var(--panel)); white-space: nowrap; vertical-align: 1px;
+}
+.evidence.theorem     { --c: var(--c-third); }
+.evidence.measurement { --c: var(--c-result); }
+.evidence.record      { --c: var(--c-operand); }
+.evidence.opinion     { --c: var(--muted); }
+
+/* ---------- essay: a reading column ---------- */
+
+.essay { max-width: 72ch; margin: 0 auto; font-size: 1.04rem; }
+.essay p, .essay li { line-height: 1.72; }
+.essay h2 { font-size: 1.3rem; margin: 2.2em 0 .6em; padding-top: .4em; border-top: 1px solid var(--line); }
+.essay h3 { color: var(--ink); font-size: 1.05rem; margin: 1.6em 0 .4em; }
+.essay .byline { color: var(--muted); margin: -.2em 0 1.2em; font-size: .92rem; }
+.essay .evidence-key { color: var(--muted); }
+.essay nav.toc { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 18px; margin: 1em 0 1.5em; }
+.essay nav.toc ol { margin: 0; padding-left: 1.3em; columns: 2 18em; }
+.essay table { margin: .6em 0 1.2em; }
+.essay ol.refs li { margin-bottom: .4em; }
+
+/* a wide text field in a .row: its label grows, the input fills it */
+input.wide { width: 100%; font-family: var(--mono); }
+.row > label.field:has(> input.wide) { flex: 1 1 30ch; min-width: 0; max-width: 52ch; }
+
+/* the hidden attribute must win over display: flex/grid set by a class */
+[hidden] { display: none !important; }
+
+/* ---------- the input dock (see assets/js/ui/dock.js): fixed at the bottom of the window ---------- */
+
+.card.input-dock {
+  position: fixed; left: 50%; bottom: 10px; transform: translateX(-50%); z-index: 20;
+  width: min(1040px, calc(100% - 20px)); margin: 0; padding: 8px 14px 10px;
+  box-shadow: 0 6px 28px rgb(0 0 0 / .22); border-color: var(--muted);
+  max-height: 70vh; overflow-y: auto;
+}
+.input-dock .dock-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin-bottom: 8px; }
+.input-dock .dock-title, .input-dock .dock-label { font-size: .72rem; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); font-weight: 650; }
+.input-dock .dock-label { margin-bottom: 4px; }
+.input-dock .dock-badge:empty { display: none; }
+.input-dock .dock-summary { font: .85rem var(--mono); flex: 1 1 auto; }
+.input-dock .dock-toggle { margin-left: auto; }
+.input-dock .dock-message { margin: 0 0 8px; }
+.input-dock .dock-section.sub { border-top: 1px dashed var(--line); margin-top: 8px; padding-top: 8px; }
+.input-dock .dock-section .row + .row, .input-dock .dock-section .row + p, .input-dock .dock-section .field.block { margin-top: 8px; }
+.input-dock textarea { width: 100%; font: .92rem/1.45 var(--mono); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 7px; padding: 6px 9px; }
+.input-dock details.explain { margin: 8px 0 0; }
+.input-dock.folded { padding-bottom: 8px; }
+.input-dock.folded .dock-head { margin-bottom: 0; }
+.input-dock.folded .dock-body { display: none; }
+.input-dock.folded .dock-message { margin: 6px 0 0; }
+/* room under the last card, so the dock never hides the end of the page (dock.js
+   refines this to the dock's real height) */
+body:has(.input-dock) { padding-bottom: 190px; }
+body:has(.input-dock.folded) { padding-bottom: 64px; }
+button.mini { min-height: 28px; padding: 2px 8px; font-size: .82rem; }

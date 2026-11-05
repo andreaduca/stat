@@ -3,14 +3,14 @@
    addresses from an xpub alone, the xpub + child-key leak (and why hardening
    stops it), and the same words under three wallets' paths. */
 
-import { el, field } from '../../../assets/js/ui/dom.js';
+import { el, field, facts } from '../../../assets/js/ui/dom.js';
 import { startPage } from '../../../assets/js/ui/page.js';
 import { bytesToHex } from '../core/bytes.js';
 import { HDNode, HARDENED, PATH_PRESETS, fillPath, parsePath, keyHex, recoverParentKey, BIP44_LEVELS } from '../core/bip32.js';
 import { compressedHex } from '../../../assets/js/core/secp256k1.js';
 import { EthAccount } from '../core/address.js';
-import { loadWallet, walletInput, WALLET_KEYS, WALLET_MEMORY } from './wallet-input.js';
-import { stepCard, hexValue, facts } from './widgets.js';
+import { loadWallet, walletDock, rejected, WALLET_KEYS, WALLET_MEMORY } from './wallet-input.js';
+import { stepCard, hexValue } from './widgets.js';
 import { hw02Shell } from './shell.js';
 
 const SVG = 'http://www.w3.org/2000/svg';
@@ -234,14 +234,14 @@ startPage({
   shell: hw02Shell('bip32.html'),
   sticky: WALLET_KEYS,
   memory: WALLET_MEMORY,
+  preserve: true,
   render: async ({ state, update }) => {
     const { wallet, run } = await loadWallet(state);
-    const input = walletInput({ wallet, update });
-    if (!run) return [input];
+    walletDock({ wallet, update });
+    if (!run) return [rejected(wallet.error)];
     const nodes = await deriveTree(run.master);
     const selected = TREE.includes(state.node) ? state.node : "m/44'/60'/0'/0/0";
     return [
-      input,
       treePanel(nodes, selected, update),
       await watchPanel(nodes),
       await leakPanel(nodes, state, update),

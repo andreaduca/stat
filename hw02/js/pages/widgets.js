@@ -1,6 +1,7 @@
 /* widgets.js — the small building blocks every hw02 page uses: the category
    badge (note 01's six kinds of operation), a hex value with copy and binary
-   buttons and optional diff marks, and the frame of a pipeline step card. */
+   buttons and optional diff marks, and the frame of a pipeline step card.
+   (facts() is in assets/js/ui/dom.js, humanTime() in assets/js/ui/format.js.) */
 
 import { el, explain } from '../../../assets/js/ui/dom.js';
 
@@ -125,20 +126,4 @@ export function stepCard({ no = null, id = null, title, cats = [], formula, body
   ]);
 }
 
-/** Facts list (label → value), the hw01 .facts style. */
-export const facts = (rows) => el('ul', { class: 'facts' }, rows.filter(Boolean).map(([k, v]) =>
-  el('li', {}, [el('span', { class: 'k', html: k }), el('span', { class: 'v', text: v })])));
 
-/** "3.2 ms", "41 s", "70 days", "1.1·10²⁵ years": a duration a person can read. */
-export function humanTime(seconds) {
-  const num = (x) => (x < 10 ? x.toPrecision(2) : String(Math.round(x)));
-  if (seconds < 1) return `${num(seconds * 1000)} ms`;
-  if (seconds < 120) return `${num(seconds)} s`;
-  if (seconds < 7200) return `${num(seconds / 60)} min`;
-  if (seconds < 172800) return `${num(seconds / 3600)} h`;
-  if (seconds < 6.3e7) return `${num(seconds / 86400)} days`;
-  const years = seconds / 3.156e7;
-  if (years < 1e4) return `${num(years)} years`;
-  const exp = Math.floor(Math.log10(years));
-  return `${(years / 10 ** exp).toFixed(1)}·10${String(exp).replace(/\d/g, (d) => '⁰¹²³⁴⁵⁶⁷⁸⁹'[d])} years`;
-}

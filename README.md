@@ -17,7 +17,10 @@ assets/           the shared shell and maths, reused by every homework
     rng.js          seeded xoshiro128** for reproducible simulations (never for keys)
   js/ui/
     site.js         author, course, repository link — edit here
-    dom.js          el(), the page shell, the "What am I looking at?" box
+    dom.js          el(), the page shell, the "What am I looking at?" box, facts()
+    dock.js         the input dock at the bottom of the window, shared by every homework
+    lab.js          the experiment frame: question, steps, result, evidence sections, notes, export
+    format.js       numbers for reading: thin-space thousands, percentages, durations, byte counts
     page.js         startPage(): state in the URL, remembered between pages; optional in-place redraws
     grid.js         SVG scatter on an integer lattice
     linechart.js    small multi-series line chart
@@ -32,7 +35,7 @@ hw01/             homework 1 — elliptic-curve scalar multiplication
   index.html curve.html keygen.html visualiser.html
   css/hw01.css      styles only this homework needs
   js/core/          curves.js: the toy curve presets (the maths is in assets/js/core)
-  js/pages/         shell.js, curve-input.js, saved-curves.js, one *-page.js per page
+  js/pages/         shell.js, curve-dock.js (the input dock), saved-curves.js, one *-page.js per page
 hw02/             homework 2 — from wallet seed to Ethereum address
   index.html pipeline.html bip39.html bip32.html address.html history.html primitives.html stats.html
   incidents.html structure.html wallet-lab.html essay.html
@@ -44,7 +47,7 @@ hw02/             homework 2 — from wallet seed to Ethereum address
                     yasmarang (the Coldcard generator model), toycurves, ecdsa, lamport,
                     lab/ (one module per experiment, S2–S11)
   js/workers/lab.js the Web Worker that runs the statistics-lab experiments
-  js/pages/         shell.js, wallet-input.js (shared input card), widgets.js, one *-page.js per page
+  js/pages/         shell.js, wallet-input.js (the input dock), widgets.js, one *-page.js per page
 hw03/             homework 3 — Caesar vs toy EC-ElGamal on secp256k1
   index.html ecc.html caesar.html break-caesar.html break-ecc.html compare.html essay.html
   css/hw03.css      public/secret tags, alphabet strips, n-gram tiles, diagrams, essay
@@ -54,7 +57,7 @@ hw03/             homework 3 — Caesar vs toy EC-ElGamal on secp256k1
                     caesar (cipher and letter statistics), attack (Caesar recognisers, experiment),
                     ecdlp (brute force, baby-step giant-step, Pollard kangaroo, experiment), data
   js/workers/       experiment.js (Caesar experiment), ecdlp.js (the key searches and their experiment)
-  js/pages/         shell.js, toykey.js (the shared toy key), widgets.js, one *-page.js per page
+  js/pages/         shell.js, toykey.js (the shared toy key), toy-dock.js (the input dock), widgets.js, one *-page.js per page
 hw04/             homework 4 — penetration as a random walk: LLN, variance scaling, CLT
   index.html model.html distributions.html variance.html lln.html clt.html thresholds.html attackers.html essay.html
   css/hw04.css      layer legends, evidence labels, word tables

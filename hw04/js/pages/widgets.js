@@ -1,5 +1,4 @@
-/* widgets.js — small building blocks shared by the hw04 pages: the facts
-   list, the legend of the three layers, evidence labels, a figure with its
+/* widgets.js — small building blocks shared by the hw04 pages: the legend of the three layers, evidence labels, a figure with its
    caption, and SVG export of a chart. */
 
 import { el } from '../../../assets/js/ui/dom.js';
@@ -7,10 +6,6 @@ import { download } from '../../../assets/js/ui/export.js';
 
 /** The fixed visual encoding of every distribution plot (note 01 §4). */
 export const SIM = 'var(--s1)', EXACT = 'var(--s2)', LIMIT = 'var(--ink)';
-
-/** Label → value rows (labels may hold markup, values are plain text). */
-export const facts = (rows) => el('ul', { class: 'facts' }, rows.filter(Boolean).map(([k, v]) =>
-  el('li', {}, [el('span', { class: 'k', html: k }), el('span', { class: 'v', text: v })])));
 
 /** A legend whose keys show the mark, not only its colour:
  *  kind is 'bar', 'dot', 'line', 'dash' or 'path'. */

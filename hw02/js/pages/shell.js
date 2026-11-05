@@ -24,5 +24,5 @@ export const hw02Shell = (current) => ({
   links: LINKS,
   current,
   home: '../index.html',
-  footer: false,   // no site footer on hw02: the safety notes live on the home page and the input card
+  footer: false,   // no site footer on hw02: the safety notes live on the home page and in the input dock
 });

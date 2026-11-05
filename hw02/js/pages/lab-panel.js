@@ -1,34 +1,26 @@
-/* lab-panel.js — the frame every statistics-lab experiment shares: its
-   parameters (N and the seed always among them), a run in the Web Worker with
-   a progress bar and a cancel button, the results (plot, table, estimates with
-   theory alongside), a Notes box kept in this browser, and CSV / JSON export.
-   Results are cached per parameter set, so redrawing the page never reruns. */
+/* lab-panel.js — hw02's statistics-lab experiments in the shared frame
+   (assets/js/ui/lab.js): parameters drawn from a field list (N and the seed
+   always among them), a run in the Web Worker with a progress bar and a
+   cancel button, and results cached per parameter set, so redrawing the page
+   never reruns. Also the small helpers the evidence sections use. */
 
-import { el, field, explain } from '../../../assets/js/ui/dom.js';
+import { el, field } from '../../../assets/js/ui/dom.js';
 import { runWorker } from '../../../assets/js/ui/worker.js';
-import { toCSV, download } from '../../../assets/js/ui/export.js';
-import { load, save } from '../../../assets/js/ui/store.js';
+import { labPanel as frame, running } from '../../../assets/js/ui/lab.js';
 import { barChart } from '../../../assets/js/ui/barchart.js';
 import { chartLegend } from '../../../assets/js/ui/linechart.js';
 import { badge } from './widgets.js';
+
+export { section, table } from '../../../assets/js/ui/lab.js';
+export { pctSig as pct } from '../../../assets/js/ui/format.js';
 
 /* ---------- small helpers for the evidence sections of an experiment ---------- */
 
 export const MEASURED = 'var(--s1)', THEORY = 'var(--s2)';
 export const pf = (p) => (p < 0.001 ? '< 0.001' : p.toFixed(3));
-export const pct = (x, digits = 3) => `${(100 * x).toPrecision(digits)} %`;
-export const table = (head, rows) => el('div', { class: 'scroll-x' }, [el('table', { class: 'data' }, [
-  el('thead', {}, [el('tr', {}, head.map((h, i) => el('th', { class: i ? null : 'left', text: h })))]),
-  el('tbody', {}, rows.map((r) => el('tr', {}, r.map((c, i) => (c instanceof Node ? el('td', { class: i ? null : 'left' }, [c]) : el('td', { class: i ? null : 'left', text: c })))))),
-])]);
 export const chart = (opts) => el('div', {}, [barChart(opts), chartLegend([...opts.series, ...(opts.overlay ? [opts.overlay] : [])])]);
+/** ok / not-ok text (hw02's own: the words carry the meaning, without ✓/✗). */
 export const verdict = (ok, yes, no) => el('span', { class: ok ? 'ok' : 'err', text: ok ? yes : no });
-
-/** A numbered section of the evidence, with a one-line caption saying how to read it. */
-export const section = (n, title, caption = '') => [
-  el('h3', { class: 'section' }, [el('span', { class: 'n', text: n }), title]),
-  caption ? el('p', { class: 'caption', html: caption }) : null,
-];
 
 /** A small left-to-right diagram: nodes are [title, subtitle, kind] or operator strings. */
 export const flow = (items) => el('div', { class: 'flow' }, items.map((it) => (typeof it === 'string'
@@ -48,7 +40,7 @@ export function histogram(values, lo, hi, width, pmf) {
   return { labels, counts, theory };
 }
 
-/* ---------- the experiment frame ---------- */
+/* ---------- running an experiment ---------- */
 
 const WORKER = new URL('../workers/lab.js', import.meta.url);
 const results = new Map();       // "S3 {n,seed}" -> result
@@ -58,22 +50,22 @@ const keyOf = (exp, params) => `${exp} ${JSON.stringify(params)}`;
 
 function start(exp, params, key, update) {
   if (job) job.cancel();
-  const running = { key, node: null, started: performance.now() };
-  const handle = runWorker(WORKER, { exp, params }, (v) => { if (running.node) running.node.value = v; });
-  running.cancel = handle.cancel;
-  job = running;
+  const run = { key, node: null, started: performance.now() };
+  const handle = runWorker(WORKER, { exp, params }, (v) => { if (run.node) run.node.value = v; });
+  run.cancel = handle.cancel;
+  job = run;
   handle.done
-    .then((result) => { results.set(key, { result, seconds: (performance.now() - running.started) / 1000 }); })
+    .then((result) => { results.set(key, { result, seconds: (performance.now() - run.started) / 1000 }); })
     .catch((e) => { if (!e.cancelled) results.set(key, { error: e.message }); else results.set(key, { cancelled: true }); })
-    .finally(() => { if (job === running) job = null; update({}); });
+    .finally(() => { if (job === run) job = null; update({}); });
 }
 
 /**
- * Every experiment reads the same way, top to bottom:
- *   the question → how the experiment works → parameters, each explained →
- *   the result in one sentence → the details (tables, plots) → why it matters.
+ * An experiment of the statistics lab, in the shared frame.
  * @param {object} o
  * @param {string} o.exp       experiment id, also the module name in js/core/lab/ ('s3')
+ * @param {string} o.id        the id shown and used for the Notes and export names ('S3')
+ * @param {string[]} [o.cats]  category badges beside the title
  * @param {string} o.question  the question the experiment answers, one sentence
  * @param {string[]} o.steps   how it works, a few short numbered steps (HTML)
  * @param {object[]} o.fields  [{key, label, min, max, options?, type?, hint}] — the parameters on screen
@@ -94,9 +86,8 @@ export function labPanel({ exp, id, title, cats = [], question, steps = [], fiel
     inputs[f.key] = input;
     return field(f.label, input);
   });
-  const read = () => Object.fromEntries(fields.map((f) => [f.key, inputs[f.key].value]));
   const rerun = () => {
-    const changes = read();
+    const changes = Object.fromEntries(fields.map((f) => [f.key, inputs[f.key].value]));
     const same = fields.every((f) => String(changes[f.key]) === String(params[f.key]));
     if (same) results.delete(key);
     update(same ? {} : changes);
@@ -106,55 +97,28 @@ export function labPanel({ exp, id, title, cats = [], question, steps = [], fiel
   const state = compute ? { result: compute(params) } : results.get(key);
   if (!state && !(job && job.key === key)) start(exp, params, key, update);
 
-  const progress = el('progress', { max: 1, value: 0 });
-  if (job && job.key === key) job.node = progress;
-
-  let body;
-  if (state?.result) {
-    const out = view(state.result, params);
-    const name = `hw02-${id}-${Object.values(params).join('-')}`;
-    body = [
-      el('div', { class: `answer ${out.answer.ok === false ? 'warn' : ''}` }, [
-        el('div', { class: 'label', text: 'Result' }),
-        el('p', { html: out.answer.text }),
-      ]),
-      ...out.body,
-      el('div', { class: 'row', style: 'margin-top:14px' }, [
-        out.rows?.length ? el('button', { type: 'button', text: 'Export CSV', onclick: () => download(`${name}.csv`, toCSV(out.rows), 'text/csv') }) : null,
-        el('button', { type: 'button', text: 'Export JSON', onclick: () => download(`${name}.json`, JSON.stringify({ experiment: id, params, result: out.summary ?? state.result }, null, 2), 'application/json') }),
-        state.seconds ? el('span', { class: 'small muted', text: `computed in ${state.seconds.toFixed(1)} s in a Web Worker` }) : null,
-      ]),
-    ];
-  } else if (state?.error) {
-    body = [el('p', { class: 'err', text: `The experiment failed: ${state.error}` })];
-  } else if (state?.cancelled) {
-    body = [el('p', { class: 'small muted', text: 'Cancelled. Press Run to start again.' })];
-  } else {
-    body = [el('div', { class: 'running' }, [
-      el('span', { class: 'small', text: 'Running in a Web Worker…' }), progress,
-      el('button', { type: 'button', text: 'Cancel', onclick: () => job?.cancel() }),
-    ])];
+  let waiting = null;
+  if (state?.error) waiting = el('p', { class: 'err', text: `The experiment failed: ${state.error}` });
+  else if (state?.cancelled) waiting = el('p', { class: 'small muted', text: 'Cancelled. Press Run to start again.' });
+  else if (!state?.result) {
+    const bar = el('progress', { max: 1, value: 0 });
+    if (job && job.key === key) job.node = bar;
+    waiting = running('Running in a Web Worker…', bar, () => job?.cancel());
   }
 
-  const notesKey = `hw02.notes.${id}`;
-  const notesBox = el('textarea', { rows: 3, 'aria-label': `notes on experiment ${id}`, placeholder: 'Your observations on this experiment — kept in this browser only.', oninput: (e) => save(notesKey, e.target.value) }, [load(notesKey, '')]);
   const seeded = fields.some((f) => f.key === 'seed');
-
-  return el('div', { class: 'card lab' }, [
-    el('div', { class: 'step-head' }, [el('h2', { text: title }), ...cats.map(badge)]),
-    el('p', { class: 'question', html: question }),
-    steps.length ? el('div', { class: 'how' }, [
-      el('div', { class: 'label', text: 'How the experiment works' }),
-      el('ol', {}, steps.map((s) => el('li', { html: s }))),
-    ]) : null,
-    el('div', { class: 'row' }, [...controls, el('button', { class: 'primary', type: 'button', text: 'Run', onclick: rerun })]),
-    el('ul', { class: 'hints' }, [
-      ...fields.filter((f) => f.hint).map((f) => el('li', { html: `<strong>${f.label}</strong> — ${f.hint}` })),
-      seeded ? el('li', { html: '<strong>seed</strong> — the simulation draws its random numbers from a seeded generator (xoshiro128**): the same seed always gives the same result, a new seed gives an independent run. These are never real keys.' }) : null,
-    ]),
-    ...body,
-    why ? el('p', { class: 'why matters', html: why }) : null,
-    notes ? explain(notes) : null,
-    el('details', { class: 'explain' }, [el('summary', { text: 'Notes' }), el('div', {}, [notesBox])]),
-  ]);
+  return frame({
+    hw: 'hw02', id, title, head: cats.map(badge), question, steps,
+    controls: [...controls, el('button', { class: 'primary', type: 'button', text: 'Run', onclick: rerun })],
+    hints: [
+      ...fields.filter((f) => f.hint).map((f) => `<strong>${f.label}</strong> — ${f.hint}`),
+      seeded ? '<strong>seed</strong> — the simulation draws its random numbers from a seeded generator (xoshiro128**): the same seed always gives the same result, a new seed gives an independent run. These are never real keys.' : null,
+    ].filter(Boolean),
+    waiting,
+    view: state?.result ? () => view(state.result, params) : null,
+    name: `${id}-${Object.values(params).join('-')}`,
+    json: (out) => ({ experiment: id, params, result: out.summary ?? state.result }),
+    extra: state?.seconds ? [el('span', { class: 'small muted', text: `computed in ${state.seconds.toFixed(1)} s in a Web Worker` })] : [],
+    why, notes,
+  });
 }
