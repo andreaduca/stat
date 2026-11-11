@@ -4,7 +4,7 @@
    pages in reading order. The 20 paths are simulated here, synchronously:
    2·10⁵ steps take a few milliseconds. */
 
-import { el, explain } from '../../../assets/js/ui/dom.js';
+import { el, explain, pageLink, pageList } from '../../../assets/js/ui/dom.js';
 import { startPage } from '../../../assets/js/ui/page.js';
 import { plot } from '../../../assets/js/ui/plot.js';
 import { StepModel } from '../core/models.js';
@@ -14,7 +14,7 @@ import { SIM, LIMIT, legend } from './widgets.js';
 import { hw04Shell, PAGES, STICKY, MEMORY, NOTICE } from './shell.js';
 
 const N_MAX = 10000, PATHS = 20;
-const link = (href, text) => (PAGES.find((p) => p.href === href)?.built ? `<a href="${href}">${text}</a>` : text);
+const link = (href, text) => pageLink(PAGES, href, text);
 
 function exercise() {
   return el('div', { class: 'card' }, [
@@ -140,16 +140,6 @@ function results() {
   ]);
 }
 
-function pageList() {
-  return el('div', { class: 'card' }, [
-    el('h2', { text: 'The pages, in reading order' }),
-    el('ul', { class: 'pagelist' }, PAGES.filter((p) => p.blurb).map((p) => el('li', {}, [
-      p.built ? el('a', { href: p.href }, [el('strong', { text: p.label })]) : el('strong', { class: 'muted', text: `${p.label} (to be built)` }),
-      ' ', p.blurb,
-    ]))),
-  ]);
-}
-
 startPage({
   shell: hw04Shell('index.html'),
   sticky: STICKY,
@@ -157,6 +147,6 @@ startPage({
   preserve: true,
   render: ({ state }) => {
     const run = readRun(state);
-    return [el('p', { class: 'notice', text: NOTICE }), exercise(), decisions(), overview(run), quantities(), layers(), results(), pageList()];
+    return [el('p', { class: 'notice', text: NOTICE }), exercise(), decisions(), overview(run), quantities(), layers(), results(), pageList(PAGES)];
   },
 });

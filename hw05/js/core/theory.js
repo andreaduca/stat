@@ -49,11 +49,9 @@ export const seAvgMean = (dist, n, R) => Math.sqrt(dist.variance / (n * R));
 export const seAvgS2 = (dist, n, R) => Math.sqrt(varS2(dist, n) / R);
 export const seAvgPlugIn = (dist, n, R) => Math.sqrt(varPlugIn(dist, n) / R);
 
-/** The comparison every table shows: measured, theory, difference, SE, z, and a verdict. */
-export function compare(measured, theory, se) {
-  const diff = measured - theory, z = se > 0 ? diff / se : NaN;
-  return { measured, theory, diff, se, z, ok: Math.abs(z) <= 3 };
-}
+/** The comparison every table shows: measured, theory, difference, SE, z, and
+ *  a verdict (|z| ≤ 3). Shared since Nov 2026: assets/js/core/stats.js. */
+export { compare } from '../../../assets/js/core/stats.js';
 
 /** SE of an empirical variance V̂ of m values whose own excess kurtosis is κ_T:
  *  SE(V̂) ≈ V·√(2/(m − 1) + κ_T/m) (draft §8.3). For x̄ⱼ, κ_T = κ/n. */

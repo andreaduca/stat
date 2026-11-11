@@ -5,14 +5,30 @@
 /** Digits and minus signs as superscripts: sup(-12) → "⁻¹²". */
 export const sup = (n) => String(n).replace(/[-\d]/g, (d) => (d === '-' ? '⁻' : '⁰¹²³⁴⁵⁶⁷⁸⁹'[d]));
 
-/** A Number with a narrow no-break space every three digits: 10 000.
- *  (dom.js `fmt` does the same for BigInts, with a plain space.) */
+/** A Number with a narrow no-break space (U+202F) every three digits: 10 000,
+ *  at most three decimals. The default for new work. */
 export const nice = (n) => n.toLocaleString('en-US').replace(/,/g, ' ');
+
+/** Any integer, BigInt included, with a thin space (U+2009) every three digits
+ *  and no rounding. Unlike nice's no-break space, a thin space may wrap, so a
+ *  78-digit secp256k1 number stays exact and still fits a narrow table cell
+ *  (hw01–hw03). */
+export const fmt = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
 /** A probability or a ratio that may be tiny: 0 → "0", 3.2e-5 → "3.20e-5",
  *  otherwise `digits` significant digits. */
 export const sci = (x, digits = 4) => (x === 0 ? '0'
   : Math.abs(x) < 1e-3 || Math.abs(x) >= 1e6 ? x.toExponential(2) : x.toPrecision(digits));
+
+/** A number to d significant digits, without trailing zeros; scientific
+ *  notation outside [10⁻⁴, 10⁶): sig(2.857142) → "2.857", sig(1e-7) → "1.00e-7". */
+export const sig = (v, d = 4) => {
+  if (!Number.isFinite(v)) return String(v);
+  if (v === 0) return '0';
+  const a = Math.abs(v);
+  if (a >= 1e6 || a < 1e-4) return sci(v, d);
+  return Number(v.toPrecision(d)).toString();
+};
 
 /** A fraction as a percentage with `d` decimals: pct(0.1234) → "12.3 %". */
 export const pct = (x, d = 1) => `${(100 * x).toFixed(d)} %`;

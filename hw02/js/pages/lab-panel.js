@@ -7,18 +7,16 @@
 import { el, field } from '../../../assets/js/ui/dom.js';
 import { runWorker } from '../../../assets/js/ui/worker.js';
 import { labPanel as frame, running } from '../../../assets/js/ui/lab.js';
-import { barChart } from '../../../assets/js/ui/barchart.js';
-import { chartLegend } from '../../../assets/js/ui/linechart.js';
 import { badge } from './widgets.js';
 
 export { section, table } from '../../../assets/js/ui/lab.js';
 export { pctSig as pct } from '../../../assets/js/ui/format.js';
+export { barChartWithLegend as chart } from '../../../assets/js/ui/barchart.js';
 
 /* ---------- small helpers for the evidence sections of an experiment ---------- */
 
 export const MEASURED = 'var(--s1)', THEORY = 'var(--s2)';
 export const pf = (p) => (p < 0.001 ? '< 0.001' : p.toFixed(3));
-export const chart = (opts) => el('div', {}, [barChart(opts), chartLegend([...opts.series, ...(opts.overlay ? [opts.overlay] : [])])]);
 /** ok / not-ok text (hw02's own: the words carry the meaning, without ✓/✗). */
 export const verdict = (ok, yes, no) => el('span', { class: ok ? 'ok' : 'err', text: ok ? yes : no });
 

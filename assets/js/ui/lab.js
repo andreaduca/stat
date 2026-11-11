@@ -9,6 +9,7 @@
 import { el, explain } from './dom.js';
 import { toCSV, download } from './export.js';
 import { load, save } from './store.js';
+import { sig } from './format.js';
 
 /** A numbered section of the evidence, with a one-line caption saying how to read it. */
 export const section = (n, title, caption = '') => [
@@ -26,6 +27,17 @@ export const table = (head, rows, cls = '') => el('div', { class: 'scroll-x' }, 
 
 /** ok / not-ok text, never colour alone. */
 export const verdict = (ok, yes, no) => el('span', { class: ok ? 'ok' : 'err', text: ok ? `✓ ${yes}` : `✗ ${no}` });
+
+/** One row of a "measured vs theory" table, from compare() in assets/js/core/stats.js:
+ *  name, measured, theory, difference, SE, z = difference/SE, and the verdict
+ *  (consistent if |z| ≤ 3, else "check": a miss is shown, never hidden). */
+export const compareRow = (name, c) => [
+  el('span', { html: name }), sig(c.measured), sig(c.theory), sig(c.diff, 3), sig(c.se, 3),
+  Number.isFinite(c.z) ? c.z.toFixed(2) : '—',
+  verdict(c.ok, 'consistent', 'check'),
+];
+/** The header that goes with compareRow. */
+export const COMPARE_HEAD = ['', 'measured', 'theory', 'difference', 'SE', 'z', ''];
 
 /** What a panel shows while its run computes: a label, the progress bar, Cancel. */
 export const running = (label, bar, onCancel = null) => el('div', { class: 'running' }, [

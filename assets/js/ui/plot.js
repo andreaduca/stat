@@ -2,9 +2,10 @@
    layers: lines (solid or dashed), steps, points with error bars, histogram
    bars on a real x axis, ribbons, reference lines, "upper bound only" arrows,
    and bundles of paths that light up under the pointer. A crosshair tooltip
-   reads every hoverable layer at the pointer. Knows no statistics; first used
-   by hw04, where linechart.js / barchart.js could not draw error bars, lattice
-   histograms or Q-Q scatters. Reuses the .chart styles of base.css. */
+   reads every hoverable layer at the pointer. First used by hw04, where
+   linechart.js / barchart.js could not draw error bars, lattice histograms or
+   Q-Q scatters. At the end, a density histogram with theory curves (hw05,
+   shared since Nov 2026). Reuses the .chart styles of base.css. */
 
 const SVG = 'http://www.w3.org/2000/svg';
 const node = (tag, attrs = {}, text = null) => {
@@ -291,4 +292,59 @@ export function plot({ x: xo = {}, y: yo = {}, layers, width = 560, height = 240
     lit = null;
   });
   return wrap;
+}
+
+/* ---------- a density histogram with theory curves (moved here from hw05, Nov 2026) ---------- */
+
+/** A density histogram of values on [lo, hi] in `bins` equal bins, as plot
+ *  bars [x0, x1, height] with height = count/(total·width), so that it sits
+ *  on the same scale as a density curve. Values outside [lo, hi] are counted in
+ *  the total but not drawn (`outside` says how many, for the caption). */
+export function densityBars(values, lo, hi, bins = 40) {
+  const w = (hi - lo) / bins, counts = new Array(bins).fill(0);
+  let outside = 0;
+  for (const v of values) {
+    const k = Math.floor((v - lo) / w);
+    if (k >= 0 && k < bins) counts[k]++;
+    else if (v === hi) counts[bins - 1]++;
+    else outside++;
+  }
+  const total = values.length;
+  return { bars: counts.map((c, k) => [lo + k * w, lo + (k + 1) * w, c / (total * w)]), outside };
+}
+
+/** Points [x, f(x)] of a curve on [lo, hi], `steps` equal intervals. */
+export const curve = (f, lo, hi, steps = 200) => Array.from({ length: steps + 1 }, (_, i) => {
+  const x = lo + ((hi - lo) * i) / steps;
+  return [x, f(x)];
+});
+
+/**
+ * A density histogram of `values` on [lo, hi], with optional theory curves and
+ * vertical reference lines. Simulation in --s1, theory in --s2 unless told otherwise.
+ * The node's data-outside attribute holds the number of values off the axis.
+ * @param {object} o
+ * @param {ArrayLike<number>} o.values
+ * @param {number} o.lo  @param {number} o.hi  @param {number} [o.bins]
+ * @param {{f: (x: number) => number, label: string, dash?: boolean|string, color?: string}[]} [o.curves]
+ * @param {{at: number, text?: string, color?: string, dash?: boolean|string}[]} [o.refs]
+ * @param {string} o.xTitle  @param {string} o.label  accessible description
+ * @param {number} [o.width] @param {number} [o.height] @param {number} [o.yMax]
+ */
+export function histogram({ values, lo, hi, bins = 40, curves = [], refs = [], xTitle, label, width = 520, height = 240, yMax, color = 'var(--s1)', barLabel = 'simulation' }) {
+  const { bars, outside } = densityBars(values, lo, hi, bins);
+  const theory = 'var(--s2)';
+  const out = plot({
+    x: { min: lo, max: hi, title: xTitle },
+    y: { min: 0, max: yMax, title: 'density' },
+    width, height,
+    layers: [
+      { type: 'bars', bars, color, label: barLabel },
+      ...curves.map((c) => ({ type: 'line', points: curve(c.f, lo, hi), color: c.color ?? theory, dash: c.dash ?? false, label: c.label })),
+      ...refs.map((r) => ({ type: 'vline', at: r.at, color: r.color ?? theory, dash: r.dash ?? false, text: r.text })),
+    ],
+    label,
+  });
+  out.dataset.outside = String(outside);
+  return out;
 }

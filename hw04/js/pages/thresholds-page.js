@@ -18,9 +18,8 @@ import { sampleSizes, klChernoff } from '../core/bounds.js';
 import { normInv, normSf } from '../../../assets/js/core/numeric.js';
 import { moments } from '../core/estimate.js';
 import { readRun, runCard } from './run-input.js';
-import { getRun, pending, updatingFlag } from './run.js';
 import { labPanel, section, table } from './lab-panel.js';
-import { SIM, EXACT, LIMIT, legend, figure } from './widgets.js';
+import { SIM, EXACT, LIMIT, legend, figure, getRun, pending, updatingFlag } from './widgets.js';
 import { hw04Shell, STICKY, MEMORY } from './shell.js';
 
 const BOUND = 'var(--m1)', MUTED = 'var(--muted)';

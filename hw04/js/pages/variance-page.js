@@ -13,9 +13,8 @@ import { GRID, column } from '../core/simulate.js';
 import { linFit } from '../../../assets/js/core/numeric.js';
 import { moments, scaleMoments } from '../core/estimate.js';
 import { readRun, runCard } from './run-input.js';
-import { getRun, pending, updatingFlag } from './run.js';
 import { labPanel, section, table, verdict } from './lab-panel.js';
-import { SIM, LIMIT, legend, figure, svgButton } from './widgets.js';
+import { SIM, LIMIT, legend, figure, svgButton, getRun, pending, updatingFlag } from './widgets.js';
 import { hw04Shell, STICKY, MEMORY } from './shell.js';
 
 /** A signed number with a real minus sign: +0.999, −1.001. */

@@ -7,15 +7,15 @@
 
 import { el, field } from '../../../assets/js/ui/dom.js';
 import { nice } from '../../../assets/js/ui/format.js';
-import { inputDock, show, onCommit } from '../../../assets/js/ui/dock.js';
+import { inputDock, show, onCommit, numberOr, freshSeed } from '../../../assets/js/ui/dock.js';
+
+export { rejected } from '../../../assets/js/ui/dock.js';
 import { scoreDist } from '../core/dists.js';
 
 export const M_PRESETS = [10, 100, 1000, 2000, 10000, 100000];
 export const DEFAULT_SEED = 20261105;
 export const DEFAULTS = { dist: 'beta25', p: 0.3, a: 2, b: 5, m: 2000, n: 10, seed: DEFAULT_SEED };
 const DISTS = [['beta25', '10·Beta(2, 5)'], ['unif', 'U[0, 10]'], ['binom', 'Binomial(10, p)'], ['beta', '10·Beta(α, β)']];
-
-const num = (v, fallback) => (v === undefined || v === null || v === '' || !Number.isFinite(Number(v)) ? fallback : Number(v));
 
 /**
  * The run a page is looking at, from its state. Values out of range are
@@ -25,9 +25,9 @@ const num = (v, fallback) => (v === undefined || v === null || v === '' || !Numb
  */
 export function readInputs(state) {
   const dist = DISTS.some(([id]) => id === state.dist) ? state.dist : DEFAULTS.dist;
-  const p = num(state.p, DEFAULTS.p), a = num(state.a, DEFAULTS.a), b = num(state.b, DEFAULTS.b);
-  const m = Math.round(num(state.m, DEFAULTS.m)), n = Math.round(num(state.n, DEFAULTS.n));
-  const seed = Math.round(num(state.seed, DEFAULTS.seed));
+  const p = numberOr(state.p, DEFAULTS.p), a = numberOr(state.a, DEFAULTS.a), b = numberOr(state.b, DEFAULTS.b);
+  const m = Math.round(numberOr(state.m, DEFAULTS.m)), n = Math.round(numberOr(state.n, DEFAULTS.n));
+  const seed = Math.round(numberOr(state.seed, DEFAULTS.seed));
   let error = null;
   if (dist === 'binom' && !(p > 0 && p < 1)) error = `p must lie strictly between 0 and 1 (got ${p}).`;
   else if (dist === 'beta' && !(a >= 0.1 && a <= 50 && b >= 0.1 && b <= 50)) error = `α and β must lie between 0.1 and 50 (got α = ${a}, β = ${b}).`;
@@ -40,14 +40,6 @@ export function readInputs(state) {
 
 /** The score distribution of a run, as an object with exact moments. */
 export const scoreOf = (run) => scoreDist({ dist: run.dist, p: run.p, a: run.a, b: run.b });
-
-/** A fresh seed from the browser's CSPRNG: the only use of real randomness on
- *  these pages. It picks WHICH reproducible run to look at. */
-export function freshSeed() {
-  const v = new Uint32Array(1);
-  crypto.getRandomValues(v);
-  return v[0];
-}
 
 const summary = (r) => `${scoreOf(r).label()} · m = ${nice(r.m)} hackers · n = ${nice(r.n)} systems · seed ${r.seed}`;
 
@@ -106,10 +98,3 @@ export const dock = (run, update, page = null, pageValue = null) => inputDock({
   values: { shared: run, ...(page ? { [page.id]: pageValue } : {}) },
   message: run.error ? { text: `Rejected: ${run.error}`, kind: 'err' } : null,
 });
-
-/** What a page shows while its inputs are rejected: the reason is in the dock too. */
-export const rejected = (error) => el('div', { class: 'card' }, [
-  el('h2', { text: 'These inputs are rejected' }),
-  el('p', { class: 'err', text: error }),
-  el('p', { class: 'small muted', text: 'Change the value in the dock below; the page comes back as soon as the inputs are valid.' }),
-]);

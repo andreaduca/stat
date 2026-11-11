@@ -4,7 +4,7 @@
    every plot, and the pages in reading order. The picture is simulated here,
    synchronously: 2 000 hackers × n systems take a few milliseconds at n = 10. */
 
-import { el, explain } from '../../../assets/js/ui/dom.js';
+import { el, explain, pageLink, pageList } from '../../../assets/js/ui/dom.js';
 import { startPage } from '../../../assets/js/ui/page.js';
 import { plot } from '../../../assets/js/ui/plot.js';
 import { nice } from '../../../assets/js/ui/format.js';
@@ -17,7 +17,7 @@ import { SIM, THEORY, MUTED, legend, densityBars, curve, sig } from './widgets.j
 import { hw05Shell, PAGES, STICKY, MEMORY, NOTICE } from './shell.js';
 
 const STREAM = 1000, HACKERS = 2000;
-const link = (href, text) => (PAGES.find((p) => p.href === href)?.built ? `<a href="${href}">${text}</a>` : text);
+const link = (href, text) => pageLink(PAGES, href, text);
 
 function exercise() {
   return el('div', { class: 'card' }, [
@@ -133,16 +133,6 @@ function results() {
   ]);
 }
 
-function pageList() {
-  return el('div', { class: 'card' }, [
-    el('h2', { text: 'The pages, in reading order' }),
-    el('ul', { class: 'pagelist' }, PAGES.filter((p) => p.blurb).map((p) => el('li', {}, [
-      p.built ? el('a', { href: p.href }, [el('strong', { text: p.label })]) : el('strong', { class: 'muted', text: `${p.label} (to be built)` }),
-      ' ', p.blurb,
-    ]))),
-  ]);
-}
-
 startPage({
   shell: hw05Shell('index.html'),
   sticky: STICKY,
@@ -150,6 +140,6 @@ startPage({
   render: ({ state }) => {
     let run = readInputs(state);
     if (run.error) run = readInputs(DEFAULTS);   // the home page has no dock: fall back to the defaults
-    return [el('p', { class: 'notice', text: NOTICE }), exercise(), decisions(run), overview(run), language(), results(), pageList()];
+    return [el('p', { class: 'notice', text: NOTICE }), exercise(), decisions(run), overview(run), language(), results(), pageList(PAGES)];
   },
 });

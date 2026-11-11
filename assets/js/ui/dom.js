@@ -78,5 +78,18 @@ export function field(label, control) {
 export const facts = (rows) => el('ul', { class: 'facts' }, rows.filter(Boolean).map(([k, v]) =>
   el('li', {}, [el('span', { class: 'k', html: k }), el('span', { class: 'v', text: v })])));
 
-/** Thousands separator for BigInt/Number, keeping tables readable. */
-export const fmt = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+/* fmt lives with the other formatters in format.js; re-exported for the pages that import it from here */
+export { fmt } from './format.js';
+
+/** A link to one of a homework's pages as HTML, or plain text while that page
+ *  is not built yet. @param {{href, built}[]} pages  the homework's PAGES */
+export const pageLink = (pages, href, text) => (pages.find((p) => p.href === href)?.built ? `<a href="${href}">${text}</a>` : text);
+
+/** The home page's list of pages in reading order, from PAGES (each {href, label, built, blurb}). */
+export const pageList = (pages, heading = 'The pages, in reading order') => el('div', { class: 'card' }, [
+  el('h2', { text: heading }),
+  el('ul', { class: 'pagelist' }, pages.filter((p) => p.blurb).map((p) => el('li', {}, [
+    p.built ? el('a', { href: p.href }, [el('strong', { text: p.label })]) : el('strong', { class: 'muted', text: `${p.label} (to be built)` }),
+    ' ', p.blurb,
+  ]))),
+]);

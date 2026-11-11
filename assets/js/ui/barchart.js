@@ -3,7 +3,11 @@
    (a histogram against its Binomial or Geometric law, counts against their
    expectation). Grouped bars when there are several series, signed values
    allowed (z-scores), horizontal reference lines (critical values).
-   Plain SVG; reuses the .chart styles of linechart.js. Knows no cryptography. */
+   Plain SVG; reuses the .chart styles of linechart.js. Knows no cryptography.
+   barChartWithLegend adds the legend underneath (hw02 and hw03). */
+
+import { el } from './dom.js';
+import { chartLegend } from './linechart.js';
 
 const SVG = 'http://www.w3.org/2000/svg';
 const node = (tag, attrs = {}, text = null) => {
@@ -96,3 +100,6 @@ export function barChart({ categories, series, overlay = null, refLines = [], xT
   svg.addEventListener('pointerleave', () => tip.classList.remove('on'));
   return wrap;
 }
+
+/** A bar chart with its legend underneath: the series, then the overlay if any. */
+export const barChartWithLegend = (opts) => el('div', {}, [barChart(opts), chartLegend([...opts.series, ...(opts.overlay ? [opts.overlay] : [])])]);

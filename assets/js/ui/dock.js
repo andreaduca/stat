@@ -122,3 +122,25 @@ export function onCommit(input, go, later) {
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && input.tagName !== 'TEXTAREA') go(); });
   return input;
 }
+
+/* ---------- reading the inputs (shared by every homework's dock module since Nov 2026) ---------- */
+
+/** A parameter from the URL state as a Number, or `fallback` when it is missing
+ *  or not a number. Range checks are the dock module's job (it rejects, with a reason). */
+export const numberOr = (v, fallback) => (v === undefined || v === null || v === '' || !Number.isFinite(Number(v)) ? fallback : Number(v));
+
+/** A fresh 32-bit seed from the browser's CSPRNG: the only use of real
+ *  randomness on the simulation pages. It picks WHICH reproducible run to look at. */
+export function freshSeed() {
+  const v = new Uint32Array(1);
+  crypto.getRandomValues(v);
+  return v[0];
+}
+
+/** What a page shows instead of its panels while its inputs are rejected; the
+ *  reason is also on the dock's message line. */
+export const rejected = (error) => el('div', { class: 'card' }, [
+  el('h2', { text: 'These inputs are rejected' }),
+  el('p', { class: 'err', text: error }),
+  el('p', { class: 'small muted', text: 'Change the value in the dock below; the page comes back as soon as the inputs are valid.' }),
+]);

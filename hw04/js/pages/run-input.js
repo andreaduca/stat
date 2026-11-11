@@ -5,29 +5,19 @@
 
 import { el, field } from '../../../assets/js/ui/dom.js';
 import { nice } from '../../../assets/js/ui/format.js';
-import { inputDock, show, onCommit } from '../../../assets/js/ui/dock.js';
+import { inputDock, show, onCommit, numberOr, freshSeed } from '../../../assets/js/ui/dock.js';
 
 export const M_PRESETS = [5, 20, 100, 1000, 10000, 100000];
 export const P_PRESETS = [0.5, 0.1, 0.01];
 export const DEFAULT_SEED = 20261028;
 
-const num = (v, fallback) => (v === undefined || v === null || v === '' || !Number.isFinite(Number(v)) ? fallback : Number(v));
-
 /** The run a page is looking at, from its state, with every value made valid. */
 export function readRun(state) {
   const model = state.model === 'ber' ? 'ber' : 'rad';
-  const p = Math.min(0.999, Math.max(0.001, num(state.p, 0.5)));
-  const m = Math.min(100000, Math.max(5, Math.round(num(state.m, 10000))));
-  const seed = Math.max(0, Math.min(4294967295, Math.round(num(state.seed, DEFAULT_SEED))));
+  const p = Math.min(0.999, Math.max(0.001, numberOr(state.p, 0.5)));
+  const m = Math.min(100000, Math.max(5, Math.round(numberOr(state.m, 10000))));
+  const seed = Math.max(0, Math.min(4294967295, Math.round(numberOr(state.seed, DEFAULT_SEED))));
   return { model, p: model === 'ber' ? p : 0.5, m, seed };
-}
-
-/** A fresh seed from the browser's CSPRNG — the only use of real randomness on
- *  these pages: it picks WHICH reproducible run to look at. */
-export function freshSeed() {
-  const b = new Uint32Array(1);
-  crypto.getRandomValues(b);
-  return b[0];
 }
 
 /** One line saying which run is on screen. */

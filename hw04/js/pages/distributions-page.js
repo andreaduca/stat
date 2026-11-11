@@ -15,9 +15,8 @@ import { lawOfTotal } from '../core/exact.js';
 import { normPdf } from '../../../assets/js/core/numeric.js';
 import { moments, scaleMoments, atoms, latticeHistogram, gofToExact, batchSE } from '../core/estimate.js';
 import { readRun, runCard } from './run-input.js';
-import { getRun, pending, updatingFlag } from './run.js';
 import { labPanel, section, table, verdict } from './lab-panel.js';
-import { SIM, EXACT, LIMIT, layersLegend, svgButton } from './widgets.js';
+import { SIM, EXACT, LIMIT, layersLegend, svgButton, getRun, pending, updatingFlag } from './widgets.js';
 import { hw04Shell, STICKY, MEMORY } from './shell.js';
 
 const DECADES = [10, 100, 1000, 10000];

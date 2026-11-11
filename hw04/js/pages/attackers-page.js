@@ -16,9 +16,8 @@ import { probMaxAtLeast, atLeastOne, expectedMaxNormal, betaPdf, betaBinomialPmf
 import { linFit } from '../../../assets/js/core/numeric.js';
 import { moments, scaleMoments, atoms, latticeHistogram } from '../core/estimate.js';
 import { readRun, runCard } from './run-input.js';
-import { getRun, pending, updatingFlag } from './run.js';
 import { labPanel, section, table } from './lab-panel.js';
-import { SIM, EXACT, LIMIT, legend, figure, evidence } from './widgets.js';
+import { SIM, EXACT, LIMIT, legend, figure, evidence, getRun, pending, updatingFlag } from './widgets.js';
 import { hw04Shell, STICKY, MEMORY } from './shell.js';
 
 const MUTED = 'var(--muted)', IID = 'var(--m1)', HET = 'var(--m3)';   // blue / green: validated pair, apart from the orange exact dots

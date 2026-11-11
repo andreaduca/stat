@@ -15,9 +15,8 @@ import { lawOfTotal, ksToNormal } from '../core/exact.js';
 import { normPdf, normCdf } from '../../../assets/js/core/numeric.js';
 import { atoms, latticeHistogram, binned, ksToContinuous, ksToExact, qqPoints, moments } from '../core/estimate.js';
 import { readRun, runCard } from './run-input.js';
-import { getRun, pending, updatingFlag } from './run.js';
 import { labPanel, section, table } from './lab-panel.js';
-import { SIM, EXACT, LIMIT, legend, layersLegend, figure, svgButton } from './widgets.js';
+import { SIM, EXACT, LIMIT, legend, layersLegend, figure, svgButton, getRun, pending, updatingFlag } from './widgets.js';
 import { hw04Shell, STICKY, MEMORY } from './shell.js';
 
 const BOUND = 'var(--m1)', MUTED = 'var(--muted)';

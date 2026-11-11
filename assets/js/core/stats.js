@@ -215,3 +215,40 @@ export function batchSE(values, stat, groups = 20) {
   const sd = Math.sqrt(est.reduce((s, v) => s + (v - mean) ** 2, 0) / (groups - 1));
   return sd / Math.sqrt(groups);
 }
+
+/* ---------- quantiles, correlation, measured vs theory (moved here from hw05/js/pages/widgets.js, Nov 2026) ---------- */
+
+/** The q-quantile of a list of values: the value at rank round(q·(m − 1)) of a
+ *  sorted copy (nearest rank, no interpolation).
+ *  Category: order statistic. Why nearest rank: with m in the thousands the
+ *  interpolation changes nothing visible, and every value returned is one that
+ *  was actually observed (an alarm threshold, a tail of a histogram). */
+export function quantile(values, q) {
+  const v = Float64Array.from(values).sort();
+  return v[Math.min(v.length - 1, Math.max(0, Math.round(q * (v.length - 1))))];
+}
+
+/** Pearson correlation of two equal-length lists:
+ *    r = Σ(aᵢ − ā)(bᵢ − b̄) / √(Σ(aᵢ − ā)² · Σ(bᵢ − b̄)²),  in [−1, 1].
+ *  Category: estimator (of the correlation coefficient). Two passes: the means
+ *  first, then the centred products, which avoids the cancellation of the
+ *  one-pass Σab − m·ā·b̄ form (the same reason as Welford, HW5 note 01). */
+export function correlation(a, b) {
+  const n = a.length;
+  let ma = 0, mb = 0;
+  for (let i = 0; i < n; i++) { ma += a[i]; mb += b[i]; }
+  ma /= n; mb /= n;
+  let sab = 0, saa = 0, sbb = 0;
+  for (let i = 0; i < n; i++) { const x = a[i] - ma, y = b[i] - mb; sab += x * y; saa += x * x; sbb += y * y; }
+  return sab / Math.sqrt(saa * sbb);
+}
+
+/** A measured value against its theoretical value, in units of its standard error.
+ *  Category: test statistic. z = (measured − theory)/SE; "consistent" when
+ *  |z| ≤ 3, i.e. the gap is within three standard errors (a two-sided
+ *  normal test at about 0.3 %). Every "measured vs theory" table row uses it,
+ *  so "close to the truth" is always a number (HW5 note 02 §3). */
+export function compare(measured, theory, se) {
+  const diff = measured - theory, z = se > 0 ? diff / se : NaN;
+  return { measured, theory, diff, se, z, ok: Math.abs(z) <= 3 };
+}
