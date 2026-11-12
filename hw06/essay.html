@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Essay · Two ways to measure area, one bell curve · HW06</title>
+<link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="css/hw06.css">
+</head>
+<body>
+<!-- Written from the author's notes (Obsidian vault, Courses/Statistics/HW6: 00–06 and the concept notes) and from
+     the measured results of these pages, at the author's request. Deterministic numbers (errors, slopes, Φ, the
+     tables) do not depend on any seed; simulated ones come from the default seed 20261111 and were checked on
+     11–12 Nov 2026 (docs/plans/hw06.md). Rerun and update them if the code changes. -->
+<main class="wrap">
+<article class="essay">
+
+  <h1>Two ways to measure area, one bell curve</h1>
+  <p class="byline">Riemann and Lebesgue integration, and the normal CDF · Statistics · MSc Cybersecurity, Sapienza · Homework 6 · November 2026</p>
+
+  <section class="card abstract" aria-label="abstract">
+    <h2>Abstract</h2>
+    <p>Riemann measures an area by cutting the domain into cells; Lebesgue by cutting the range into levels and
+      measuring the set where the function exceeds each level. On a collection of eleven functions the two
+      numerical schemes reach the same value whenever the function is Riemann integrable, but at different
+      speeds, and the real cost of the Lebesgue scheme is computing those measures: an error of 10⁻⁶ on
+      <span class="m">\sin x</span> costs 51 evaluations with Simpson's rule and 94 372 with root-found
+      preimages. They disagree only where Riemann's integral does not exist or is improper, and a computer
+      cannot even represent the difference between a rational and an irrational number. The second exercise is
+      an integral with no formula, the normal CDF <span class="m">\Phi</span>. Liouville's theorem proves it
+      is not elementary; a series near 0 and Laplace's continued fraction in the tails compute it to
+      <span class="m">7.6\cdot10^{-15}</span> relative error on <span class="m">[-37.5, 8.25]</span>, checked
+      against 80-digit values and the NIST table, while any method that forms the lower tail as
+      <span class="m">1 - \Phi(-x)</span> loses every digit beyond <span class="m">x \approx -8.3</span>. That
+      tail is where p-values, lattice-crypto samplers and differential-privacy calibrations live.</p>
+  </section>
+
+  <p class="evidence-key small">Each claim is labelled with its evidence:
+    <span class="evidence theorem">theorem</span> proved in the notes, or an exact computation ·
+    <span class="evidence measurement">measured</span> on these pages, with a link to the run ·
+    <span class="evidence record">source</span> from the literature, to be checked before citing ·
+    <span class="evidence opinion">opinion</span> the author's judgement.</p>
+
+  <nav class="toc" aria-label="Contents">
+    <ol>
+      <li><a href="#intro">Introduction</a></li>
+      <li><a href="#two">Two ways to measure area</a></li>
+      <li><a href="#numerics">The numerical comparison</a></li>
+      <li><a href="#patho">Pathological functions</a></li>
+      <li><a href="#phi">Computing Φ</a></li>
+      <li><a href="#liouville">Liouville and special functions</a></li>
+      <li><a href="#connections">Connections: inference, lattices, privacy, Monte Carlo</a></li>
+      <li><a href="#nature">Nature</a></li>
+      <li><a href="#final">Final considerations</a></li>
+      <li><a href="#refs">References</a></li>
+    </ol>
+  </nav>
+
+  <!-- 1 -->
+  <h2 id="intro">1 · Introduction</h2>
+  <p>Inference rests on two tools, and this homework builds both. The first is the integral itself: a
+    probability is a measure, and an expected value is a Lebesgue integral, so the question of what an integral
+    <em>is</em> sits under every statistical statement. The second is one particular integral, the normal CDF</p>
+  <div class="M">\Phi(x) = \int_{-\infty}^{x} \frac{e^{-t^2/2}}{\sqrt{2\pi}}\,dt,</div>
+  <p>which every z-test, p-value and confidence interval evaluates. The first exercise compares the two
+    classical definitions of the integral as <em>algorithms</em>; the second asks how to compute
+    <span class="m">\Phi</span> when, as we will see, no formula for it can exist.</p>
+  <p>Two methodological rules hold throughout. Every numerical result is shown with its error against a known
+    reference, and every comparison between methods shows accuracy and cost together. Everything runs in the
+    browser in IEEE 754 double precision; the references were computed separately, at 80 digits, in Python's
+    <code>decimal</code>.</p>
+
+  <!-- 2 -->
+  <h2 id="two">2 · Two ways to measure area</h2>
+  <p>Riemann cuts the <em>domain</em> <span class="m">[a, b]</span> into <span class="m">N</span> cells, takes one
+    height per cell and adds height × width. Lebesgue cuts the <em>range</em>: for each level
+    <span class="m">t</span> he asks how much of the domain lies above it, the measure
+    <span class="m">\lambda\{f > t\}</span> of a preimage. The bridge between the two is the layer-cake formula
+    <span class="evidence theorem">theorem</span>:</p>
+  <div class="M">\int_\Omega f = m\,\lambda(\Omega) + \int_m^M \lambda\{f > t\}\,dt,</div>
+  <p>where <span class="m">m</span> and <span class="m">M</span> are the smallest and largest values of <span class="m">f</span>. It turns Lebesgue's integral into an ordinary one-dimensional integral over heights. Any rule in
+    <span class="m">t</span> then gives a Lebesgue-style method; this homework uses the midpoint rule in
+    <span class="m">t</span> (the "layer cake") and Lebesgue's own lower simple-function sum. The two pictures
+    side by side are on the <a href="integration.html">Riemann vs Lebesgue page</a> (E1): rectangles over the
+    domain, slabs over the range, each slab as wide as its preimage.</p>
+  <p>Lebesgue described the difference with money <span class="evidence record">source</span>: paying a debt by
+    taking coins out of the pocket in the order they come is Riemann; first sorting them by value and paying
+    each heap at once is his integral. The analogy contains a warning that the numerics confirm. If the
+    measures <span class="m">\lambda\{f > t\}</span> are obtained by counting grid points, the layer cake is the
+    midpoint sum regrouped, the same coins in another order: the two agree to
+    <span class="m">2\cdot10^{-15}</span> relative on <span class="m">\sin x</span>
+    <span class="evidence measurement">measured</span> (<a href="integration.html?f=f1#E4">E4</a>). A Lebesgue
+    method is genuinely different only when the measures come from somewhere else: a formula (an analytic
+    inverse), root finding on each monotone piece of <span class="m">f</span>, or random points.</p>
+
+  <!-- 3 -->
+  <h2 id="numerics">3 · The numerical comparison</h2>
+  <p>The collection (note 01) was chosen so that each member tests one thing: <span class="m">\sin x</span>
+    and <span class="m">x^2</span> are smooth but flat somewhere; two step functions jump on and off the grid;
+    <span class="m">|x - \frac{1}{2}|</span> has a kink; <span class="m">x^{-1/2}</span> is unbounded;
+    <span class="m">\sin x / x</span> has no elementary antiderivative, so its preimages need root finding;
+    <span class="m">\sin(1/x)</span> oscillates infinitely often near 0.</p>
+  <p><strong>Same limit.</strong> For every Riemann-integrable member the Riemann and Lebesgue integrals are
+    equal <span class="evidence theorem">theorem</span>, and the numerics agree: at <span class="m">10^5</span>
+    cells and levels the two schemes are <span class="m">5.4\cdot10^{-9}</span> apart on
+    <span class="m">\sin x</span>, exactly equal on the steps, <span class="m">4.5\cdot10^{-5}</span> apart on
+    <span class="m">\sin(1/x)</span> <span class="evidence measurement">measured</span>
+    (<a href="integration.html#E2">E2, “Same limit?”</a>).</p>
+  <p><strong>Different speed.</strong> The fitted log-log slopes over <span class="m">N, K \in [10, 1000]</span>
+    reproduce the textbook orders for Riemann: −2.00 for the midpoint rule, −4.00 for Simpson on
+    <span class="m">\sin x</span>. The layer cake on the same function converges with slope <strong>−1.47</strong>,
+    not −2 <span class="evidence measurement">measured</span>. The reason is a square root: near a maximum
+    <span class="m">M</span> with <span class="m">f'' \ne 0</span>, <span class="m">\lambda\{f > t\} \approx c\sqrt{M - t}</span>,
+    and the midpoint rule in <span class="m">t</span> loses half an order on the last level
+    <span class="evidence theorem">theorem</span>. The duality is the main lesson of Ex. 1
+    <span class="evidence opinion">opinion</span>: cutting the domain suffers where <span class="m">f</span> is
+    steep, jumps or blows up; cutting the range suffers where <span class="m">f</span> is flat, because a flat
+    stretch puts a lot of domain at nearly one level. The cases confirm it. A jump on a cell boundary costs the
+    midpoint rule nothing, moved to <span class="m">1/\sqrt{2}</span> it costs every Riemann rule
+    <span class="m">O(1/N)</span>, and the layer cake does not care where the jump is. On
+    <span class="m">x^{-1/2}</span> the midpoint rule crawls at <span class="m">N^{-1/2}</span>
+    (<span class="m">1.9\cdot10^{-3}</span> at <span class="m">N = 10^5</span>), while the layer cake on a
+    geometric <span class="m">t</span>-grid with the exact tail <span class="m">1/T</span> is exact from
+    <span class="m">K = 10</span> <span class="evidence measurement">measured</span>
+    (<a href="integration.html?f=f5#E2">E2 for f5</a>).</p>
+  <p><strong>Cost.</strong> Accuracy alone does not rank methods. Counting every evaluation of
+    <span class="m">f</span>, including those inside the root finder, an error of <span class="m">10^{-6}</span>
+    on <span class="m">\sin x</span> costs 51 evaluations with Simpson, 1 000 with the midpoint rule and 94 372 with
+    the root-finding layer cake; plain Monte Carlo does not reach it within <span class="m">10^5</span> samples
+    <span class="evidence measurement">measured</span> (<a href="integration.html?f=f1#E3">E3</a>). For smooth
+    one-dimensional functions Riemann-type rules win, by orders of magnitude. Lebesgue's strengths lie
+    elsewhere <span class="evidence opinion">opinion</span>: in theory (convergence theorems, a unified treatment
+    of sums and integrals), in functions Riemann cannot handle, and in practice when the distribution of values
+    is known or cheap, as for <span class="m">x^{-1/2}</span>, for steps, and in high dimension (section 7).</p>
+
+  <!-- 4 -->
+  <h2 id="patho">4 · Pathological functions</h2>
+  <p>Lebesgue's criterion <span class="evidence theorem">theorem</span> says that a bounded function is Riemann
+    integrable exactly when its discontinuities form a set of measure zero, and then the two integrals agree. So
+    the approaches can only give different answers when the discontinuities are too many, or when the domain is
+    unbounded and Riemann's integral is only an improper limit (<a href="pathological.html">Pathological page</a>).</p>
+  <p><strong>Dirichlet</strong>, 1 on the rationals and 0 elsewhere, is the first case. With rational tags every
+    Riemann sum is 1, with irrational tags every sum is 0, so there is no Riemann integral; the Lebesgue integral
+    is 0 because the rationals are countable, hence null. The interesting part is what a computer does. A double is
+    an integer times a power of two, always rational: 0.1 is stored as
+    <span class="m">3602879701896397/2^{55}</span> <span class="evidence theorem">theorem</span>. Evaluated on
+    floating-point tags, the Dirichlet function is 1 everywhere and every sum is 1. Irrational tags can only be
+    represented symbolically, as <span class="m">(i - 1 + \sqrt{2})/N</span> with the <span class="m">\sqrt{2}</span>
+    kept as a name (<a href="pathological.html#P1">P1</a>). No measurement of finite precision can tell a rational
+    from an irrational; floating point, like physics, sees functions only up to sets of measure zero, which is
+    exactly the Lebesgue point of view <span class="evidence opinion">opinion</span>.</p>
+  <p><strong>Thomae's function</strong> (<span class="m">1/q</span> at <span class="m">p/q</span>, 0 at
+    irrationals) is discontinuous at every rational, yet integrable: in exact integer arithmetic the left-tag sum is
+    <span class="m">\frac{1}{N^2}\sum_{i=1}^{N}\operatorname{gcd}(i, N)</span>, 0.00850 at <span class="m">N = 1000</span> and
+    0.00198 at the prime 1009, and the upper Darboux sums fall to 0.011 at <span class="m">N = 10^4</span>
+    <span class="evidence measurement">measured</span> (<a href="pathological.html#P2">P2</a>). Number theory
+    appears inside a Riemann sum.</p>
+  <p>A <strong>fat Cantor set</strong> is the case that fools numerics. Removing the middle
+    <span class="m">4^{-n}</span> of every piece at step <span class="m">n</span> leaves a closed set
+    <span class="m">S</span> with no interval inside and measure <span class="m">\frac{1}{2}</span>. Its
+    indicator is not Riemann integrable, yet left, midpoint and random-tag sums at <span class="m">N = 10^5</span>
+    give 0.5002, 0.4995 and 0.5003: the Lebesgue value <span class="evidence measurement">measured</span>
+    (<a href="pathological.html#P3">P3</a>). Only the Darboux sums, the adversary that picks every tag in a removed
+    gap, show the failure: lower sums stay at 0 while upper sums fall to <span class="m">\frac{1}{2}</span>.
+    Riemann integrability is a worst case over all tags; numerics only ever try typical ones.</p>
+  <p>On <strong><span class="m">[0, \infty)</span></strong> the roles swap. <span class="m">\int_0^T \sin x/x\,dx</span>
+    settles at <span class="m">\pi/2</span> (1.570846 at <span class="m">T = 10^4</span>), while
+    <span class="m">\int_0^T |\sin x|/x\,dx</span> grows like <span class="m">\frac{2}{\pi}\ln T</span>
+    <span class="evidence measurement">measured</span>: an improper Riemann integral exists, a Lebesgue integral
+    does not, because Lebesgue requires <span class="m">\int |f| < \infty</span>. Finally the <strong>Cantor
+    function</strong> integrates to <span class="m">\frac{1}{2}</span> by both methods, although it climbs from 0
+    to 1 with derivative 0 almost everywhere: the fundamental theorem of calculus fails for it.</p>
+  <p>So "the two approaches behave differently" means three things (note 02): different answers only when Riemann's
+    integral does not exist or is improper; the same answers at different difficulty for every Riemann-integrable
+    function; and a blurred line in floating point, which samples a null set.</p>
+
+  <!-- 5 -->
+  <h2 id="phi">5 · Computing Φ</h2>
+  <p>The target was full double-precision <em>relative</em> accuracy for every <span class="m">x</span> where
+    <span class="m">\Phi(x)</span> is a normal double, tails included. Relative, because a tail probability is judged
+    against its own size: <span class="m">\Phi(-10) = 7.6\cdot10^{-24}</span>, and an answer with an absolute
+    error of <span class="m">10^{-16}</span> is no answer. Formed as <span class="m">1 - \Phi(10)</span> in
+    doubles, the lower tail is 7 % wrong at <span class="m">x = -8</span> and exactly 0 from
+    <span class="m">x = -9</span> <span class="evidence measurement">measured</span>
+    (<a href="normal.html#theory">theory card</a>).</p>
+  <p>Ten methods were implemented and compared on 2 001 points of <span class="m">[-37.5, 8.25]</span>
+    (<a href="normal.html#E7">E7</a>). Quadrature from 0 (trapezoid, Simpson), the alternating Taylor series of
+    <span class="m">\operatorname{erf}</span>, the positive series and the classical Abramowitz–Stegun formula
+    all form the lower tail by subtraction, and their relative error reaches 1 before <span class="m">x = -9</span>.
+    The Taylor series fails twice: its terms grow to <span class="m">10^{11.7}</span> at
+    <span class="m">x = 8</span> before they shrink, and the rounding of those terms swamps a sum of order 1
+    <span class="evidence measurement">measured</span>. The methods that compute the tail directly survive:
+    Simpson on the tail (to about <span class="m">10^{-3}</span> with a fixed <span class="m">N</span>), the
+    Zelen–Severo formula (to its 16 % deep in the tail), and Laplace's continued fraction
+    <span class="m">Q(a) = \varphi(a)/(a + 1/(a + 2/(a + \cdots)))</span>, which is excellent for large
+    <span class="m">a</span> (7 iterations at <span class="m">a = 30</span>) and slow near 0 (396 at
+    <span class="m">a = 1</span>).</p>
+  <p>The production method M7 uses each where it is good <span class="evidence theorem">theorem</span>: below the
+    switch-over <span class="m">s = 2</span>, the positive series
+    <span class="m">\Phi(a) - \frac{1}{2} = \varphi(a)\sum a^{2n+1}/(2n+1)!!</span>, whose terms are all positive;
+    above it, the continued fraction for the tail itself; and <span class="m">e^{-x^2/2}</span> computed with
+    <span class="m">x^2</span> split exactly into two pieces. Its worst relative error over the grid is
+    <strong><span class="m">7.6\cdot10^{-15}</span></strong>, and <span class="m">2.9\cdot10^{-15}</span> at
+    <span class="m">s = 1.5</span>, at the price of up to 187 instead of 103 iterations
+    <span class="evidence measurement">measured</span>. A fixed Chebyshev expansion (M8), with 21 + 16 coefficients
+    fitted once at 80 digits, reaches <span class="m">5.0\cdot10^{-15}</span> with the same work at every
+    <span class="m">x</span>, and is the fastest method with full accuracy, about 90 ns per call against 240 ns for
+    M7 in this browser (<a href="normal.html#E8">E8</a>). An iterative method is easy to make accurate; a fixed
+    polynomial is faster and takes constant time, which matters again in section 7.</p>
+  <p><strong>Trusted references.</strong> The 80-digit values come from two independent methods, the positive
+    series and the continued fraction evaluated backward, which agree to <span class="m">10^{-68}</span> or better
+    <span class="evidence theorem">theorem</span>; M7 matches them to <span class="m">1.5\cdot10^{-15}</span> at
+    every test point. The web reference the exercise asks for, the NIST/SEMATECH table
+    <span class="evidence record">source</span>, gives <span class="m">\Phi(z) - \frac{1}{2}</span> to five
+    decimals: all nine rows checked agree with M7 (<a href="normal.html#E9">E9</a>).</p>
+  <p><strong>Avoidable and unavoidable error.</strong> The condition number
+    <span class="m">\kappa_\Phi(x) = |x\varphi(x)/\Phi(x)|</span> lies between <span class="m">x^2</span> and
+    <span class="m">1 + x^2</span> for <span class="m">x < 0</span> <span class="evidence theorem">theorem</span>:
+    near <span class="m">x = -30</span> a relative change <span class="m">u</span> of the input becomes
+    <span class="m">900u</span> in the output. That part is unavoidable for a rounded input; the rest is the
+    method's. The textbook route <span class="m">\frac{1}{2}\operatorname{erfc}(-x/\sqrt{2})</span> rounds
+    <span class="m">x/\sqrt{2}</span> and loses up to <span class="m">1.1\cdot10^{-13}</span>, a naive
+    <span class="m">e^{-x^2/2}</span> loses <span class="m">5.7\cdot10^{-14}</span>, both growing like
+    <span class="m">x^2u</span>, while M7 stays at its <span class="m">7.6\cdot10^{-15}</span>
+    <span class="evidence measurement">measured</span> (<a href="normal.html#E10">E10</a>).</p>
+
+  <!-- 6 -->
+  <h2 id="liouville">6 · Liouville and special functions</h2>
+  <p>Why compute at all, rather than find a formula? Because there is none, and that is a theorem. An elementary
+    function is built from rational functions by arithmetic, composition, <span class="m">\exp</span>,
+    <span class="m">\log</span> and algebraic roots. By Liouville's criterion (1835, in the modern form of
+    Rosenlicht 1972 <span class="evidence record">source</span>), <span class="m">\int f e^{g}</span> with rational
+    <span class="m">f, g</span> is elementary exactly when <span class="m">R' + g'R = f</span> has a rational
+    solution <span class="m">R</span>. For the Gaussian the equation is <span class="m">R' - 2xR = 1</span>, and the
+    proof that it has no rational solution takes two lines <span class="evidence theorem">theorem</span>. A pole of
+    order <span class="m">k</span> in <span class="m">R</span> becomes a pole of order <span class="m">k + 1</span> in
+    <span class="m">R'</span> and nothing on the left can cancel it, while <span class="m">1</span> has no poles. A
+    polynomial <span class="m">R</span> of degree <span class="m">d</span> makes <span class="m">2xR</span> of
+    degree <span class="m">d + 1</span>, again with nothing to cancel it, while <span class="m">1</span> has degree 0.
+    So <span class="m">\int e^{-x^2}</span>, <span class="m">\Phi</span> and <span class="m">\operatorname{erf}</span>
+    are not elementary. The <a href="liouville.html#E11">checker</a> on the Liouville page lets the reader try:
+    every candidate leaves a term behind.</p>
+  <p>Naming the integral <span class="m">\operatorname{erf}</span> is closure by extension, as
+    <span class="m">\sqrt{-1}</span> was adjoined to the reals: in the enlarged class,
+    <span class="m">\Phi(x) = \frac{1}{2}(1 + \operatorname{erf}(x/\sqrt{2}))</span> is an exact closed form, and the
+    name carries knowledge (series, continued fractions, bounds, the equation
+    <span class="m">y'' + 2xy' = 0</span>). It does not carry digits. Neither does <span class="m">e^x</span>: in
+    this browser <code>Math.exp(1)</code> is a rounded approximation produced by range reduction and a polynomial,
+    like every <span class="m">\Phi</span> value on these pages. The distinction between elementary and special
+    functions is algebraic, not computational <span class="evidence opinion">opinion</span>; the computational
+    questions are cost, uniform relative accuracy, constant time and safety from underflow. That closed-form-ness is
+    a property of our vocabulary rather than of the function is the same lesson as "every computer number is
+    rational, yet we reason with reals" <span class="evidence opinion">opinion</span>.</p>
+
+  <!-- 7 -->
+  <h2 id="connections">7 · Connections: inference, lattices, privacy, Monte Carlo</h2>
+  <p><strong>Inference.</strong> A p-value is a tail area: <span class="m">Q(z)</span> one-sided,
+    <span class="m">2Q(|z|)</span> two-sided. Under <span class="m">H_0</span> it is uniform, by the probability
+    integral transform <span class="evidence theorem">theorem</span>, and <span class="m">10^5</span> simulated
+    tests give a flat histogram (χ² test of uniformity, p = 0.19); under an alternative of 2.5 standard errors 70.5 %
+    fall below 0.05, the power <span class="evidence measurement">measured</span>
+    (<a href="inference.html#E12b">E12b</a>). Particle physics announces discoveries at 5σ, a one-sided
+    <span class="m">p = 2.87\cdot10^{-7}</span>, and a Bonferroni correction over a million tests needs
+    <span class="m">z = 5.45</span> (<a href="inference.html#E12c">E12c</a>): decisions live in the far tail, where
+    at 9σ the methods that subtract from 1 report <span class="m">p = 0</span> and beyond 38σ only a log-space value
+    survives (<a href="inference.html?z=9#E12a">E12a</a>).</p>
+  <p><strong>Lattice cryptography.</strong> Lattice schemes add discrete Gaussian noise, drawn by looking a random
+    integer up in a cumulative table, a discrete <span class="m">\Phi</span>
+    <span class="evidence record">source</span>. The table's precision is a statistical distance: for
+    <span class="m">\sigma = 2</span>, <span class="m">5.7\cdot10^{-5}</span> at 16 bits per entry,
+    <span class="m">1.1\cdot10^{-9}</span> at 32, <span class="m">4\cdot10^{-19}</span> at 64 with an exact table,
+    each bit halving it; but a 64-bit table built from doubles only reaches <span class="m">3\cdot10^{-16}</span>,
+    because a double holds 53 bits <span class="evidence measurement">measured</span>
+    (<a href="lattice.html#E13a">E13a</a>). The accuracy lesson of Ex. 2 becomes a security lesson. So does its
+    cost lesson: a sampler that stops at the first table entry above the random number makes
+    <span class="m">T + x + 1</span> comparisons for output <span class="m">x</span>, so its running time reveals the
+    secret sample, while a constant-time sampler always makes <span class="m">2T + 1</span>
+    (<a href="lattice.html#E13b">E13b</a>). A cache-timing attack of exactly this kind broke the BLISS signature
+    scheme <span class="evidence record">source</span>.</p>
+  <p><strong>Distance and privacy.</strong> The statistical distance <span class="m">\frac{1}{2}\int|p - q|</span>
+    is an integral in the sense of Ex. 1 and, for two Gaussians, a value of <span class="m">\Phi</span> in the
+    sense of Ex. 2: <span class="m">2\Phi(\mu/2) - 1</span>. Simpson integration and the closed form agree to
+    <span class="m">10^{-14}</span>, and a simulated threshold test reaches the bound
+    <span class="evidence measurement">measured</span> (<a href="privacy.html#E14a">E14a</a>). The analytic
+    Gaussian mechanism of differential privacy <span class="evidence record">source</span> gives
+    <span class="m">\delta</span> as a difference of two lower-tail <span class="m">\Phi</span> values. Calibrated
+    exactly, <span class="m">(\varepsilon, \delta) = (0.5, 10^{-5})</span> needs noise
+    <span class="m">\sigma = 7.03</span>, against 9.69 from the classical formula, 38 % more noise than necessary;
+    computed with <span class="m">1 - \Phi(-x)</span>, <span class="m">\delta</span> is misreported by
+    <span class="m">6\cdot10^{-3}</span> relative at <span class="m">\delta = 10^{-14}</span>
+    <span class="evidence measurement">measured</span> (<a href="privacy.html#E14b">E14b</a>). An inaccurate
+    <span class="m">\Phi</span> misstates a privacy guarantee.</p>
+  <p><strong>Monte Carlo as Lebesgue.</strong> Monte Carlo estimates an integral from the values of
+    <span class="m">f</span> at random points, i.e. from a sample of the distribution of <span class="m">f</span>:
+    the layer cake of that sample is the sample mean. In one dimension the grids win easily (Simpson exact to
+    rounding at <span class="m">10^6</span> points, Monte Carlo off by about <span class="m">10^{-3}</span>), but on
+    the fat Cantor set, where no grid rule is reliable, Monte Carlo gives <span class="m">0.4997 \pm 0.0005</span>
+    with an error bar that means what it says (<a href="monte-carlo.html?g=P3#E15a">E15a</a>). In ten dimensions a grid
+    with ten points per axis needs <span class="m">10^{10}</span> evaluations, while
+    <span class="m">10^5</span> random points give its volume as <span class="m">2.80 \pm 0.17</span> (exact 2.55), an
+    error the standard error honestly announces (<a href="monte-carlo.html#E15b">E15b</a>). And for a rare event like <span class="m">Q(5)</span>, plain
+    sampling needs about <span class="m">3\cdot10^8</span> draws for 10 % accuracy, importance sampling from
+    <span class="m">N(5, 1)</span> about 570, its relative variance per sample being
+    <span class="m">e^{25}Q(10)/Q(5)^2 - 1 = 5.68</span> <span class="evidence theorem">theorem</span>
+    (<a href="monte-carlo.html#E15c">E15c</a>), itself a far-tail <span class="m">\Phi</span> computation.</p>
+
+  <!-- 8 -->
+  <h2 id="nature">8 · Nature</h2>
+  <p>Three examples from note 05, each labelled by how far it can be trusted. <strong>Lakes</strong>
+    <span class="evidence record">source</span>: limnologists compute a lake's volume from the areas of its depth
+    contours, <span class="m">V = \int A(z)\,dz</span>, which is the layer-cake formula with
+    <span class="m">f</span> = depth, the Lebesgue integral in use before Lebesgue. The
+    <a href="nature.html#lake">demo</a> measures a synthetic lake both ways: 4.5832 million m³ by columns, the same to
+    <span class="m">5\cdot10^{-6}</span> by 500 contour slabs <span class="evidence measurement">measured</span>.
+    <strong>Kelvin's erf</strong> <span class="evidence record">source</span>: the temperature below a surface
+    suddenly held at a fixed temperature is an erf profile, and in 1862 Kelvin fitted it to the geothermal gradient
+    to give the Earth 20 to 400 million years. The mathematics was right and the model wrong (no radioactivity, no
+    convection): a correct formula with a wrong model gives a wrong answer. <strong>5σ and genome-wide
+    significance</strong> <span class="evidence record">source</span>: the Higgs boson at
+    <span class="m">p \approx 2.87\cdot10^{-7}</span> and genetic association at
+    <span class="m">p < 5\cdot10^{-8}</span> are far-tail values of <span class="m">\Phi</span>, where section 5
+    showed which methods can be trusted. Behind all of them stands the
+    <a href="nature.html#galton">Galton board</a>: many small independent pushes add up to a normal law, and twelve
+    rows of pegs already bring the binomial within 0.005 of the normal curve.</p>
+
+  <!-- 9 -->
+  <h2 id="final">9 · Final considerations</h2>
+  <p>The two exercises turned out to be one argument. Riemann and Lebesgue compute the same areas in different
+    orders, and the order decides where each one struggles: Riemann at steep and broken parts of the domain,
+    Lebesgue at flat parts of the range and in the cost of its preimages. The normal CDF is the case where the area
+    has no formula at all, by a theorem, so the order of computation is everything: the same integral is exact to
+    the last bit or wrong in every digit depending on whether the small tail is computed directly or subtracted
+    from 1. <span class="evidence opinion">opinion</span> The practical rule that comes out of both is to compute
+    small quantities directly, measure the error against an independent reference, and report accuracy together
+    with cost.</p>
+  <p>The limits should be stated. The functions are one-dimensional textbook cases, chosen to isolate effects; the
+    timings belong to one browser on one machine; the lattice sampler and the privacy mechanism are simulations of
+    the arithmetic, not deployable components; the lake is synthetic; and the historical and real-world claims are
+    marked as sources still to be checked. The numerical claims are reproducible from the pages, and the
+    references from <code>hw06/tools/reference.py</code>.</p>
+
+  <!-- 10 -->
+  <h2 id="refs">References</h2>
+  <p class="small muted">Sources marked <span class="evidence record">source</span> in the text are to be checked before citing.</p>
+  <ol class="refs">
+    <li>The author's notes, HW6 (Map; Ex. 1, Riemann vs Lebesgue numerics; Pathological functions; Ex. 2, computing the normal CDF; Liouville and special functions; Nature, history and imagination; Connections) and the concept notes on the Riemann and Lebesgue integrals, measure and null sets, the layer-cake formula, Newton–Cotes error, the error function, Liouville's theorem, conditioning, polynomial approximation, z-tests, statistical distance, discrete Gaussian sampling, the Gaussian mechanism and Monte Carlo.</li>
+    <li>B. Riemann, Über die Darstellbarkeit einer Function durch eine trigonometrische Reihe, Habilitationsschrift, 1854. H. Lebesgue, Intégrale, longueur, aire, thesis, 1902; the coin analogy as commonly quoted from Lebesgue's later writings (c. 1926).</li>
+    <li>J. Liouville, Mémoire sur l'intégration d'une classe de fonctions transcendantes, 1835. M. Rosenlicht, Integration in finite terms, <em>Amer. Math. Monthly</em> 79, 1972.</li>
+    <li>P.-S. Laplace, Traité de mécanique céleste, vol. 4, 1805 (the continued fraction). G. Marsaglia, Evaluating the normal distribution, <em>J. Stat. Software</em> 11, 2004.</li>
+    <li>M. Abramowitz, I. A. Stegun, <em>Handbook of Mathematical Functions</em>, formulas 7.1.26 and 26.2.17 (Hastings 1955; Zelen and Severo 1964). W. J. Cody, Rational Chebyshev approximations for the error function, <em>Math. Comp.</em> 23, 1969.</li>
+    <li>NIST/SEMATECH e-Handbook of Statistical Methods, §1.3.6.7.1, Cumulative distribution function of the standard normal distribution, https://itl.nist.gov/div898/handbook/eda/section3/eda3671.htm, retrieved 11 Nov 2026.</li>
+    <li>N. J. Higham, <em>Accuracy and Stability of Numerical Algorithms</em>, 2nd ed., SIAM, 2002.</li>
+    <li>L. Groot Bruinderink, A. Hülsing, T. Lange, Y. Yarom, Flush, Gauss, and reload: a cache attack on the BLISS lattice-based signature scheme, CHES 2016. D. Micciancio, M. Walter, Gaussian sampling over the integers: efficient, generic, constant-time, CRYPTO 2017. The FrodoKEM and Falcon specifications.</li>
+    <li>B. Balle, Y.-X. Wang, Improving the Gaussian mechanism for differential privacy: analytical calibration and optimal denoising, ICML 2018. C. Dwork, A. Roth, <em>The Algorithmic Foundations of Differential Privacy</em>, 2014. I. Mironov, On significance of the least significant bits for differential privacy, CCS 2012.</li>
+    <li>D. Hendrycks, K. Gimpel, Gaussian error linear units (GELUs), 2016.</li>
+    <li>ATLAS and CMS collaborations, observation of a new boson, <em>Phys. Lett. B</em> 716, 2012. Genome-wide significance threshold 5·10⁻⁸ (GWAS conventions).</li>
+    <li>W. Thomson (Lord Kelvin), On the secular cooling of the Earth, 1862; J. Perry, On the age of the Earth, <em>Nature</em> 51, 1895. R. G. Wetzel, <em>Limnology</em> (lake volume from depth contours). F. Galton, <em>Natural Inheritance</em>, 1889. J. M. Berger, B. Mandelbrot, A new model for error clustering in telephone circuits, <em>IBM J. Res. Dev.</em> 7, 1963.</li>
+    <li>D. Blackman, S. Vigna, Scrambled linear pseudorandom number generators, 2018 (xoshiro128**). R. P. Brent, <em>Algorithms for Minimization without Derivatives</em>, 1973.</li>
+  </ol>
+
+</article>
+</main>
+<script type="module">
+  import { mountShell } from '../assets/js/ui/dom.js';
+  import { renderMath } from '../assets/js/ui/math.js';
+  import { hw06Shell } from './js/pages/shell.js';
+  mountShell(hw06Shell('essay.html'));
+  renderMath(document.querySelector('.essay'));
+</script>
+</body>
+</html>
