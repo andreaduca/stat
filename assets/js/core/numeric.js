@@ -193,6 +193,19 @@ export function betaInc(x, a, b) {
   return 1 - (Math.exp(lnFront) * betaCF(1 - x, b, a)) / b;
 }
 
+/** ln I_x(a, b): the log of the regularised incomplete beta, for tails below 1e−308.
+ *  Category: special function (log p-values of Welch's t with |t| in the hundreds; hw07).
+ *  Formula: on the continued-fraction side (x < (a + 1)/(a + b + 2)) the prefactor
+ *  xᵃ(1 − x)ᵇ/B(a, b) is kept in logs: ln I = lnFront + ln CF − ln a; on the other
+ *  side I is at least about ½ and ln(1 − I_{1−x}(b, a)) is computed with log1p. */
+export function lnBetaInc(x, a, b) {
+  if (x <= 0) return -Infinity;
+  if (x >= 1) return 0;
+  const lnFront = lnGamma(a + b) - lnGamma(a) - lnGamma(b) + a * Math.log(x) + b * Math.log1p(-x);
+  if (x < (a + 1) / (a + b + 2)) return lnFront + Math.log(betaCF(x, a, b)) - Math.log(a);
+  return Math.log1p(-Math.exp(lnFront + Math.log(betaCF(1 - x, b, a)) - Math.log(b)));
+}
+
 /* ---------- Student t and χ² (hw05) ---------- */
 
 /** CDF of Student's t with k degrees of freedom.

@@ -23,21 +23,11 @@ export function lnGamma(x) {
   return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
 }
 
-/** Regularised upper incomplete gamma Q(a, x) = Γ(a, x) / Γ(a).
- *  It is the tail of the χ² distribution: P(χ²_k ≥ s) = Q(k/2, s/2), and also
- *  of |Z| for a standard normal: P(|Z| ≥ z) = Q(1/2, z²/2).
- *  Computed by the power series of P = 1 − Q when x < a + 1 (it converges
- *  fast there) and by Lentz's continued fraction for Q otherwise. */
-export function gammaQ(a, x) {
-  if (x <= 0) return 1;
-  const front = Math.exp(-x + a * Math.log(x) - lnGamma(a));
-  if (x < a + 1) {
-    // P(a, x) = e^−x x^a / Γ(a+1) · Σ xⁿ / ((a+1)(a+2)…(a+n))
-    let term = 1 / a, sum = term;
-    for (let n = 1; n < 1000 && Math.abs(term) > Math.abs(sum) * 1e-15; n++) { term *= x / (a + n); sum += term; }
-    return Math.max(0, 1 - sum * front);
-  }
-  // Q(a, x) = e^−x x^a / Γ(a) · 1/(x + 1 − a − 1·(1−a)/(x + 3 − a − 2·(2−a)/(x + 5 − a − …)))
+/* Lentz's continued fraction for the upper incomplete gamma (Numerical Recipes §6.2):
+   Γ(a, x) = e^−x x^a · 1/(x + 1 − a − 1·(1−a)/(x + 3 − a − 2·(2−a)/(x + 5 − a − …))).
+   Returns the fraction alone, so the caller can multiply by the prefactor e^−x x^a / Γ(a)
+   either directly (gammaQ) or in logs (lnGammaQ). Converges fast for x ≥ a + 1. */
+function gammaCF(a, x) {
   const tiny = 1e-300;
   let b = x + 1 - a, c = 1 / tiny, d = 1 / b, h = d;
   for (let i = 1; i < 1000; i++) {
@@ -50,7 +40,41 @@ export function gammaQ(a, x) {
     h *= step;
     if (Math.abs(step - 1) < 1e-15) break;
   }
-  return Math.min(1, front * h);
+  return h;
+}
+
+/* The power series of the lower incomplete gamma, without its prefactor:
+   P(a, x) = e^−x x^a / Γ(a+1) · Σ xⁿ / ((a+1)(a+2)…(a+n)); returns Σ / a. */
+function gammaSeries(a, x) {
+  let term = 1 / a, sum = term;
+  for (let n = 1; n < 1000 && Math.abs(term) > Math.abs(sum) * 1e-15; n++) { term *= x / (a + n); sum += term; }
+  return sum;
+}
+
+/** Regularised upper incomplete gamma Q(a, x) = Γ(a, x) / Γ(a).
+ *  It is the tail of the χ² distribution: P(χ²_k ≥ s) = Q(k/2, s/2), and also
+ *  of |Z| for a standard normal: P(|Z| ≥ z) = Q(1/2, z²/2).
+ *  Computed by the power series of P = 1 − Q when x < a + 1 (it converges
+ *  fast there) and by Lentz's continued fraction for Q otherwise. */
+export function gammaQ(a, x) {
+  if (x <= 0) return 1;
+  const front = Math.exp(-x + a * Math.log(x) - lnGamma(a));
+  if (x < a + 1) return Math.max(0, 1 - gammaSeries(a, x) * front);
+  return Math.min(1, front * gammaCF(a, x));
+}
+
+/** ln Q(a, x): the log of the upper incomplete gamma, for tails too small for a double.
+ *  Category: special function (log p-values: a χ² of 70 000 on 225 df has p = 10^−14875,
+ *  which gammaQ can only return as 0; hw07).
+ *  Formula: for x ≥ a + 1, ln Q = −x + a ln x − ln Γ(a) + ln CF(a, x): the prefactor is
+ *  added in logs, so it never underflows, and the continued fraction itself is a modest
+ *  number (≈ 1/(x + 1 − a)). For x < a + 1, Q is not small (the tail starts beyond the
+ *  mean a), so ln(1 − P) with log1p is exact enough. */
+export function lnGammaQ(a, x) {
+  if (x <= 0) return 0;
+  const lnFront = -x + a * Math.log(x) - lnGamma(a);
+  if (x < a + 1) return Math.log1p(-Math.min(1, gammaSeries(a, x) * Math.exp(lnFront)));
+  return Math.min(0, lnFront + Math.log(gammaCF(a, x)));
 }
 
 /* ---------- tests ---------- */

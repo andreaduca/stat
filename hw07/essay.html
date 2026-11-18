@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Essay · Independence, tested · HW07</title>
+<link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="css/hw07.css">
+</head>
+<body>
+<!-- Written from the author's notes (Obsidian vault, Courses/Statistics/HW7-vault: HW7/00–06 and the concept notes)
+     and from the measured results of these pages, at the author's request. Berkeley, Mendel, Snow and Matthews are
+     published data; simulated numbers come from the default seed 20261117 and were checked on 17–18 Nov 2026
+     (docs/plans/hw07.md). Rerun and update them if the code changes. -->
+<main class="wrap">
+<article class="essay">
+
+  <h1>Independence, tested</h1>
+  <p class="byline">Contingency tables, χ², and association vs causality · Statistics · MSc Cybersecurity, Sapienza · Homework 7 · November 2026</p>
+
+  <section class="card abstract" aria-label="abstract">
+    <h2>Abstract</h2>
+    <p>Every earlier homework assumed independence — of the bits of a seed, of the steps of a walk, of the samples
+      of a mean. This one tests it. For two categorical variables the procedure is short: count the table, compare
+      it with the independent table that has the same totals, measure the gap with χ², and read three things — the
+      evidence (p), the strength (Cramér's V, bits) and what the result does not mean. On Berkeley's 1973
+      admissions the pooled gap between men and women is overwhelming (p = 7.8 × 10⁻²²) and disappears inside the
+      departments (p = 0.22): Simpson's paradox. On random generators the test catches a textbook generator at
+      once, and passes another one that is still fully predictable. On a masked chip it finds a leak that the
+      standard test of averages cannot see. Throughout, association is not cause, and “not significant” is not
+      “independent”.</p>
+  </section>
+
+  <p class="evidence-key small">Each claim is labelled with its evidence:
+    <span class="evidence theorem">theorem</span> proved in the notes or on the theory page ·
+    <span class="evidence measurement">measured</span> on these pages ·
+    <span class="evidence record">source</span> a published result (checked 18 Nov 2026) ·
+    <span class="evidence opinion">opinion</span> the author's view.</p>
+
+  <!-- 1 -->
+  <h2 id="intro">1 · Introduction</h2>
+  <p>Independence is the quiet assumption under most of statistics and of cryptography. The law of large numbers
+    and the central limit theorem of HW4 and HW5 add up variances, which needs independent draws; the entropy of a
+    wallet seed in HW2 counts its bits as independent coin flips; the secrecy of a cipher in HW3 is, by Shannon's
+    definition, the independence of ciphertext and message. When the assumption fails, two different things go
+    wrong <span class="evidence theorem">theorem</span>: a secret leaks, because an observation that depends on it
+    tells something about it; and error bars lie, because correlated draws carry less information than they seem —
+    with a correlation of 0.5 between consecutive draws a “95 %” interval covers the truth only 74 % of the time
+    (<a href="theory.html">theory</a>). This homework turns the assumption into a question that data can answer.</p>
+
+  <!-- 2 -->
+  <h2 id="theory">2 · Theory</h2>
+  <p>In probability, <span class="m">X</span> and <span class="m">Y</span> are independent when
+    <span class="m">P(X = x, Y = y) = P(X = x)\,P(Y = y)</span> for every pair of values, or equivalently when
+    <span class="m">P(Y = y \mid X = x) = P(Y = y)</span>: knowing X changes nothing about Y. It is a property of a
+    model, true or false. In statistics we only see counts <span class="m">O_{ij}</span> from a sample, and their
+    exact twin of independence — every row of the table having the same profile, or
+    <span class="m">O_{ij} = R_i C_j / N</span> in every cell — almost never holds even for truly independent
+    variables <span class="evidence theorem">theorem</span>. Two groups of 100 with the same true rate differ by up
+    to ±13.6 points 95 % of the time. So the question becomes: is the gap larger than chance would make it?</p>
+  <p>The expected count <span class="m">E_{ij} = R_i C_j / N</span>, the row total times the overall share of the
+    column, is not a recipe but the maximum-likelihood fit of the independence model: the independent table closest
+    to the data <span class="evidence theorem">theorem</span>. Once the totals are fixed only
+    <span class="m">(r - 1)(c - 1)</span> cells are free; that count is the degrees of freedom. The statistic
+    <span class="m">\chi^2 = \sum (O_{ij} - E_{ij})^2 / E_{ij}</span> adds up each gap in units of the size chance
+    gives it (a count expected to be E wanders by about <span class="m">\sqrt E</span>); under independence it
+    follows the χ² law with those degrees of freedom — exactly for two categories, where it is the square of a
+    standardised binomial <span class="evidence theorem">theorem</span>, and asymptotically in general (Pearson
+    1900, Fisher 1922 <span class="evidence record">source</span>). Two traps mark the limits of weaker notions:
+    <span class="m">Y = X^2</span> with X uniform on {−1, 0, 1} has zero correlation and total dependence, and the
+    XOR of two independent bits is independent of each of them but fixed by the pair.</p>
+
+  <!-- 3 -->
+  <h2 id="procedure">3 · The procedure, on Berkeley</h2>
+  <p>In 1973 the six largest departments of UC Berkeley received 4 526 applications; 44.5 % of the men and 30.4 %
+    of the women were admitted (Bickel et al. 1975 <span class="evidence record">source</span>). Following the five
+    steps of the <a href="procedure.html">procedure</a> page <span class="evidence measurement">measured</span>:
+    (1) the 2 × 2 table of gender × admission; (2) its row profiles, 44.5 % vs 30.4 %; (3) the expected table — if
+    gender did not matter, 2 691 × 1 755 / 4 526 = 1 043.5 men would have been admitted, against 1 198; (4) the gap,
+    χ² = 92.2 on 1 degree of freedom; (5) the decision, p = 7.8 × 10⁻²², far below α = 0.05, with a weak strength,
+    V = 0.14. Steps 1–4 are exact integer arithmetic; only the p-value needs numerics, computed in logarithms so that
+    even <span class="m">10^{-14875}</span> remains a number. The table is a sufficient statistic: counts from
+    different sources simply add up, and the raw records can be discarded — the method runs on any CSV in the
+    browser without the file leaving the device.</p>
+
+  <!-- 4 -->
+  <h2 id="results">4 · Results</h2>
+  <h3>Random generators</h3>
+  <p>A generator is random when its next output cannot be guessed from the current one. On
+    <a href="generators.html">10 000 pairs of consecutive 4-bit outputs</a>
+    <span class="evidence measurement">measured</span>, the last 4 bits of a textbook linear congruential generator
+    (LCG: <span class="m">x_{n+1} = (a\,x_n + c) \ \text{mod}\ 2^{32}</span> with <span class="m">a = 1664525</span>, <span class="m">c = 1013904223</span>) fill only 8 of the 256 cells of
+    the pair table: χ² = 70 000, V = 1. The reason is a theorem: those bits follow their own 16-state generator,
+    <span class="m">y \mapsto 13y + 15 \ \text{mod}\ 16</span>, and repeat every 16 outputs. A generator that repeats its
+    output 5 % of the time is caught with p = 3 × 10⁻³⁸ (detected for good after about 900 pairs; 80 % detection is
+    promised at 2 015 by the power formula and reached 77 % of the time in simulation). xoshiro128** and the LCG's
+    <em>first</em> 4 bits pass (p = 0.90 and 0.84). Yet the LCG remains fully predictable: 8 outputs carry its whole
+    32-bit state. Coldcard hardware wallets (2021–2026) made the same point at a cost of over a thousand bitcoin: a
+    small deterministic generator whose output passed the tests and whose seeds could be enumerated
+    (<a href="../hw02/incidents.html">HW2</a> <span class="evidence record">source</span>). A test of independence
+    catches visible patterns; it cannot certify unpredictability.</p>
+  <figure class="fig">
+    <div data-fig="generators"></div>
+    <figcaption>Pair tables (current output × next output, 16 × 16) of the LCG's last 4 bits and of xoshiro, 10 000
+      pairs each, seed 20261117. Orange: more pairs than independence predicts; blue: fewer.</figcaption>
+  </figure>
+
+  <h3>Berkeley 1973</h3>
+  <p>Inside the departments the gap disappears <span class="evidence measurement">measured</span>: women are
+    admitted more often in four of the six, and the only department with a significant difference, A, favours women
+    (82 % vs 62 %, p = 3 × 10⁻⁵). Combining the six departments without mixing them (the Cochran–Mantel–Haenszel
+    test) gives p = 0.22 and a common odds ratio of 0.90. The pooled rate of each gender is a weighted average of
+    the department rates, with that gender's own weights; men applied mostly to departments A and B, which admit
+    most applicants, and women mostly to C–F, which admit few. Simpson's paradox needs exactly these two
+    associations — gender × department (V = 0.49) and department × admission (V = 0.41) — and cannot happen if the
+    weights are the same <span class="evidence theorem">theorem</span>.</p>
+  <figure class="fig">
+    <div data-fig="berkeley"></div>
+    <figcaption>Berkeley 1973, six departments: share admitted, pooled and by department. The pooled gap (first
+      pair) is not found inside any department.</figcaption>
+  </figure>
+
+  <h3>Any dataset</h3>
+  <p>The same five steps run on a file of the reader's choice, with categories made from numbers by bins fixed in
+    advance <span class="evidence measurement">measured</span>. Fixing the bins first matters: trying bin after bin
+    until p drops below α is a hidden multiple test.</p>
+
+  <!-- 5 -->
+  <h2 id="interpretation">5 · Interpretation: evidence, strength, power</h2>
+  <p>A p-value mixes two things, the strength of an association and the amount of data. Adding Berkeley's records
+    one chunk at a time separates them <span class="evidence measurement">measured</span>: V settles near 0.14 while
+    χ² keeps growing, roughly in proportion to N, and stays significant from about 360 records on. With enough data
+    every real association, however weak, becomes significant, so the strength must be reported next to p. The
+    converse matters as much: with 4 526 records the test finds an association of strength V ≥ 0.042 80 % of the
+    time; a weaker one could be there and go unnoticed. “Not significant” means no evidence at this sample size,
+    never “independent”. A test can contradict independence; it cannot confirm it
+    <span class="evidence opinion">opinion</span>, after Popper.</p>
+
+  <!-- 6 -->
+  <h2 id="causality">6 · Association vs causality</h2>
+  <p>A χ² test measures <span class="m">P(Y \mid X)</span>, what is seen together; a causal claim is about
+    <span class="m">P(Y \mid do(X))</span>, what would happen if X were set. In a simulated world where old devices
+    have both an old operating system and more infections, but the OS does nothing, the infection rates differ
+    23.2 % vs 8.0 %; setting the OS by a coin flip gives 14.6 % vs 15.1 %, and comparing inside device groups then
+    averaging gives 15.0 % vs 13.9 % <span class="evidence measurement">measured</span> (<a href="causality.html">causality</a>).
+    Three structures produce association without cause: a common cause, a mediator (whose effect is real but
+    vanishes inside its groups, exactly like a common cause in the tables), and a selection — two independent
+    alarms become strongly dependent (φ = −0.70) once only the cases where one fired are kept. The table alone
+    cannot tell these apart; the causal diagram, a claim about the world, can <span class="evidence theorem">theorem</span>.
+    For Berkeley, the pooled table answers “were women admitted less often?” (yes, through where they applied) and
+    the departmental one “did departments treat equal applicants differently?” (no evidence); which question
+    matters is not a statistical choice <span class="evidence opinion">opinion</span>.</p>
+  <p>Base rates turn association into error at scale. An alarm that catches 99 % of targets and clears 99 % of
+    innocents, looking for 1 target in 100 000, raises about 10 010 alarms per million people, of which 10 are real
+    <span class="evidence theorem">theorem</span> (Bayes; Axelsson 2000 on intrusion detection
+    <span class="evidence record">source</span>). Being flagged is strongly associated with being a target, and
+    still almost every flag is wrong. Reading a group-level association as a fact about the person flagged is
+    where statistics turns into harm <span class="evidence opinion">opinion</span>.</p>
+
+  <!-- 7 -->
+  <h2 id="security">7 · Security connections</h2>
+  <p>An observation O reveals nothing about a secret S exactly when <span class="m">S \perp O</span>, that is
+    when the mutual information <span class="m">I(S; O) = H(S) - H(S \mid O)</span> is zero
+    <span class="evidence theorem">theorem</span>: leakage <em>is</em> dependence, measured in bits. Encrypting 200 000
+    letters of a skewed text with a fixed shift (Caesar) leaves the ciphertext with 3.93 bits about each letter, all
+    of its entropy; a fresh random key per letter (the one-time pad) leaves 0.002 bits, the level of pure noise
+    <span class="evidence measurement">measured</span> (<a href="information.html">mutual information</a>). That
+    noise level matters: measured information is biased upward, and independent 4 × 4 tables of 100 pairs show
+    0.068 bits on average.</p>
+  <p>On a simulated chip computing one step of the PRESENT cipher, the power is the number of 1 bits of an
+    intermediate value plus noise <span class="evidence measurement">measured</span>
+    (<a href="side-channels.html">side channels</a>). Masking splits the value into two random shares; every class
+    is then centred on the same power, but its variance is <span class="m">4 - \text{HW}(v)</span>
+    <span class="evidence theorem">theorem</span>. Welch's t-test, the averages-only check of the standard TVLA
+    methodology (Goodwill et al. 2011 <span class="evidence record">source</span>), is blind to it: it detects the
+    leak in 0.5 % of 200 repeats with 10 000 traces, the false-alarm rate. The χ² test of independence, which
+    compares whole distributions, detects it in all 200, from about 500 traces (as proposed by Moradi et al. 2018
+    <span class="evidence record">source</span>). Masking moves the leak to a higher moment; it does not remove it.</p>
+  <figure class="fig">
+    <div data-fig="sideChannel"></div>
+    <figcaption>Masked leakage, 20 000 simulated traces, noise σ = 1, seed 20261117: one curve per Hamming-weight
+      class, all centred on 4, with different widths.</figcaption>
+  </figure>
+
+  <!-- 8 -->
+  <h2 id="nature">8 · Nature</h2>
+  <p>The contingency table was born in heredity (<a href="nature.html">nature</a>). Mendel's peas — 315, 108, 101 and
+    32 seeds in the four combinations of shape and colour — give χ² = 0.12, p = 0.73: independent assortment.
+    Bateson, Saunders and Punnett's sweet peas do not (V = 0.70); the dependence, explained by Morgan as genes on the
+    same chromosome, became in Sturtevant's hands the first genetic map
+    <span class="evidence record">source</span>. Fisher later found Mendel's totals too good: χ² = 41.6 on 84
+    degrees of freedom, a fit that honest chance beats only about 3 times in 100 000 — the lower tail of χ² flags
+    data too regular to be true. And Snow's cholera study of 1854 shows how a causal question can be settled
+    without an experiment: two water companies supplied the same London streets almost at random, and the houses
+    drinking water drawn below the sewers had 8.5 times the deaths <span class="evidence record">source</span>.</p>
+
+  <!-- 9 -->
+  <h2 id="final">9 · Final considerations</h2>
+  <p>The procedure is short and general, and the hard part is reading it <span class="evidence opinion">opinion</span>.
+    Three readings carry over to any table. First, p, V and power answer different questions — could this be
+    chance, how strong is it, could the test have missed it — and a result needs all three. Second, association is
+    not cause; whether to compare inside groups depends on a causal diagram that the data do not reveal. Third, in
+    security a test of independence is a leak detector, valuable precisely because a leak is a dependence; but it
+    sees only the dependence it looks at, so passing it is evidence, never a proof of safety. The generators that
+    pass and are still predictable, the masked chip that passes the classic test and still leaks, and the wallets
+    whose seeds passed every test are the same lesson three times.</p>
+
+  <!-- 10 -->
+  <h2 id="refs">References</h2>
+  <p class="small muted">All checked against the sources on 18 Nov 2026 (Cohen's conventions and the Pearl theorem through secondary sources that quote them; Popper's book is cited in its standard English edition).</p>
+  <ol class="refs">
+    <li>The author's notes, HW7 (Map; Procedure; Datasets and results; Independence in probability vs statistics; Association vs causality; Nature, history and imagination; Connections) and the concept notes on independence, contingency tables, maximum likelihood, the χ² test, effect size, power, mutual information and the G-test, Bayes and base rates, Simpson's paradox, causal graphs, perfect secrecy, randomness testing and χ² leakage detection.</li>
+    <li>P. J. Bickel, E. A. Hammel, J. W. O'Connell, Sex bias in graduate admissions: data from Berkeley, <em>Science</em> 187 (1975) 398–404.</li>
+    <li>K. Pearson, <em>Philosophical Magazine</em> (5th series) 50 (1900) 157–175. R. A. Fisher, <em>J. Royal Statistical Society</em> 85 (1922) 87–94. W. G. Cochran, Some methods for strengthening the common χ² tests, <em>Biometrics</em> 10 (1954) 417–451 (the expected-count rule of thumb is attributed to Cochran's papers of 1952 and 1954).</li>
+    <li>N. Mantel, W. Haenszel, Statistical aspects of the analysis of data from retrospective studies of disease, <em>J. National Cancer Institute</em> 22 (1959) 719–748. J. Cohen, <em>Statistical Power Analysis for the Behavioral Sciences</em>, 2nd ed., 1988.</li>
+    <li>J. Pearl, <em>Causality</em>, 2nd ed., Cambridge University Press, 2009. A. B. Hill, The environment and disease: association or causation?, <em>Proc. Royal Society of Medicine</em> 58 (1965) 295–300. S. Axelsson, The base-rate fallacy and the difficulty of intrusion detection, <em>ACM TISSEC</em> 3 (2000) 186–205.</li>
+    <li>C. E. Shannon, Communication theory of secrecy systems, <em>Bell System Technical Journal</em> 28 (1949) 656–715. I. J. Good, A. M. Turing's statistical work in World War II, <em>Biometrika</em> 66 (1979) 393–396.</li>
+    <li>I. J. Good, The serial test for sampling numbers and other tests for randomness, <em>Proc. Cambridge Philosophical Society</em> 49 (1953) 276–284. T. W. Anderson, L. A. Goodman, Statistical inference about Markov chains, <em>Annals of Mathematical Statistics</em> 28 (1957) 89–110. D. Blackman, S. Vigna, Scrambled linear pseudorandom number generators, arXiv:1805.01407 (2018), later in <em>ACM Trans. Math. Software</em> (xoshiro128**). The LCG constants are those of <em>Numerical Recipes</em> (ranqd1, §7.1).</li>
+    <li>Coldcard (2021–2026): the case study of HW2. Milk Sad (2023): Libbitcoin Explorer 3.x seeded its Mersenne Twister with 32 bits of time, CVE-2023-39910. NSA, <em>Venona: an overview</em> (duplicated one-time pad pages). fail0verflow, Console hacking 2010, 27C3 (a repeated ECDSA nonce on the PlayStation 3).</li>
+    <li>A. Bogdanov et al., PRESENT: an ultra-lightweight block cipher, CHES 2007. G. Goodwill, B. Jun, J. Jaffe, P. Rohatgi, A testing methodology for side-channel resistance validation, NIST NIAT 2011. A. Moradi, B. Richter, T. Schneider, F.-X. Standaert, Leakage detection with the χ²-test, <em>IACR TCHES</em> 2018(1) 209–237. S. Chari, C. S. Jutla, J. R. Rao, P. Rohatgi, Towards sound approaches to counteract power-analysis attacks, CRYPTO 1999, LNCS 1666, 398–412.</li>
+    <li>G. Mendel, <em>Verhandlungen des naturforschenden Vereines in Brünn</em> 4 (1866) 3–47. W. Bateson, E. R. Saunders, R. C. Punnett, Reports to the Evolution Committee of the Royal Society II (1905). T. H. Morgan, <em>Science</em> 34 (1911) 384. A. H. Sturtevant, <em>J. Exp. Zool.</em> 14 (1913) 43–59. R. A. Fisher, Has Mendel's work been rediscovered?, <em>Annals of Science</em> 1 (1936) 115–137; A. M. Pires, J. A. Branco, <em>Statistical Science</em> 25 (2010) 545–565. J. Snow, <em>On the Mode of Communication of Cholera</em>, 2nd ed., 1855, Table IX.</li>
+    <li>K. Popper, <em>The Logic of Scientific Discovery</em>, 1959. R. L. Wasserstein, N. A. Lazar, The ASA statement on p-values: context, process, and purpose, <em>The American Statistician</em> 70 (2016) 129–133.</li>
+  </ol>
+
+</article>
+</main>
+<script type="module">
+  import { mountShell } from '../assets/js/ui/dom.js';
+  import { renderMath } from '../assets/js/ui/math.js';
+  import { hw07Shell } from './js/pages/shell.js';
+  mountShell(hw07Shell('essay.html'));
+  renderMath(document.querySelector('.essay'));
+</script>
+<script type="module" src="js/pages/essay-figures.js"></script>
+</body>
+</html>

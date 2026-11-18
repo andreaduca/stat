@@ -93,3 +93,22 @@ export const pageList = (pages, heading = 'The pages, in reading order') => el('
     ' ', p.blurb,
   ]))),
 ]);
+
+/**
+ * The abstract that opens every page (hw06 on; user's request, 11 Nov 2026): the question
+ * the page answers, what it finds (with the key numbers), and its sections as links.
+ * @param {{question: string, findings: string[], sections?: [string, string][], scope?: string}} o  html strings; sections are [id, title]; scope 'homework' on the home page
+ */
+export function abstract({ question, findings, sections = [], scope = 'page' }) {
+  return el('section', { class: 'card abstract', 'aria-label': 'abstract' }, [
+    el('h2', { text: 'Abstract' }),
+    el('p', { class: 'abstract-q', html: question }),
+    el('div', { class: 'label', text: `What this ${scope} finds` }),
+    el('ul', {}, findings.map((f) => el('li', { html: f }))),
+    sections.length ? el('div', { class: 'label', text: 'On this page' }) : null,
+    sections.length ? el('ol', { class: 'abstract-toc' }, sections.map(([id, t]) => el('li', {}, [el('a', { href: `#${id}`, text: t })]))) : null,
+  ]);
+}
+
+/** Give a panel an id, so the abstract can link to it. */
+export const anchor = (id, node) => { node.id = id; return node; };

@@ -489,3 +489,16 @@ button.mini { min-height: 28px; padding: 2px 8px; font-size: .82rem; }
 .math-lines .r { justify-self: start; }
 .math-lines math { math-style: normal; font-size: 1.2em; }
 @media (max-width: 480px) { .math-block math, .math-lines math { font-size: 1.02em; } }
+
+/* ---------- the abstract that opens every page (dom.js `abstract`; hw06, hw07) ---------- */
+.abstract { border-left: 4px solid var(--accent); }
+.abstract .abstract-q { font-size: 1.08rem; }
+.abstract .label { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 14px 0 4px; }
+.abstract ul { margin: 0; padding-left: 1.2em; }
+.abstract ul li { margin: 4px 0; }
+.abstract-toc { margin: 0; padding-left: 1.4em; columns: 2 260px; }
+.abstract-toc li { margin: 2px 0; break-inside: avoid; }
+
+/* a boxed conclusion inside a panel; a table of words: left-aligned (with .prose, in the text font) */
+.inset { border: 1px solid var(--line); border-radius: 8px; padding: 4px 16px 8px; margin-top: 16px; }
+table.data.words td, table.data.words th { text-align: left; }

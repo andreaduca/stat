@@ -101,6 +101,20 @@ hw06/             homework 6 — Riemann vs Lebesgue integration, and computing 
                     experiments (the worker's experiments)
   js/workers/sim.js the Web Worker that runs the experiments
   js/pages/         shell.js, inputs.js (the input dock), widgets.js (encoding, worker, the abstract), one *-page.js per page
+hw07/             homework 7 — statistical independence: contingency tables, χ², association vs causality
+  index.html theory.html procedure.html generators.html berkeley.html causality.html side-channels.html
+  information.html nature.html essay.html
+  css/hw07.css      mosaics, tables with margins and residual tints, the method flow, the annotated χ² curve, bit
+                    planes, the Simpson animation, causal diagrams, power bars, symbols keys
+  data/berkeley.js  Berkeley 1973, the six largest departments (Bickel et al. 1975)
+  js/core/          the maths, documented for study: table (contingency table, margins, profiles, expected counts,
+                    binning), tests (χ² with log p-values, effect sizes, 2 × 2 extras, G and mutual information, CMH,
+                    Welch t, noncentral χ² power), csv (RFC 4180 parsing in the browser), datasets, generators (xoshiro,
+                    LCG, sticky), sidechannel (PRESENT S-box, masking), causal (fork, chain, collider, back-door, PPV),
+                    secrecy (shift cipher, one-time pad), interpret (the result triple), experiments (the worker's runs)
+  js/workers/sim.js the Web Worker that runs the experiments
+  js/pages/         shell.js, inputs.js (the input dock), widgets.js (mosaic, residual grids, causal diagrams, view
+                    switch), essay-figures.js, one *-page.js per page
 tools/            development aids; not part of the published site
 docs/             the specification and the conventions (not committed)
 ```

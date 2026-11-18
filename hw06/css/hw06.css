@@ -6,21 +6,6 @@
 .coins rect.coin { transition: transform 0.9s ease; }
 @media (prefers-reduced-motion: reduce) { .coins rect.coin { transition: none; } }
 
-/* a boxed conclusion inside a lab panel */
-.inset { border: 1px solid var(--line); border-radius: 8px; padding: 4px 16px 8px; margin-top: 16px; }
-
-/* a table of words: left-aligned and in the text font (with the shared .prose) */
-table.data.words td, table.data.words th { text-align: left; }
-
-/* the abstract that opens every page */
-.abstract { border-left: 4px solid var(--accent); }
-.abstract .abstract-q { font-size: 1.08rem; }
-.abstract .label { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 14px 0 4px; }
-.abstract ul { margin: 0; padding-left: 1.2em; }
-.abstract ul li { margin: 4px 0; }
-.abstract-toc { margin: 0; padding-left: 1.4em; columns: 2 260px; }
-.abstract-toc li { margin: 2px 0; break-inside: avoid; }
-
 /* Nature page: how far an example can be trusted */
 .nat-list { padding-left: 1.1em; }
 .nat-list li { margin: 8px 0; }

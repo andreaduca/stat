@@ -1,0 +1,196 @@
+/* hw07.css — styles used only by this homework. Anything belonging to a
+   shared component (lab panels, essays, evidence labels, charts) lives in
+   assets/css/base.css. */
+
+/* mosaic plots: tiles with their percentage written inside (never colour alone) */
+.mosaic svg { max-width: 420px; }
+.mosaic rect.tile { opacity: .82; stroke: var(--panel); stroke-width: 1; }
+.mosaic text.tile-lbl { font: 600 11px var(--sans); fill: var(--ink); paint-order: stroke; stroke: var(--panel); stroke-width: 3px; stroke-linejoin: round; }
+.mosaic text.muted-tick { font-size: 10px; }
+
+/* the assignment as numbered steps */
+ol.steps { margin: .4em 0 0; padding-left: 1.4em; }
+ol.steps li { margin: 3px 0; }
+
+/* breathing room: a caption under a mosaic, a heading after a list, a paragraph after a legend */
+.mosaic + p { margin-top: 8px; }
+ol.steps + h3.panel-title { margin-top: 18px; }
+.legend + p { margin-top: 14px; }
+
+/* a row of view buttons, one pressed */
+.switch { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 10px; }
+.switch button { min-height: 30px; padding: 3px 10px; font-size: .86rem; }
+.switch button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+/* contingency tables: margins set apart, free cells outlined, residuals tinted (and written) */
+table.data.ct td, table.data.ct th { text-align: right; white-space: nowrap; }
+table.data.ct th.left { text-align: left; }
+table.data.ct .margin { color: var(--muted); }
+table.data.ct tr > .margin:last-child { border-left: 2px solid var(--line); }
+table.data.ct tr.margin-row > * { border-top: 2px solid var(--line); }
+table.data.ct td.free { box-shadow: inset 0 0 0 2px var(--accent); }
+table.data.ct td.forced { color: var(--muted); }
+table.data.ct td.resid.pos { background: color-mix(in srgb, var(--m2) var(--w, 0%), var(--panel)); }
+table.data.ct td.resid.neg { background: color-mix(in srgb, var(--m1) var(--w, 0%), var(--panel)); }
+.view-formula { margin: 2px 0 6px; }
+.view-reading { margin: 6px 0 0; }
+
+.badge.validity.doubtful, .badge.validity.invalid { background: var(--warn-bg); border-color: var(--warn-line); color: var(--warn-ink); }
+
+/* theory: a statement with its proof folded underneath */
+.lemma { margin: 12px 0; }
+.lemma > p { margin: 0 0 4px; }
+.lemma details.explain { margin-top: 2px; }
+table.data.grid-demo td { text-align: center; min-width: 5ch; }
+.stream-status { margin: 0 0 6px; font-variant-numeric: tabular-nums; }
+
+/* tables of sentences: cells wrap, rows align at the top */
+table.data.wrap td, table.data.wrap th { white-space: normal; vertical-align: top; }
+table.data.wrap td:first-child { white-space: nowrap; }
+/* a heading after a chart row or a table gets room to breathe */
+.card .cols + h3.panel-title, .card .scroll-x + h3.panel-title, .card details + h3.panel-title { margin-top: 20px; }
+
+/* the key under a formula: each symbol and what it stands for */
+.symbols { background: var(--panel-alt); border-radius: 8px; padding: 6px 12px 8px; margin: 4px 0 10px; font-size: .84rem; }
+.symbols .label { font-size: .68rem; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+.symbols ul { list-style: none; margin: 2px 0 0; padding: 0; }
+.symbols li { display: grid; grid-template-columns: minmax(64px, max-content) 1fr; gap: 10px; padding: 1px 0; align-items: baseline; }
+.symbols .sym { white-space: nowrap; }
+.stream-table { margin-top: 10px; max-width: 420px; }
+.stream-table .label { font-size: .72rem; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+.zoom { margin-top: 14px; padding-top: 8px; border-top: 1px dashed var(--line); }
+.zoom > p { margin: 0 0 4px; }
+
+/* E4: one bar per possible strength V, its percentage and verdict written beside it */
+.power-bars { display: grid; gap: 6px; font-size: .88rem; }
+.pb-row { display: grid; grid-template-columns: 158px 1fr 160px; gap: 10px; align-items: center; }
+.pb-head { font-size: .74rem; color: var(--muted); }
+.pb-v { font-family: var(--mono); white-space: nowrap; }
+.pb-track { position: relative; height: 16px; background: var(--panel-alt); border-radius: 3px; }
+.pb-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; }
+.pb-fill.found { background: var(--s1); }
+.pb-fill.missed { background: var(--s2); }
+.pb-80 { position: absolute; left: 80%; top: -3px; bottom: -3px; border-left: 2px solid var(--ink); opacity: .6; }
+.pb-pct { white-space: nowrap; }
+.pb-row.measured { font-weight: 700; outline: 2px solid var(--line); outline-offset: 3px; border-radius: 4px; }
+@media (max-width: 520px) { .pb-row { grid-template-columns: 1fr; gap: 2px; } .pb-head { display: none; } }
+
+/* generators: four residual grids, the LCG strip */
+.rgrid-wrap svg { max-width: 240px; display: block; }
+.rgrid .rcell { stroke: var(--panel); stroke-width: .5; }
+.gen-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; }
+.gen-grid h3 { margin: 0 0 4px; }
+.gen-grid .facts li { padding: 2px 0; font-size: .86rem; }
+.strip { display: flex; flex-wrap: wrap; gap: 3px; margin: 6px 0; }
+.strip span { font-family: var(--mono); font-size: .85rem; min-width: 2.2ch; text-align: center; padding: 3px 4px; border-radius: 4px; background: var(--panel-alt); }
+.strip span.p2 { background: color-mix(in srgb, var(--m4) 30%, var(--panel)); }
+
+/* Berkeley: the Simpson animation, its stage chips, the causal diagram */
+svg.simpson { width: 100%; max-width: 760px; display: block; }
+svg.simpson rect.sbar { opacity: .85; }
+svg.simpson .slabels { opacity: 0; transition: opacity .35s; }
+svg.simpson .slabels.on { opacity: 1; }
+svg.simpson line.pooled { stroke: var(--ink); stroke-width: 1.5; stroke-dasharray: 5 4; }
+svg.simpson text.slbl { font: 600 11.5px var(--sans); fill: var(--ink); paint-order: stroke; stroke: var(--panel); stroke-width: 3px; }
+svg.simpson text.slbl.big { font-size: 13px; }
+.row.chips { gap: 6px; margin: 2px 0 8px; }
+.chip { font-size: .8rem; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+.chip.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.simpson-caption { min-height: 4.5em; margin: 6px 0 4px; }
+svg.dag { width: 100%; max-width: 420px; display: block; }
+svg.dag .dnode { fill: var(--panel-alt); stroke: var(--muted); }
+svg.dag .dlabel { font: 600 13px var(--sans); fill: var(--ink); }
+svg.dag .edge { stroke: var(--ink); stroke-width: 1.6; }
+svg.dag .edge.direct { stroke-dasharray: 6 4; stroke: var(--c-third); }
+svg.dag .arrowhead { fill: var(--ink); }
+svg.dag .dnode.boxed { stroke: var(--accent); stroke-width: 2.5; fill: color-mix(in srgb, var(--accent) 14%, var(--panel)); }
+
+/* causality: the rule under each structure, the bar of alarms */
+p.rule { border-left: 3px solid var(--accent); padding: 4px 0 4px 10px; margin: 10px 0 0; }
+.alarm-bar { display: flex; height: 26px; border-radius: 4px; overflow: hidden; margin: 6px 0 8px; background: var(--panel-alt); }
+.alarm-bar .real { background: var(--s1); }
+.alarm-bar .false { background: var(--s2); }
+
+/* nature: one item per subject, labelled */
+.nature-item { margin: 14px 0; }
+.nature-item h3 { margin: 0 0 4px; font-size: 1rem; color: var(--ink); }
+.nature-item p { margin: 0 0 4px; }
+.kind { display: inline-block; font-size: .68rem; letter-spacing: .06em; text-transform: uppercase; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); vertical-align: 2px; margin-left: 4px; font-weight: 600; }
+.kind.rigorous { border-color: var(--accent); color: var(--accent); }
+
+/* generators: the method's worked example, the bit planes */
+.mono { font-family: var(--mono); }
+.hexkeep { color: var(--accent); }
+ol.steps.method li { margin: 5px 0; }
+svg.bitplane { max-width: 760px; }
+svg.bitplane rect.one { fill: var(--ink); opacity: .8; }
+svg.bitplane rect.zero { fill: var(--panel-alt); }
+svg.bitplane .brk { stroke: var(--accent); stroke-width: 2; }
+svg.bitplane .blk { fill: none; stroke: var(--m2); stroke-width: 2; }
+svg.bitplane .blk.again { stroke-dasharray: 4 3; }
+.binary { font-size: .95rem; letter-spacing: .06em; overflow-wrap: anywhere; margin: 4px 0; }
+.binary .bmid { color: var(--muted); }
+.bfirst, .blast { color: var(--m2); font-weight: 700; }
+
+/* procedure: the method as a flow of five boxes, and the annotated χ² curve */
+.flow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 22px; margin: 6px 0 14px; }
+.fbox { position: relative; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px 10px; background: var(--panel-alt); }
+.fbox:not(:last-child)::after { content: '→'; position: absolute; right: -18px; top: 42%; color: var(--muted); font-size: 1.1rem; }
+.fbox .fn { display: inline-block; width: 20px; height: 20px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: .75rem; text-align: center; line-height: 20px; font-weight: 700; }
+.fbox .ft { font-size: .78rem; color: var(--muted); margin: 4px 0 2px; text-transform: uppercase; letter-spacing: .05em; }
+.fbox .fbig { font-size: 1.05rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.fbox .fsmall { font-size: .8rem; color: var(--muted); margin-top: 2px; }
+@media (max-width: 760px) { .flow { grid-template-columns: 1fr; gap: 10px; } .fbox:not(:last-child)::after { content: '↓'; right: 10px; top: auto; bottom: -16px; } }
+svg.anatomy { max-width: 760px; }
+svg.anatomy .axis { stroke: var(--c-axis); }
+svg.anatomy .curve { fill: none; stroke: var(--ink); stroke-width: 2; }
+svg.anatomy .alpha { fill: color-mix(in srgb, var(--m2) 30%, transparent); }
+svg.anatomy .parea { fill: color-mix(in srgb, var(--s1) 60%, transparent); }
+svg.anatomy .crit { stroke: var(--m2); stroke-width: 1.5; stroke-dasharray: 5 4; }
+svg.anatomy .obsA { stroke: var(--muted); fill: var(--muted); stroke-width: 1.5; }
+svg.anatomy .obsB { stroke: var(--s1); fill: var(--s1); stroke-width: 2; }
+svg.anatomy .ann { font: 12px var(--sans); fill: var(--ink); paint-order: stroke; stroke: var(--panel); stroke-width: 3px; }
+svg.anatomy .alpha-t { fill: var(--m2); font-weight: 600; }
+svg.anatomy .obsB-t { fill: var(--s1); font-weight: 600; }
+svg.anatomy .obsA-t { font-weight: 600; }
+svg.anatomy .small-t { font-size: 11px; fill: var(--muted); }
+svg.anatomy .lead { stroke-width: 1.2; }
+svg.anatomy .alpha-l { stroke: var(--m2); }
+svg.anatomy .obsB-l { stroke: var(--s1); }
+svg.bitplane .digit { font: 700 9px var(--mono); }
+svg.bitplane .digit.on { fill: var(--panel); }
+svg.bitplane .digit.off { fill: var(--ink); }
+svg.bitplane .col1 { fill: none; stroke: var(--accent); stroke-width: 2; }
+svg.bitplane .col1-t { fill: var(--accent); font-weight: 700; }
+.bsplit { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 6px; }
+.bseg { border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; }
+.bseg .bdigits { font-size: .95rem; letter-spacing: .08em; overflow-wrap: anywhere; }
+.bseg .bname { font-size: .78rem; font-weight: 600; }
+.bseg .bwhere { font-size: .74rem; color: var(--muted); }
+.bseg.bfirst, .bseg.blast { border-color: var(--m2); }
+.bseg.bfirst .bdigits, .bseg.blast .bdigits { color: var(--m2); font-weight: 700; }
+.bseg.bmid { flex: 1 1 16ch; }
+.bseg.bmid .bdigits { color: var(--muted); }
+svg.bitplane .grp { stroke: var(--muted); stroke-width: 2; }
+svg.bitplane .grp-t { font-weight: 700; fill: var(--ink); }
+svg.bitplane .grp16 { fill: none; stroke: var(--c-third); stroke-width: 2.5; }
+svg.bitplane .grp16.again { stroke-dasharray: 6 4; }
+svg.bitplane .grp16-t { fill: var(--c-third); font-weight: 700; }
+/* causality: seeing vs doing, the verdict chips of E9 */
+.see-do { border: 1px solid var(--line); border-radius: 10px; padding: 4px 14px 10px; }
+.see-do .example { margin: 6px 0 0; padding: 6px 10px; background: var(--panel-alt); border-radius: 6px; }
+.row.vchips { gap: 8px; margin: 4px 0 6px; }
+.vchip { font-size: .84rem; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); }
+.vchip.dep { border-color: var(--m2); }
+.vchip.indep { border-color: var(--accent); }
+/* nature: the figures under an item, each with its reason */
+.nature-item .fig-why { margin: 8px 0 4px; color: var(--muted); }
+.nature-item h4.fig-title { margin: 6px 0 2px; font-size: .9rem; }
+.nature-item { padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.nature-item:last-child { border-bottom: 0; }
+
+/* information: the bar of H(X) split into I and H(X | Y) */
+.ibar { display: flex; height: 34px; border-radius: 6px; overflow: hidden; margin: 6px 0; font-size: .82rem; }
+.ibar span { display: flex; align-items: center; padding: 0 8px; white-space: nowrap; overflow: hidden; }
+.ibar-i { background: var(--s2); color: #fff; font-weight: 700; }
+.ibar-rest { background: var(--panel-alt); color: var(--ink); }

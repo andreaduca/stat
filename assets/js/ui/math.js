@@ -20,7 +20,7 @@ const SYMBOLS = {
   sim: '∼', equiv: '≡', to: '→', rightarrow: '→', mapsto: '↦', infty: '∞', in: '∈', ldots: '…', cdots: '⋯', mid: '∣',
   propto: '∝', partial: '∂', ell: 'ℓ', cup: '∪', cap: '∩', lfloor: '⌊', rfloor: '⌋', lceil: '⌈', rceil: '⌉',
   langle: '⟨', rangle: '⟩', vert: '|', Vert: '‖', prime: '′', circ: '∘', ast: '∗', star: '⋆', implies: '⟹', iff: '⟺',
-  gg: '≫', ll: '≪', Longrightarrow: '⟹', Rightarrow: '⇒', leftarrow: '←', blacksquare: '∎', square: '□', bullet: '•',
+  gg: '≫', ll: '≪', perp: '⊥', oplus: '⊕', setminus: '∖', Longrightarrow: '⟹', Rightarrow: '⇒', leftarrow: '←', blacksquare: '∎', square: '□', bullet: '•',
 };
 const LARGE = { sum: '∑', prod: '∏', int: '∫' };
 const SPACES = { ',': '0.17em', ';': '0.28em', ':': '0.22em', '!': '0em', quad: '1em', qquad: '2em', ' ': '0.28em' };   // \! (negative space) is drawn as no space
